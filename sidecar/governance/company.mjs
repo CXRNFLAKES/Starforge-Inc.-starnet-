@@ -62,7 +62,7 @@ export function makeCompany({ load, save } = {}) {
       assertCan(actorRole, ACTIONS.COMPANY_CONFIGURE);
       state.company.cho = { id: String(id), name: String(name), role: ROLES.CHO };
       state.company.updatedAt = new Date().toISOString();
-      this.audit(actorRole, "company.cho.profile.updated", { choId: state.company.cho.id });
+      this.audit(actorRole, "company.cho.profile.updated", { choId: state.company.cho.id } , false);
       persist();
       return this.snapshot();
     },
@@ -72,7 +72,7 @@ export function makeCompany({ load, save } = {}) {
       state.company.mission = String(mission);
       state.company.objective = String(objective);
       state.company.updatedAt = new Date().toISOString();
-      this.audit(actorRole, "company.mission.updated", { mission, objective });
+      this.audit(actorRole, "company.mission.updated", { mission, objective } , false);
       persist();
       return this.snapshot();
     },
@@ -90,7 +90,7 @@ export function makeCompany({ load, save } = {}) {
       };
       state.objectives.push(objective);
       state.company.updatedAt = objective.updatedAt;
-      this.audit(actorRole, "company.objective.created", { objectiveId: objective.id });
+      this.audit(actorRole, "company.objective.created", { objectiveId: objective.id } , false);
       persist();
       return structuredClone(objective);
     },
@@ -99,7 +99,7 @@ export function makeCompany({ load, save } = {}) {
       assertCan(actorRole, ACTIONS.COMPANY_CONFIGURE);
       if (!person?.id || !person?.name || !person?.role) throw new Error("Invalid person");
       state.people.push({ id: String(person.id), name: String(person.name), role: person.role });
-      this.audit(actorRole, "company.person.registered", { personId: person.id, role: person.role });
+      this.audit(actorRole, "company.person.registered", { personId: person.id, role: person.role } , false);
       persist();
       return this.snapshot();
     },
@@ -112,12 +112,12 @@ export function makeCompany({ load, save } = {}) {
         ...decision,
       };
       state.decisions.push(entry);
-      this.audit(actorRole, "governance.decision.recorded", { decisionId: entry.id });
+      this.audit(actorRole, "governance.decision.recorded", { decisionId: entry.id } , false);
       persist();
       return entry;
     },
 
-    audit(actorRole, event, details = {}) {
+    audit(actorRole, event, details = {}, persistAudit = true) {
       const entry = {
         id: randomUUID(),
         at: new Date().toISOString(),
@@ -126,7 +126,7 @@ export function makeCompany({ load, save } = {}) {
         details,
       };
       state.audit.push(entry);
-      persist();
+      if (persistAudit) persist();
       return entry;
     },
   };
