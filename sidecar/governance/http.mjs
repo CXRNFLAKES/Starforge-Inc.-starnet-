@@ -82,6 +82,8 @@ export function makeStarForgeGovernanceHandler({ workspace, roster = new Map(), 
 
     const workers = list();
     const activeRuns = runs();
+    const tasks = Array.isArray(persisted?.tasks) ? persisted.tasks : [];
+    const starNetTasks = tasks.filter((task) => task.assigneeSource === "starnet");
 
     return send(res, 200, {
       ok: true,
@@ -97,6 +99,15 @@ export function makeStarForgeGovernanceHandler({ workspace, roster = new Map(), 
         source: "starnet-live-roster",
       },
       activeRuns,
+      execution: {
+        taskCount: starNetTasks.length,
+        inProgress: starNetTasks.filter((task) => task.status === "in-progress").length,
+        completed: starNetTasks.filter((task) => task.status === "completed").length,
+        failed: starNetTasks.filter((task) => task.status === "failed").length,
+        blocked: starNetTasks.filter((task) => task.status === "blocked").length,
+        recentTasks: starNetTasks.slice(-10),
+        source: "starforge-governed-task-ledger",
+      },
     });
   };
 }
