@@ -1,0 +1,128 @@
+import { ROLES } from "./roles.mjs";
+import { ACTIONS, assertCan, can } from "./authority.mjs";
+
+const LEADERSHIP_CAPABILITIES = Object.freeze({
+  [ROLES.PA]: Object.freeze([
+    "coordinate",
+    "research",
+    "review_work",
+    "inspect_company",
+    "communicate",
+    "brief_cho",
+    "investigate",
+    "convene_board",
+    "assess_risk",
+    "maintain_memory",
+  ]),
+  [ROLES.CEO]: Object.freeze([
+    "coordinate",
+    "research",
+    "review_work",
+    "inspect_company",
+    "communicate",
+    "spawn_agents",
+    "delegate",
+    "create_projects",
+    "manage_operations",
+    "monitor_performance",
+    "reassign_workers",
+    "request_approval",
+    "execute_approved_plans",
+  ]),
+});
+
+const RESERVED_CAPABILITIES = Object.freeze({
+  [ROLES.PA]: Object.freeze(["brief_cho", "investigate", "convene_board", "assess_risk"]),
+  [ROLES.CEO]: Object.freeze(["spawn_agents", "delegate", "create_projects", "manage_operations",
+    "monitor_performance", "reassign_workers", "request_approval", "execute_approved_plans"]),
+});
+
+export function leadershipProfile(role) {
+  const capabilities = LEADERSHIP_CAPABILITIES[role];
+  if (!capabilities) throw new Error(`Unknown leadership role: ${role}`);
+  return {
+    role,
+    capabilities: [...capabilities],
+    reservedCapabilities: [...(RESERVED_CAPABILITIES[role] || [])],
+  };
+}
+
+export function hasCapability(role, capability) {
+  return LEADERSHIP_CAPABILITIES[role]?.includes(capability) === true;
+}
+
+export function assertLeadershipCapability(role, capability) {
+  if (!hasCapability(role, capability)) {
+    throw new Error(`Unauthorized capability: ${role} cannot perform ${capability}`);
+  }
+  return true;
+}
+
+export function makeLeadership({ company } = {}) {
+  if (!company || typeof company.snapshot !== "function") {
+    throw new Error("makeLeadership requires a company");
+  }
+
+  function actor(role) {
+    const person = company.snapshot().people.find(p => p.role === role);
+    if (!person) throw new Error(`No registered ${role} leader`);
+    return { id: person.id, name: person.name, role };
+  }
+
+  function act(role, capability, { action = null, details = {} } = {}) {
+    assertLeadershipCapability(role, capability);
+    if (action) assertCan(role, action);
+    const leader = actor(role);
+    company.audit(role, `leadership.${capability}`, { leaderId: leader.id, details });
+    return { ...leader, capability, action, details };
+  }
+
+  function communicate(role, targetRole, message) {
+    assertLeadershipCapability(role, "communicate");
+    if (!targetRole || !message) throw new Error("Communication target and message are required");
+    const leader = actor(role);
+    const target = company.snapshot().people.find(p => p.role === targetRole);
+    if (!target) throw new Error(`Unknown communication target: ${targetRole}`);
+    return act(role, "communicate", {
+      details: { targetRole, targetId: target.id, message: String(message) },
+    });
+  }
+
+  function briefCho(role, brief) {
+    assertLeadershipCapability(role, "brief_cho");
+    if (role !== ROLES.PA) throw new Error("Only the PA may brief the CHO through the PA channel");
+    if (!brief) throw new Error("CHO brief is required");
+    return act(role, "brief_cho", { details: { brief: String(brief) } });
+  }
+
+  function requestApproval(role, request) {
+    assertLeadershipCapability(role, "request_approval");
+    if (role !== ROLES.CEO) throw new Error("Only the CEO may submit an operational approval request");
+    if (!request || !request.title) throw new Error("Approval request title is required");
+    return act(role, "request_approval", {
+      action: ACTIONS.CEO_REQUEST_APPROVAL,
+      details: { request: structuredClone(request) },
+    });
+  }
+
+  function operate(role, operation) {
+    assertLeadershipCapability(role, "manage_operations");
+    if (role !== ROLES.CEO) throw new Error("Only the CEO may control company operations");
+    return act(role, "manage_operations", {
+      action: ACTIONS.CEO_OPERATE,
+      details: { operation: String(operation || "") },
+    });
+  }
+
+  return {
+    profiles: () => [leadershipProfile(ROLES.PA), leadershipProfile(ROLES.CEO)],
+    actor,
+    act,
+    communicate,
+    briefCho,
+    requestApproval,
+    operate,
+  };
+}
+
+export { LEADERSHIP_CAPABILITIES };
