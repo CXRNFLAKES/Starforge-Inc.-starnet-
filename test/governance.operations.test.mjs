@@ -83,6 +83,24 @@ test("CEO, PA, and Vice CEO can review StarNet execution within separate scopes"
   assert.throws(() => operations.reviewStarNetExecution(ROLES.BOARD), /Only the CEO, PA, or StarNet Vice CEO/);
 });
 
+test("StarNet adapter reports working and idle workforce agents", () => {
+  const adapter = makeStarNetAdapter({
+    roster: () => [
+      { id: "worker-a", name: "Worker A" },
+      { id: "worker-b", name: "Worker B" },
+    ],
+    dispatch: async () => ({ content: "unused" }),
+  });
+  const snapshot = adapter.inspectWorkforce({
+    activeRuns: [{ agentId: "worker-b", runId: "run-7" }],
+  });
+  assert.equal(snapshot.workerCount, 2);
+  assert.equal(snapshot.counts.working, 1);
+  assert.equal(snapshot.counts.idle, 1);
+  assert.equal(snapshot.workers.find((worker) => worker.id === "worker-b").status, "working");
+  assert.equal(snapshot.workers.find((worker) => worker.id === "worker-a").status, "idle");
+});
+
 test("StarNet adapter awaits async dispatch results and preserves completion payload", async () => {
   let received = null;
   const adapter = makeStarNetAdapter({
