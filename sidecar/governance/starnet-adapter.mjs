@@ -30,6 +30,34 @@ export function makeStarNetAdapter({ roster, dispatch } = {}) {
 
   function listWorkers() { return normalizeRoster(roster()); }
 
+  function inspectWorkforce({ activeRuns = [] } = {}) {
+    const active = new Map(
+      (Array.isArray(activeRuns) ? activeRuns : [])
+        .filter((run) => run && ID_RE.test(String(run.agentId ?? "")))
+        .map((run) => [String(run.agentId), clone(run)]),
+    );
+
+    const workers = listWorkers().map((worker) => {
+      const run = active.get(worker.id);
+      return {
+        ...worker,
+        status: run ? "working" : "idle",
+        activeRun: run ?? null,
+      };
+    });
+
+    return clone({
+      source: "live-roster",
+      workerCount: workers.length,
+      counts: {
+        total: workers.length,
+        working: workers.filter((worker) => worker.status === "working").length,
+        idle: workers.filter((worker) => worker.status === "idle").length,
+      },
+      workers,
+    });
+  }
+
   async function delegateTask(actorRole, task = {}) {
     assertCan(actorRole, ACTIONS.STARNET_DELEGATE);
 
@@ -79,5 +107,5 @@ export function makeStarNetAdapter({ roster, dispatch } = {}) {
     });
   }
 
-  return Object.freeze({ listWorkers, delegateTask });
+  return Object.freeze({ listWorkers, inspectWorkforce, delegateTask });
 }
