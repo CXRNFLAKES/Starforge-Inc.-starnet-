@@ -61,8 +61,11 @@ export function makeStarNetAdapter({ roster, dispatch } = {}) {
       throw new Error(`StarNet dispatch failed: ${message}`, { cause: error });
     }
 
-    if (!result || typeof result !== "object") {
+    if (!result || typeof result !== "object" || Array.isArray(result)) {
       throw new Error("StarNet dispatch returned an invalid result");
+    }
+    if (typeof result.content !== "string") {
+      throw new Error("StarNet dispatch returned a result without content");
     }
 
     return clone({
