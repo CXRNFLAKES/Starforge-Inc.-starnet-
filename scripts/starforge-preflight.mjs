@@ -31,6 +31,7 @@ const TEST_FILES = [
   "test/governance.board.test.mjs",
   "test/governance.risk.test.mjs",
   "test/governance.fact-checker.test.mjs",
+  "test/governance.decision-packet.test.mjs",
   "test/starforge.android9.test.mjs",
 ];
 const REQUIRED_MODULES = [
@@ -42,6 +43,7 @@ const REQUIRED_MODULES = [
   "sidecar/governance/board.mjs",
   "sidecar/governance/risk-engine.mjs",
   "sidecar/governance/fact-checker.mjs",
+  "sidecar/governance/decision-packet.mjs",
   "test/governance.risk.test.mjs",
   "test/governance.fact-checker.test.mjs",
   "scripts/starforge-mobile-test.mjs",
@@ -120,6 +122,7 @@ const sourceFiles = [
   "sidecar/governance/board.mjs",
   "sidecar/governance/risk-engine.mjs",
   "sidecar/governance/fact-checker.mjs",
+  "sidecar/governance/decision-packet.mjs",
   "scripts/starforge-mobile-test.mjs",
 ];
 

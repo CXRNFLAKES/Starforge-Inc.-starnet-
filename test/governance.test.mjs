@@ -87,3 +87,17 @@ test("company persistence hook receives the updated state", () => {
   assert.equal(saves.at(-1).company.objective, "Operate safely");
   assert.equal(saves.at(-1).objectives.length, 1);
 });
+
+test("PA can persist a structured decision packet but CEO cannot", () => {
+  const company = makeCompany();
+  assert.throws(() => company.recordDecisionPacket(ROLES.CEO, {
+    request: { id: "expense-1" },
+  }), /Unauthorized action/);
+  const packet = company.recordDecisionPacket(ROLES.PA, {
+    request: { id: "expense-1", purpose: "TEST" },
+    independentRisk: { rating: "low" },
+    paAssessment: { label: "VERIFIED FACT" },
+  });
+  assert.equal(packet.request.id, "expense-1");
+  assert.equal(company.snapshot().decisionPackets.length, 1);
+});

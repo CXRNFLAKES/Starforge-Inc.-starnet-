@@ -32,6 +32,7 @@ export function defaultState() {
     ],
     decisions: [],
     boardMeetings: [],
+    decisionPackets: [],
     audit: [],
   };
 }
@@ -46,6 +47,7 @@ function normalize(state) {
     objectives: Array.isArray(state?.objectives) ? state.objectives : [],
     decisions: Array.isArray(state?.decisions) ? state.decisions : [],
     boardMeetings: Array.isArray(state?.boardMeetings) ? state.boardMeetings : [],
+    decisionPackets: Array.isArray(state?.decisionPackets) ? state.decisionPackets : [],
     audit: Array.isArray(state?.audit) ? state.audit : [],
   };
 }
@@ -132,6 +134,20 @@ export function makeCompany({ load, save } = {}) {
       this.audit(actorRole, "company.person.registered", { personId: person.id, role: person.role } , false);
       persist();
       return this.snapshot();
+    },
+
+    recordDecisionPacket(actorRole, packet) {
+      assertCan(actorRole, ACTIONS.PA_ADVISE_CHO);
+      if (!packet?.request?.id) throw new Error("Decision packet requires request id");
+      const entry = {
+        id: randomUUID(),
+        createdAt: new Date().toISOString(),
+        ...structuredClone(packet),
+      };
+      state.decisionPackets.push(entry);
+      this.audit(actorRole, "governance.decision-packet.recorded", { packetId: entry.id, requestId: entry.request.id }, false);
+      persist();
+      return structuredClone(entry);
     },
 
     recordDecision(actorRole, decision) {

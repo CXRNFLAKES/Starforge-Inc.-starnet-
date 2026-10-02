@@ -12,6 +12,10 @@ test("integration lab runs the governed expense path without side effects", () =
   assert.equal(snapshot.lab.riskAssessments.length, 2);
   assert.equal(snapshot.lab.approvals[0].decision, "approve");
   assert.equal(snapshot.lab.recoveries.length, 1);
+  assert.equal(snapshot.lab.decisionPackets.length, 1);
+  assert.equal(snapshot.company.decisionPackets.length, 1);
+  assert.equal(snapshot.company.decisionPackets[0].independentRisk.rating, "low");
+  assert.equal(snapshot.company.decisionPackets[0].paAssessment.label, "SUPPORTED ESTIMATE");
 });
 
 test("integration lab preserves CHO-only execution authority", () => {
@@ -55,6 +59,7 @@ test("integration lab produces an auditable event trail", () => {
   assert.ok(events.includes("governance.request.created"));
   assert.ok(events.includes("risk.assessment.completed"));
   assert.ok(events.includes("pa.review.completed"));
+  assert.ok(events.includes("governance.decision-packet.recorded"));
   assert.ok(events.includes("board.meeting.started"));
   assert.ok(events.includes("board.decision"));
   assert.ok(events.includes("approval.cho-decision"));

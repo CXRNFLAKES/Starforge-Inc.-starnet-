@@ -3,6 +3,7 @@ import { ROLES } from "./roles.mjs";
 import { makeTestingCompany } from "./testing.mjs";
 import { makeRiskEngine } from "./risk-engine.mjs";
 import { makeFactChecker } from "./fact-checker.mjs";
+import { makeDecisionPacket } from "./decision-packet.mjs";
 
 export const INTEGRATION_MODE = "testing";
 export const SIDE_EFFECTS = "none";
@@ -28,6 +29,7 @@ export function makeIntegrationLab(overrides = {}) {
     meetings: [],
     approvals: [],
     recoveries: [],
+    decisionPackets: [],
     events: [],
   };
 
@@ -100,6 +102,18 @@ export function makeIntegrationLab(overrides = {}) {
     };
       request.status = review.escalateToCho ? "cho-decision" : "board-review";
       state.riskAssessments.push({ type: "pa-review", ...entry });
+      const risk = state.riskAssessments.find((item) => item.requestId === requestId && item.type !== "pa-review");
+      const packet = makeDecisionPacket({
+        request,
+        risk,
+        evidence: checked,
+        financialExposure: { amount: request.amount, currency: request.currency },
+        evidenceProblems: checked.label === "UNVERIFIED CLAIM" ? checked.findings : [],
+        paRecommendation: entry.recommendation,
+      });
+      company.recordDecisionPacket(actorRole, packet);
+      state.decisionPackets.push(packet);
+      emit(actorRole, "governance.decision-packet.recorded", { requestId, informationStatus: packet.informationStatus });
       emit(actorRole, "pa.review.completed", entry);
       return clone(entry);
     },
