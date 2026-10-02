@@ -180,6 +180,17 @@ export function makeIntegrationLab(overrides = {}) {
       const request = state.requests.find((item) => item.id === requestId);
       if (!request) throw new Error(`Unknown request: ${requestId}`);
       if (request.status !== "approved") throw new Error("Only approved requests may execute");
+      const approval = state.approvals.find(
+        (item) => item.requestId === requestId && item.decision === "approve",
+      );
+      if (!approval) throw new Error("Execution requires a recorded CHO approval");
+      const decision = company.snapshot().decisions.find(
+        (item) =>
+          item.requestId === requestId &&
+          item.packetId === approval.packetId &&
+          item.decision === "approve",
+      );
+      if (!decision) throw new Error("Execution requires a valid recorded CHO decision");
       request.status = "simulated-executed";
       emit(actorRole, "expense.execution.simulated", { requestId });
       return clone(request);

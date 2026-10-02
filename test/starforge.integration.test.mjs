@@ -103,3 +103,27 @@ test("integration lab blocks duplicate CHO decisions", () => {
     /already recorded/,
   );
 });
+
+test("integration lab blocks execution without a recorded CHO approval", () => {
+  const lab = makeIntegrationLab();
+  const request = lab.requestExpense(ROLES.CEO, {
+    id: "expense-no-cho-approval-001",
+    amount: 100,
+    currency: "EUR",
+    purpose: "TEST: execution authorization gate",
+  });
+  lab.assessRisk(ROLES.RISK, request.id);
+  lab.paReview(ROLES.PA, request.id, {
+    evidence: [{ source: "test", supports: true }],
+    recommendation: "escalate-to-board",
+  });
+  lab.conveneBoard(ROLES.BOARD, request.id);
+  lab.boardDecision(ROLES.BOARD, request.id, {
+    decision: "approve-routine",
+    rationale: "TEST: board routine approval must not bypass CHO authorization in this path",
+  });
+  assert.throws(
+    () => lab.executeApproved(ROLES.CHO, request.id),
+    /requires a recorded CHO approval/,
+  );
+});
