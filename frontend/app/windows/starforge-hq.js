@@ -1,5 +1,5 @@
 'use strict';
-// Economic campaign ceiling: LVL 100 = €10M net operating capital. The live finance bridge will supply the actual balance.
+// Economic campaign ceiling: LVL 100 = €10M net operating capital. The live finance bridge supplies the actual governed balance.
 (function(){
   if(typeof document==='undefined'||typeof StationUI==='undefined'||!StationUI.registerWindow)return;
   const esc=StationUI.h.esc;
@@ -28,7 +28,8 @@
         const recent=Array.isArray(execution?.recentTasks)?execution.recentTasks.slice().reverse():[];
         recentEl.replaceChildren();
         if(!recent.length){recentEl.textContent='No governed StarNet tasks recorded yet.';} else recent.slice(0,5).forEach(task=>{const row=document.createElement('div');row.className='sf-task';row.innerHTML='<b>'+esc(task.title||'Untitled task')+'</b><span>'+esc(String(task.status||'unknown').toUpperCase())+' · '+esc(task.assigneeId||'unassigned')+'</span>';recentEl.appendChild(row);});
-        const net=Number(capital&&capital.netOperatingCapital);
+        if(!capital || capital.source!=='starforge-governed-company-ledger') throw new Error('governed finance source unavailable');
+        const net=Number(capital.netOperatingCapital);
         const level=levelForCapital(net);
         if(level===null) throw new Error('governance feed returned invalid capital');
         levelEl.textContent='LVL '+level;
