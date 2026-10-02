@@ -1,0 +1,19 @@
+name: StarForge Android 9 Test
+
+on:
+  push:
+    branches: ["starforge/governance-kernel"]
+  pull_request:
+    branches: ["starforge/governance-kernel"]
+
+jobs:
+  governance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - run: npm ci
+      - run: npm run starforge:test
+      - run: node --test test/starforge.android9.test.js
