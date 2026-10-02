@@ -52,3 +52,11 @@ test('StarForge HQ HUD is presentation-only and keeps governed feed semantics',(
   assert.match(hq,/netOperatingCapital/);
   assert.match(hq,/recentTasks/);
 });
+
+
+test('StarForge HQ keeps its retro HUD presentation separate from governed values',()=>{
+  const css=fs.readFileSync(new URL('../frontend/css/starforge-hq.css',import.meta.url),'utf8');
+  assert.match(css,/RETRO HQ HUD/);
+  assert.match(css,/sf-execution-stats/);
+  assert.match(css,/sf-worker:hover/);
+});
