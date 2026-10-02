@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import { ROLES } from "./roles.mjs";
 import { ACTIONS, assertCan } from "./authority.mjs";
 
@@ -118,9 +119,16 @@ export function makeLeadership({ company } = {}) {
       if (!target) throw new Error(`Missing StarForge ${targetRole} reporting target`);
       return { role: target.role, id: target.id, name: target.name };
     });
+    const entry = {
+      id: crypto.randomUUID(),
+      createdAt: new Date().toISOString(),
+      report: structuredClone(report),
+      targets,
+    };
+    company.recordLeadershipReport(role, entry);
     return act(role, "report_to_leadership", {
       action: ACTIONS.STARNET_REPORT,
-      details: { report: structuredClone(report), targets },
+      details: { report: structuredClone(report), targets, reportId: entry.id },
     });
   }
 
