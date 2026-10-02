@@ -2,9 +2,9 @@ import http from "node:http";
 import { readFile } from "node:fs/promises";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { makeTestingCompany } from "../sidecar/governance/testing.js";
-import { ROLES } from "../sidecar/governance/roles.js";
-import { ACTIONS, assertCan } from "../sidecar/governance/authority.js";
+import { makeTestingCompany } from "../sidecar/governance/testing.mjs";
+import { ROLES } from "../sidecar/governance/roles.mjs";
+import { ACTIONS, assertCan } from "../sidecar/governance/authority.mjs";
 
 const ROOT = dirname(fileURLToPath(import.meta.url));
 const UI = join(ROOT, "../mobile-test/index.html");
