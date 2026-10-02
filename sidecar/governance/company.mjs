@@ -273,6 +273,16 @@ export function makeCompany({ load, save } = {}) {
       return financeData();
     },
 
+    financeTelemetrySnapshot(actorRole, { limit = 5 } = {}) {
+      assertCan(actorRole, ACTIONS.FINANCE_TELEMETRY);
+      const safeLimit = Math.max(0, Math.min(20, Number(limit) || 0));
+      const summary = financeData({ summaryOnly: true });
+      return {
+        ...summary,
+        recentEntries: structuredClone(state.finance.entries.slice(-safeLimit).reverse()),
+      };
+    },
+
     capitalSnapshot(actorRole) {
       assertCan(actorRole, ACTIONS.COMPANY_READ);
       return financeData({ summaryOnly: true });
