@@ -198,6 +198,25 @@ export function makeOperations({ company, starnet = null } = {}) {
     });
   }
 
+  function inspectStarNetWorkforce(actorRole) {
+    if (![ROLES.CEO, ROLES.PA, ROLES.VICE_CEO].includes(actorRole)) {
+      throw new Error("Only the CEO, PA, or StarNet Vice CEO may inspect the StarNet workforce");
+    }
+    requireRole(actorRole, ACTIONS.COMPANY_READ);
+    if (!starnet || typeof starnet.listWorkers !== "function") {
+      throw new Error("StarNet adapter is required for workforce inspection");
+    }
+
+    const workers = starnet.listWorkers();
+    return clone({
+      source: "live-roster",
+      workerCount: workers.length,
+      workers,
+      reviewScope: actorRole === ROLES.PA ? "independent-oversight"
+        : actorRole === ROLES.VICE_CEO ? "starnet-operational-review" : "operational-review",
+    });
+  }
+
   function inspect({ projectId = null, assigneeId = null } = {}) {
     return clone({
       projects: company.snapshot().projects.filter((item) => !projectId || item.id === projectId),
@@ -243,6 +262,7 @@ export function makeOperations({ company, starnet = null } = {}) {
     inspect,
     reviewExecution,
     reviewStarNetExecution,
+    inspectStarNetWorkforce,
   });
 }
 
