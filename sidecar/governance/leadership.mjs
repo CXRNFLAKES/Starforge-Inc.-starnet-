@@ -123,7 +123,7 @@ export function makeLeadership({ company } = {}) {
     const report = company.snapshot().leadershipReports.find(item => item.id === reportId);
     if (!report) throw new Error("Unknown leadership report");
     if (!report.targets.some(target => target.role === role)) {
-      throw new Error(`Leadership report is not addressed to \${role}`);
+      throw new Error(`Leadership report is not addressed to ${role}`);
     }
 
     const reviewer = actor(role);
