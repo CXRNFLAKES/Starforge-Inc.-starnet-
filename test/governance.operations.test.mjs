@@ -41,7 +41,7 @@ test("workers can update their assigned tasks but cannot update another worker's
     title: "Complete test",
     assigneeId: "worker-a",
   });
-  const updated = operations.updateTask(ROLES.WORKER, task.id, { status: "in-progress", note: "Started" });
+  const updated = operations.updateTask(ROLES.WORKER, task.id, { actorId: "worker-a", status: "in-progress", note: "Started" });
   assert.equal(updated.status, "in-progress");
-  assert.throws(() => operations.updateTask(ROLES.WORKER, task.id, { status: "completed" }), /Unauthorized task update/);
+  assert.throws(() => operations.updateTask(ROLES.WORKER, task.id, { actorId: "worker-b", status: "completed" }), /Unauthorized task update/);
 });
