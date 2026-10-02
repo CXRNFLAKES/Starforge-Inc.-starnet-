@@ -55,3 +55,35 @@ test("decision recording is CHO-reserved", () => {
   assert.equal(decision.title, "test");
   assert.equal(company.snapshot().decisions.length, 1);
 });
+
+
+test("company identity establishes the human CHO and Phase 1 state", () => {
+  const company = makeCompany();
+  const state = company.snapshot();
+  assert.equal(state.company.phase, 1);
+  assert.equal(state.company.status, "active");
+  assert.deepEqual(state.company.cho, { id: "cho", name: "Human Owner", role: ROLES.CHO });
+});
+
+test("CHO can update identity and create company objectives", () => {
+  const company = makeCompany();
+  assert.throws(() => company.setChoProfile(ROLES.CEO, { name: "Not CHO" }), /Unauthorized action/);
+  const state = company.setChoProfile(ROLES.CHO, { id: "human-owner", name: "Human Owner" });
+  assert.equal(state.company.cho.id, "human-owner");
+  const objective = company.createObjective(ROLES.CHO, {
+    title: "Build StarForge revenue engine",
+    description: "Create the first measurable company revenue objective.",
+  });
+  assert.equal(objective.status, "active");
+  assert.equal(company.snapshot().objectives.length, 1);
+});
+
+test("company persistence hook receives the updated state", () => {
+  const saves = [];
+  const company = makeCompany({ save: (state) => saves.push(state) });
+  company.setMission(ROLES.CHO, { mission: "Build StarForge", objective: "Operate safely" });
+  company.createObjective(ROLES.CHO, { title: "First objective" });
+  assert.equal(saves.length, 2);
+  assert.equal(saves.at(-1).company.objective, "Operate safely");
+  assert.equal(saves.at(-1).objectives.length, 1);
+});
