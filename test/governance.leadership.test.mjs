@@ -88,3 +88,21 @@ test("Vice CEO leadership reports persist for CEO and PA review", () => {
   const restored = makeCompany({ load: () => stored });
   assert.equal(restored.snapshot().leadershipReports.length, 1);
 });
+
+
+test("CEO and PA can retrieve persisted Vice CEO reports through the leadership layer", () => {
+  const company = makeCompany();
+  const leadership = makeLeadership({ company });
+  leadership.reportToLeadership(ROLES.VICE_CEO, {
+    status: "yellow",
+    workforce: { active: 2, blocked: 1 },
+  });
+
+  const ceoReports = leadership.listLeadershipReports({ targetRole: ROLES.CEO });
+  const paReports = leadership.listLeadershipReports({ targetRole: ROLES.PA });
+
+  assert.equal(ceoReports.length, 1);
+  assert.equal(paReports.length, 1);
+  assert.equal(ceoReports[0].report.status, "yellow");
+  assert.equal(ceoReports[0].report.workforce.blocked, 1);
+});
