@@ -117,6 +117,7 @@ test("CHO decisions with a request require the recorded decision packet", () => 
     requestId: "expense-with-packet",
     packetId: packet.id,
     decision: "approve",
+    rationale: "TEST: approved after packet review",
   });
   assert.equal(decision.packetId, packet.id);
 });
