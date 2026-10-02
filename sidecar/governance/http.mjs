@@ -58,7 +58,7 @@ function financeSummary(state) {
   };
 }
 
-export function makeStarForgeGovernanceHandler({ workspace, roster = new Map(), runsMeta = new Map() } = {}) {
+export function makeStarForgeGovernanceHandler({ workspace, roster = new Map(), runsMeta = new Map(), runtime = null } = {}) {
   if (!workspace) throw new TypeError("StarForge governance workspace is required");
   const list = () => roster instanceof Map
     ? Array.from(roster.entries()).map(([id, value]) => ({ id, ...(value || {}) }))
@@ -80,8 +80,17 @@ export function makeStarForgeGovernanceHandler({ workspace, roster = new Map(), 
       persisted = JSON.parse(await readFile(file, "utf8"));
     } catch (_) {}
 
-    const workers = list();
     const activeRuns = runs();
+    let workers = list();
+    let workforceSource = "starnet-live-roster";
+    if (runtime && typeof runtime.inspectWorkforce === "function") {
+      const inspected = await runtime.inspectWorkforce({ activeRuns });
+      workers = Array.isArray(inspected?.workers) ? inspected.workers : workers;
+      workforceSource = inspected?.source || "live-runtime";
+    } else if (runtime && typeof runtime.listWorkers === "function") {
+      workers = await runtime.listWorkers();
+      workforceSource = "live-runtime-roster";
+    }
     const tasks = Array.isArray(persisted?.tasks) ? persisted.tasks : [];
     const starNetTasks = tasks.filter((task) => task.assigneeSource === "starnet");
 
@@ -96,7 +105,7 @@ export function makeStarForgeGovernanceHandler({ workspace, roster = new Map(), 
       workforce: {
         workers,
         count: workers.length,
-        source: "starnet-live-roster",
+        source: workforceSource,
       },
       activeRuns,
       execution: {
