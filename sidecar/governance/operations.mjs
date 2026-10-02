@@ -118,12 +118,35 @@ export function makeOperations({ company } = {}) {
     });
   }
 
+  function reviewExecution(actorRole, { projectId = null } = {}) {
+    requireRole(actorRole, ACTIONS.CEO_OPERATE);
+    if (actorRole !== ROLES.CEO) throw new Error("Only the CEO may review operational execution");
+
+    const snapshot = company.snapshot();
+    const tasks = snapshot.tasks.filter((item) => !projectId || item.projectId === projectId);
+    const counts = Object.fromEntries(TASK_STATUSES.map((status) => [
+      status,
+      tasks.filter((item) => item.status === status).length,
+    ]));
+
+    return clone({
+      projectId,
+      taskCount: tasks.length,
+      counts,
+      blocked: tasks.filter((item) => item.status === "blocked"),
+      failed: tasks.filter((item) => item.status === "failed"),
+      completed: tasks.filter((item) => item.status === "completed"),
+      attentionNeeded: tasks.filter((item) => item.status === "blocked" || item.status === "failed"),
+    });
+  }
+
   return Object.freeze({
     createProject,
     setProjectStatus,
     delegateTask,
     updateTask,
     inspect,
+    reviewExecution,
   });
 }
 
