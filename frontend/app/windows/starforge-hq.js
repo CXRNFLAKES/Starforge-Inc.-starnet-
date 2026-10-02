@@ -9,9 +9,10 @@
   function statusForAgent(agent){const id=String(agent&&(agent.id||agent.agentId)||'');let running=false;try{running=!!(StationUI.isAgentRunning&&StationUI.isAgentRunning(id));}catch(_){}return running?['WORKING','working']:['IDLE','idle'];}
   function render(body){
     body.innerHTML='';const root=document.createElement('section');root.className='sf-hq';
-    root.innerHTML='<div class="sf-hq-head"><div><div class="sf-kicker">STARFORGE HQ</div><h2>COMPANY COMMAND ROOM</h2><p>StarNet workforce · governed by StarForge</p></div><div class="sf-link-state" role="status">STARFORGE LINK · UI BRIDGE</div></div><article class="sf-capital"><div class="sf-section-label">COMPANY LEVEL</div><div class="sf-level-line"><strong class="sf-level">LVL —</strong><span class="sf-capital-value">CAPITAL FEED PENDING</span></div><div class="sf-meter"><i></i></div><div class="sf-next">Finance bridge not connected — no balance is invented.</div></article><div class="sf-leadership"></div><section class="sf-roster"><div class="sf-section-label">STARNET WORKFORCE</div><div class="sf-roster-meta"></div><div class="sf-workers"></div></section>';
+    root.innerHTML='<div class="sf-hq-head"><div><div class="sf-kicker">STARFORGE HQ</div><h2>COMPANY COMMAND ROOM</h2><p>StarNet workforce · governed by StarForge</p></div><div class="sf-link-state" role="status">STARFORGE LINK · UI BRIDGE</div></div><article class="sf-capital"><div class="sf-section-label">COMPANY LEVEL</div><div class="sf-level-line"><strong class="sf-level">LVL —</strong><span class="sf-capital-value">CAPITAL FEED PENDING</span></div><div class="sf-meter"><i></i></div><div class="sf-next">Finance bridge not connected — no balance is invented.</div></article><div class="sf-leadership"></div><section class="sf-execution"><div class="sf-section-label">STARFORGE EXECUTION FEED</div><div class="sf-execution-stats"><span>IN PROGRESS <b data-sf="in-progress">—</b></span><span>COMPLETED <b data-sf="completed">—</b></span><span>FAILED <b data-sf="failed">—</b></span><span>BLOCKED <b data-sf="blocked">—</b></span></div><div class="sf-recent"></div></section><section class="sf-roster"><div class="sf-section-label">STARNET WORKFORCE</div><div class="sf-roster-meta"></div><div class="sf-workers"></div></section>';
     const leaders=root.querySelector('.sf-leadership');[['CHO','HUMAN OWNER'],['PA','OVERSIGHT'],['CEO','OPERATIONS'],['VICE CEO','STARNET LEAD']].forEach(([n,r])=>{const c=document.createElement('div');c.className='sf-leader';c.innerHTML='<b>'+esc(n)+'</b><span>'+esc(r)+'</span>';leaders.appendChild(c);});
     const meta=root.querySelector('.sf-roster-meta'),workers=root.querySelector('.sf-workers');
+    const executionStats={}; root.querySelectorAll('[data-sf]').forEach(el=>executionStats[el.dataset.sf]=el); const recentEl=root.querySelector('.sf-recent');
     const levelEl=root.querySelector('.sf-level'),capitalEl=root.querySelector('.sf-capital-value'),meterEl=root.querySelector('.sf-meter i'),nextEl=root.querySelector('.sf-next');
     async function refreshGovernance(){
       try{
@@ -19,6 +20,11 @@
         if(!response.ok) throw new Error('governance feed unavailable');
         const data=await response.json();
         const capital=data&&data.capital;
+        const execution=data&&data.execution;
+        for(const key of ['in-progress','completed','failed','blocked']) executionStats[key].textContent=Number(execution?.[key.replace('-','')] ?? execution?.[key] ?? 0);
+        const recent=Array.isArray(execution?.recentTasks)?execution.recentTasks.slice().reverse():[];
+        recentEl.replaceChildren();
+        if(!recent.length){recentEl.textContent='No governed StarNet tasks recorded yet.';} else recent.slice(0,5).forEach(task=>{const row=document.createElement('div');row.className='sf-task';row.innerHTML='<b>'+esc(task.title||'Untitled task')+'</b><span>'+esc(String(task.status||'unknown').toUpperCase())+' · '+esc(task.assigneeId||'unassigned')+'</span>';recentEl.appendChild(row);});
         const net=Number(capital&&capital.netOperatingCapital);
         const level=levelForCapital(net);
         if(level===null) throw new Error('governance feed returned invalid capital');
