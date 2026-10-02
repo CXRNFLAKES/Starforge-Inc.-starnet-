@@ -54,10 +54,18 @@ export function makeStarNetAdapter({ roster, dispatch } = {}) {
     };
 
     const result = await dispatch(dispatchRequest);
+    if (!result || typeof result !== "object") {
+      throw new Error("StarNet dispatch returned an invalid result");
+    }
 
     return clone({
-      taskId: task.id ?? null, projectId: task.projectId ?? null,
-      assigneeId: agentId, worker, delegatedBy: actorRole, dispatchRequest, result,
+      taskId: task.id ?? null,
+      projectId: task.projectId ?? null,
+      assigneeId: agentId,
+      worker,
+      delegatedBy: actorRole,
+      dispatchRequest,
+      result,
     });
   }
 
