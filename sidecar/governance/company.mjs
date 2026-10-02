@@ -25,6 +25,8 @@ export function defaultState() {
       updatedAt: now,
     },
     objectives: [],
+    projects: [],
+    tasks: [],
     people: [
       { id: "cho", name: "CHO", role: ROLES.CHO },
       { id: "main-overseer", name: "Main Overseer", role: ROLES.PA },
@@ -46,6 +48,8 @@ function normalize(state) {
     company: { ...base.company, ...(state?.company ?? {}) },
     people: Array.isArray(state?.people) ? state.people : base.people,
     objectives: Array.isArray(state?.objectives) ? state.objectives : [],
+    projects: Array.isArray(state?.projects) ? state.projects : [],
+    tasks: Array.isArray(state?.tasks) ? state.tasks : [],
     decisions: Array.isArray(state?.decisions) ? state.decisions : [],
     boardMeetings: Array.isArray(state?.boardMeetings) ? state.boardMeetings : [],
     decisionPackets: Array.isArray(state?.decisionPackets) ? state.decisionPackets : [],
@@ -135,6 +139,51 @@ export function makeCompany({ load, save } = {}) {
       this.audit(actorRole, "company.person.registered", { personId: person.id, role: person.role } , false);
       persist();
       return this.snapshot();
+    },
+
+    recordProject(actorRole, project) {
+      assertCan(actorRole, ACTIONS.CEO_OPERATE);
+      if (!project?.id || !project?.title) throw new Error("Invalid project");
+      state.projects.push(structuredClone(project));
+      state.company.updatedAt = project.updatedAt ?? new Date().toISOString();
+      this.audit(actorRole, "operations.project.recorded", { projectId: project.id }, false);
+      persist();
+      return structuredClone(project);
+    },
+
+    updateProject(actorRole, project) {
+      assertCan(actorRole, ACTIONS.CEO_OPERATE);
+      const index = state.projects.findIndex((item) => item.id === project?.id);
+      if (index < 0) throw new Error("Unknown project");
+      state.projects[index] = structuredClone(project);
+      state.company.updatedAt = project.updatedAt ?? new Date().toISOString();
+      this.audit(actorRole, "operations.project.updated", { projectId: project.id, status: project.status }, false);
+      persist();
+      return structuredClone(project);
+    },
+
+    recordTask(actorRole, task) {
+      assertCan(actorRole, ACTIONS.CEO_DELEGATE);
+      if (!task?.id || !task?.projectId || !task?.assigneeId) throw new Error("Invalid task");
+      state.tasks.push(structuredClone(task));
+      state.company.updatedAt = task.updatedAt ?? new Date().toISOString();
+      this.audit(actorRole, "operations.task.recorded", { taskId: task.id, projectId: task.projectId }, false);
+      persist();
+      return structuredClone(task);
+    },
+
+    updateTask(actorRole, task) {
+      const allowed = actorRole === ROLES.CEO
+        ? ACTIONS.CEO_OPERATE
+        : ACTIONS.WORKER_EXECUTE;
+      assertCan(actorRole, allowed);
+      const index = state.tasks.findIndex((item) => item.id === task?.id);
+      if (index < 0) throw new Error("Unknown task");
+      state.tasks[index] = structuredClone(task);
+      state.company.updatedAt = task.updatedAt ?? new Date().toISOString();
+      this.audit(actorRole, "operations.task.updated", { taskId: task.id, status: task.status }, false);
+      persist();
+      return structuredClone(task);
     },
 
     recordDecisionPacket(actorRole, packet) {
