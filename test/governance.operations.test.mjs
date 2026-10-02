@@ -277,7 +277,7 @@ test("CEO execution review is restricted to CEO or PA oversight", () => {
 });
 
 
-test("StarForge leadership can inspect the live StarNet workforce without mutating it", () => {
+test("StarForge leadership can inspect the live StarNet workforce without mutating it", async () => {
   const company = makeCompany();
   const starnet = makeStarNetAdapter({
     roster: () => new Map([
@@ -289,9 +289,9 @@ test("StarForge leadership can inspect the live StarNet workforce without mutati
   });
   const operations = makeOperations({ company, starnet });
 
-  const ceo = operations.inspectStarNetWorkforce(ROLES.CEO);
-  const pa = operations.inspectStarNetWorkforce(ROLES.PA);
-  const vice = operations.inspectStarNetWorkforce(ROLES.VICE_CEO);
+  const ceo = await operations.inspectStarNetWorkforce(ROLES.CEO);
+  const pa = await operations.inspectStarNetWorkforce(ROLES.PA);
+  const vice = await operations.inspectStarNetWorkforce(ROLES.VICE_CEO);
 
   assert.equal(ceo.source, "live-roster");
   assert.equal(ceo.workerCount, 3);
@@ -305,7 +305,7 @@ test("StarForge leadership can inspect the live StarNet workforce without mutati
 });
 
 
-test("StarForge leadership workforce inspection preserves live working and idle status", () => {
+test("StarForge leadership workforce inspection preserves live working and idle status", async () => {
   const company = makeCompany();
   const starnet = makeStarNetAdapter({
     roster: () => [
@@ -316,7 +316,7 @@ test("StarForge leadership workforce inspection preserves live working and idle 
   });
   const operations = makeOperations({ company, starnet });
 
-  const snapshot = operations.inspectStarNetWorkforce(ROLES.CEO, {
+  const snapshot = await operations.inspectStarNetWorkforce(ROLES.CEO, {
     activeRuns: [{ agentId: "worker-b", runId: "run-9" }],
   });
 
@@ -503,4 +503,24 @@ test("StarNet Vice CEO can delegate through the StarNet execution bridge", async
   assert.equal(result.task.status, "completed");
   assert.equal(result.worker.id, "researcher-1");
   assert.equal(result.result.summary, "dispatched 1 worker");
+});
+
+
+test("StarForge can delegate through an asynchronous live StarNet roster", async () => {
+  const company = makeCompany();
+  const operations = makeOperations({
+    company,
+    starnet: {
+      listWorkersAsync: async () => [{ id: "remote-worker", name: "Remote Worker" }],
+      delegateTask: async (_role, task) => ({ result: { content: "remote completed", taskId: task.id } }),
+    },
+  });
+  const project = operations.createProject(ROLES.CEO, { title: "Remote StarNet project" });
+  const result = await operations.delegateToStarNet(ROLES.CEO, {
+    projectId: project.id,
+    title: "Remote research",
+    assigneeId: "remote-worker",
+  });
+  assert.equal(result.worker.id, "remote-worker");
+  assert.equal(result.task.status, "completed");
 });
