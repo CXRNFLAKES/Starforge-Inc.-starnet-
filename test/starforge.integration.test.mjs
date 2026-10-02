@@ -16,6 +16,7 @@ test("integration lab runs the governed expense path without side effects", () =
   assert.equal(snapshot.company.decisionPackets.length, 1);
   assert.equal(snapshot.company.decisionPackets[0].independentRisk.rating, "low");
   assert.equal(snapshot.company.decisionPackets[0].paAssessment.label, "SUPPORTED ESTIMATE");
+  assert.equal(snapshot.company.decisions[0].packetId, snapshot.company.decisionPackets[0].id);
 });
 
 test("integration lab preserves CHO-only execution authority", () => {
@@ -36,6 +37,20 @@ test("integration lab rejects execution before approval", () => {
   assert.throws(
     () => lab.executeApproved(ROLES.CHO, request.id),
     /Only approved requests may execute/,
+  );
+});
+
+test("integration lab requires a decision packet before CHO approval", () => {
+  const lab = makeIntegrationLab();
+  const request = lab.requestExpense(ROLES.CEO, {
+    id: "expense-packet-required-001",
+    amount: 100,
+    currency: "EUR",
+    purpose: "TEST: packet gate",
+  });
+  assert.throws(
+    () => lab.choDecision(ROLES.CHO, request.id, { decision: "approve" }),
+    /requires a recorded decision packet/,
   );
 });
 

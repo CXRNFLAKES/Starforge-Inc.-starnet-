@@ -101,3 +101,22 @@ test("PA can persist a structured decision packet but CEO cannot", () => {
   assert.equal(packet.request.id, "expense-1");
   assert.equal(company.snapshot().decisionPackets.length, 1);
 });
+
+test("CHO decisions with a request require the recorded decision packet", () => {
+  const company = makeCompany();
+  assert.throws(() => company.recordDecision(ROLES.CHO, {
+    requestId: "expense-missing-packet",
+    packetId: "missing",
+    decision: "approve",
+  }), /requires a recorded decision packet/);
+
+  const packet = company.recordDecisionPacket(ROLES.PA, {
+    request: { id: "expense-with-packet", purpose: "TEST" },
+  });
+  const decision = company.recordDecision(ROLES.CHO, {
+    requestId: "expense-with-packet",
+    packetId: packet.id,
+    decision: "approve",
+  });
+  assert.equal(decision.packetId, packet.id);
+});

@@ -152,6 +152,15 @@ export function makeCompany({ load, save } = {}) {
 
     recordDecision(actorRole, decision) {
       assertCan(actorRole, ACTIONS.CHO_DECIDE);
+      if (decision?.requestId) {
+        const packet = state.decisionPackets.find(
+          (item) => item.request?.id === decision.requestId,
+        );
+        if (!packet) throw new Error("CHO decision requires a recorded decision packet");
+        if (decision.packetId !== packet.id) {
+          throw new Error("CHO decision packet reference does not match the recorded packet");
+        }
+      }
       const entry = {
         id: randomUUID(),
         createdAt: new Date().toISOString(),

@@ -111,8 +111,8 @@ export function makeIntegrationLab(overrides = {}) {
         evidenceProblems: checked.label === "UNVERIFIED CLAIM" ? checked.findings : [],
         paRecommendation: entry.recommendation,
       });
-      company.recordDecisionPacket(actorRole, packet);
-      state.decisionPackets.push(packet);
+      const recordedPacket = company.recordDecisionPacket(actorRole, packet);
+      state.decisionPackets.push(recordedPacket);
       emit(actorRole, "governance.decision-packet.recorded", { requestId, informationStatus: packet.informationStatus });
       emit(actorRole, "pa.review.completed", entry);
       return clone(entry);
@@ -154,7 +154,15 @@ export function makeIntegrationLab(overrides = {}) {
       if (!allowed.has(decision.decision)) throw new Error("Invalid CHO decision");
       request.status = decision.decision === "approve" ? "approved" :
         decision.decision === "deny" ? "denied" : "needs-changes";
-      const entry = { requestId, actorRole, decision: decision.decision, rationale: decision.rationale ?? "" };
+      const packet = state.decisionPackets.find((item) => item.request?.id === requestId);
+      if (!packet) throw new Error("CHO decision requires a recorded decision packet");
+      const entry = {
+        requestId,
+        packetId: packet.id,
+        actorRole,
+        decision: decision.decision,
+        rationale: decision.rationale ?? "",
+      };
       state.approvals.push(entry);
       company.recordDecision(actorRole, entry);
       emit(actorRole, "approval.cho-decision", entry);
