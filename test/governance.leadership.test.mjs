@@ -69,3 +69,22 @@ test("unknown leadership capability fails closed", () => {
   assert.equal(hasCapability(ROLES.PA, "execute_money"), false);
   assert.throws(() => assertLeadershipCapability(ROLES.PA, "execute_money"), /Unauthorized capability/);
 });
+
+test("Vice CEO leadership reports persist for CEO and PA review", () => {
+  let stored;
+  const company = makeCompany({ save: (snapshot) => { stored = snapshot; } });
+  const leadership = makeLeadership({ company });
+  const result = leadership.reportToLeadership(ROLES.VICE_CEO, {
+    status: "green",
+    workforce: { active: 3, blocked: 0 },
+  });
+
+  assert.ok(result.details.reportId);
+  assert.equal(stored.leadershipReports.length, 1);
+  assert.equal(stored.leadershipReports[0].id, result.details.reportId);
+  assert.deepEqual(stored.leadershipReports[0].targets.map(item => item.role), [ROLES.CEO, ROLES.PA]);
+  assert.equal(stored.leadershipReports[0].report.workforce.active, 3);
+
+  const restored = makeCompany({ load: () => stored });
+  assert.equal(restored.snapshot().leadershipReports.length, 1);
+});
