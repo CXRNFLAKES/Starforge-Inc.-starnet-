@@ -23,3 +23,14 @@ test('finance report includes entries while capital snapshot stays summary-only'
   assert.equal(company.capitalSnapshot(ROLES.CHO).entries,undefined);
   assert.equal(company.financeSnapshot(ROLES.CHO).entries.length,1);
 });
+
+test('PA can read bounded finance telemetry without gaining finance-report authority',()=>{
+  const company=makeCompany();
+  company.recordFinanceEntry(ROLES.CHO,{id:'rev',kind:'revenue',amount:500,currency:'EUR'});
+  company.recordFinanceEntry(ROLES.CHO,{id:'exp',kind:'expense',amount:100,currency:'EUR'});
+  const telemetry=company.financeTelemetrySnapshot(ROLES.PA,{limit:1});
+  assert.equal(telemetry.netOperatingCapital,400);
+  assert.equal(telemetry.recentEntries.length,1);
+  assert.equal(telemetry.recentEntries[0].id,'exp');
+  assert.throws(()=>company.financeSnapshot(ROLES.PA),/Unauthorized action/);
+});
