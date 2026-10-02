@@ -13,6 +13,8 @@ test("mobile governance bridge exposes read-only state", async () => {
   assert.equal(payload.readOnly, true);
   assert.equal(payload.workforce.count, 1);
   assert.equal(payload.activeRuns.length, 1);
+  assert.equal(payload.execution.taskCount, 0);
+  assert.equal(payload.execution.source, "starforge-governed-task-ledger");
 });
 
 test("mobile governance bridge rejects write methods", async () => {
