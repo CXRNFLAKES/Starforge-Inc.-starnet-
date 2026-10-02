@@ -62,7 +62,11 @@ export function makeStarNetRuntimeBridge({ baseUrl = "", token = "", fetchImpl =
 
   return Object.freeze({
     baseUrl: root,
-    listWorkers: () => adapter.listWorkers(),
+    listWorkers: async () => {
+      const body = await request("/api/roster");
+      return Array.isArray(body?.agents) ? body.agents : [];
+    },
+    listWorkersAsync: () => adapter.listWorkersAsync(),
     delegateTask: (...args) => adapter.delegateTask(...args),
     inspectWorkforce,
   });
