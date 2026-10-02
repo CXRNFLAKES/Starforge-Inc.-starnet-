@@ -1,0 +1,14 @@
+{
+  "name": "StarForge Android 9 Test Lab",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:1-20-bookworm",
+  "forwardPorts": [8799],
+  "portsAttributes": {
+    "8799": {
+      "label": "StarForge Android 9 Test Lab",
+      "protocol": "http",
+      "onAutoForward": "openBrowser"
+    }
+  },
+  "postCreateCommand": "npm ci",
+  "postStartCommand": "nohup npm run starforge:mobile-test >/tmp/starforge-mobile-test.log 2>&1 &"
+}
