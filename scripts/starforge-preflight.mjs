@@ -139,7 +139,7 @@ for (const file of TEST_FILES) {
   record(
     `node test: ${file}`,
     result.code === 0,
-    result.code === 0 ? "passed" : (result.stderr.trim().split("\n").slice(-3).join(" ") || `exit ${result.code}`)
+    result.code === 0 ? "passed" : [result.stderr.trim(), result.stdout.trim()].filter(Boolean).join(" | ").split("\n").slice(-8).join(" ") || `exit ${result.code}`
   );
 }
 
