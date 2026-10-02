@@ -120,3 +120,22 @@ test("CHO decisions with a request require the recorded decision packet", () => 
   });
   assert.equal(decision.packetId, packet.id);
 });
+
+test("CHO cannot record a second decision for the same request", () => {
+  const company = makeCompany();
+  const packet = company.recordDecisionPacket(ROLES.PA, {
+    request: { id: "expense-once", purpose: "TEST" },
+  });
+  company.recordDecision(ROLES.CHO, {
+    requestId: "expense-once",
+    packetId: packet.id,
+    decision: "approve",
+    rationale: "first",
+  });
+  assert.throws(() => company.recordDecision(ROLES.CHO, {
+    requestId: "expense-once",
+    packetId: packet.id,
+    decision: "deny",
+    rationale: "second",
+  }), /already recorded/);
+});

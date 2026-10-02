@@ -160,6 +160,9 @@ export function makeCompany({ load, save } = {}) {
         if (decision.packetId !== packet.id) {
           throw new Error("CHO decision packet reference does not match the recorded packet");
         }
+        if (state.decisions.some((item) => item.requestId === decision.requestId)) {
+          throw new Error("CHO decision already recorded for this request");
+        }
       }
       const entry = {
         id: randomUUID(),
@@ -167,7 +170,11 @@ export function makeCompany({ load, save } = {}) {
         ...decision,
       };
       state.decisions.push(entry);
-      this.audit(actorRole, "governance.decision.recorded", { decisionId: entry.id } , false);
+      this.audit(actorRole, "governance.decision.recorded", {
+        decisionId: entry.id,
+        requestId: entry.requestId ?? null,
+        packetId: entry.packetId ?? null,
+      } , false);
       persist();
       return entry;
     },
