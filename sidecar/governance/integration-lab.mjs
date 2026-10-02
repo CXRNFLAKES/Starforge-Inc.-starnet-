@@ -1,6 +1,8 @@
 import { ACTIONS, assertCan } from "./authority.mjs";
 import { ROLES } from "./roles.mjs";
 import { makeTestingCompany } from "./testing.mjs";
+import { makeRiskEngine } from "./risk-engine.mjs";
+import { makeFactChecker } from "./fact-checker.mjs";
 
 export const INTEGRATION_MODE = "testing";
 export const SIDE_EFFECTS = "none";
@@ -14,6 +16,9 @@ export function makeIntegrationLab(overrides = {}) {
     mission: overrides.mission ?? "TEST: Operate StarForge as a governed AI company",
     objective: overrides.objective ?? "TEST: validate PA, Board, CEO, Risk, CHO, approval, and recovery flows",
   });
+
+  const riskEngine = makeRiskEngine();
+  const factChecker = makeFactChecker();
 
   const state = {
     mode: INTEGRATION_MODE,
@@ -58,13 +63,18 @@ export function makeIntegrationLab(overrides = {}) {
       assertCan(actorRole, ACTIONS.RISK_ASSESS);
       const request = state.requests.find((item) => item.id === requestId);
       if (!request) throw new Error(`Unknown request: ${requestId}`);
-      const entry = {
-        requestId,
-        assessorRole: actorRole,
-        rating: assessment.rating ?? "insufficient-information",
-        confidence: assessment.confidence ?? 0,
-        reasons: Array.isArray(assessment.reasons) ? [...assessment.reasons] : [],
-      };
+      const calculated = riskEngine.assess(request, {
+      availableCash: assessment.availableCash ?? 5000,
+      taxReserve: assessment.taxReserve ?? 1000,
+    });
+    const entry = {
+      requestId,
+      assessorRole: actorRole,
+      rating: calculated.rating,
+      confidence: calculated.confidence,
+      reasons: [...calculated.reasons],
+      inputs: calculated.inputs,
+    };
       state.riskAssessments.push(entry);
       request.status = "pa-review";
       emit(actorRole, "risk.assessment.completed", entry);
@@ -75,13 +85,19 @@ export function makeIntegrationLab(overrides = {}) {
       assertCan(actorRole, ACTIONS.PA_REVIEW);
       const request = state.requests.find((item) => item.id === requestId);
       if (!request) throw new Error(`Unknown request: ${requestId}`);
-      const entry = {
-        requestId,
-        reviewerRole: actorRole,
-        label: review.label ?? "UNVERIFIED CLAIM",
-        findings: Array.isArray(review.findings) ? [...review.findings] : [],
-        recommendation: review.recommendation ?? "request-more-information",
-      };
+      const checked = factChecker.check(
+      review.claim ?? request.purpose,
+      { evidence: Array.isArray(review.evidence) ? review.evidence : [] },
+    );
+    const entry = {
+      requestId,
+      reviewerRole: actorRole,
+      label: checked.label,
+      confidence: checked.confidence,
+      findings: [...checked.findings, ...(Array.isArray(review.findings) ? review.findings : [])],
+      recommendation: review.recommendation ?? "request-more-information",
+      evidenceCount: checked.evidenceCount,
+    };
       request.status = review.escalateToCho ? "cho-decision" : "board-review";
       state.riskAssessments.push({ type: "pa-review", ...entry });
       emit(actorRole, "pa.review.completed", entry);
@@ -174,13 +190,13 @@ export function runIntegrationScenario() {
   });
 
   lab.assessRisk(ROLES.RISK, expense.id, {
-    rating: "medium",
-    confidence: 0.9,
-    reasons: ["prototype spend", "limited amount", "return not yet proven"],
+    availableCash: 5000,
+    taxReserve: 1000,
   });
 
   lab.paReview(ROLES.PA, expense.id, {
-    label: "SUPPORTED ESTIMATE",
+    claim: "TEST: prototype research budget has a bounded expected return",
+    evidence: [{ source: "test-forecast", supports: true, estimate: true }],
     findings: ["No provider or payment system is connected in this test"],
     recommendation: "escalate-to-board",
   });
