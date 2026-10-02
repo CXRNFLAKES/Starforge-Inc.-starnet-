@@ -30,7 +30,7 @@ export function makeStarNetAdapter({ roster, dispatch } = {}) {
 
   function listWorkers() { return normalizeRoster(roster()); }
 
-  function delegateTask(actorRole, task = {}) {
+  async function delegateTask(actorRole, task = {}) {
     assertCan(actorRole, ACTIONS.STARNET_DELEGATE);
 
     const agentId = String(task.assigneeId ?? "").trim();
@@ -48,7 +48,7 @@ export function makeStarNetAdapter({ roster, dispatch } = {}) {
     ).trim();
     if (!prompt) throw new Error("StarNet delegation requires a non-empty task prompt");
 
-    const result = dispatch({
+    const result = await dispatch({
       workers: [{ agentId, prompt, context: task.context ?? "" }],
       parallel: false,
     });
