@@ -30,6 +30,10 @@ export function makeStarNetAdapter({ roster, dispatch } = {}) {
 
   function listWorkers() { return normalizeRoster(roster()); }
 
+  async function listWorkersAsync() {
+    return normalizeRoster(await roster());
+  }
+
   function inspectWorkforce({ activeRuns = [] } = {}) {
     const active = new Map(
       (Array.isArray(activeRuns) ? activeRuns : [])
@@ -66,7 +70,7 @@ export function makeStarNetAdapter({ roster, dispatch } = {}) {
     if (!ID_RE.test(agentId)) throw new Error("StarNet delegation requires a valid assigneeId");
     if (!title) throw new Error("StarNet delegation requires a task title");
 
-    const worker = listWorkers().find((item) => item.id === agentId);
+    const worker = (await listWorkersAsync()).find((item) => item.id === agentId);
     if (!worker) throw new Error("StarNet worker is not present in the live roster");
 
     const prompt = String(
@@ -107,5 +111,5 @@ export function makeStarNetAdapter({ roster, dispatch } = {}) {
     });
   }
 
-  return Object.freeze({ listWorkers, inspectWorkforce, delegateTask });
+  return Object.freeze({ listWorkers, listWorkersAsync, inspectWorkforce, delegateTask });
 }
