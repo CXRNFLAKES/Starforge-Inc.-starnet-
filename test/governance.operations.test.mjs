@@ -83,6 +83,33 @@ test("CEO, PA, and Vice CEO can review StarNet execution within separate scopes"
   assert.throws(() => operations.reviewStarNetExecution(ROLES.BOARD), /Only the CEO, PA, or StarNet Vice CEO/);
 });
 
+test("StarNet adapter awaits async dispatch results and preserves completion payload", async () => {
+  let received = null;
+  const adapter = makeStarNetAdapter({
+    roster: () => [{ id: "worker-a", name: "Worker A" }],
+    dispatch: async (request) => {
+      received = request;
+      return { content: "completed", summary: "1 worker completed" };
+    },
+  });
+
+  const result = await adapter.delegateTask(ROLES.CEO, {
+    id: "task-1",
+    projectId: "project-1",
+    assigneeId: "worker-a",
+    title: "Execute research",
+    successCriteria: "Return findings",
+    context: "StarForge context",
+  });
+
+  assert.equal(received.parallel, false);
+  assert.equal(received.workers[0].agentId, "worker-a");
+  assert.match(received.workers[0].prompt, /Execute research/);
+  assert.match(received.workers[0].prompt, /Return findings/);
+  assert.equal(result.result.content, "completed");
+  assert.equal(result.result.summary, "1 worker completed");
+});
+
 test("StarNet delegation preserves the dispatch request at the governance boundary", async () => {
   const company = makeCompany();
   let captured = null;
