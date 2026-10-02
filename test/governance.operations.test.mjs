@@ -7,16 +7,8 @@ import { makeOperations } from "../sidecar/governance/operations.mjs";
 test("CEO can create projects and delegate tasks without CHO execution authority", () => {
   const company = makeCompany();
   const operations = makeOperations({ company });
-  const project = operations.createProject(ROLES.CEO, {
-    title: "Revenue sprint",
-    objective: "Build a measurable revenue pipeline",
-  });
-  const task = operations.delegateTask(ROLES.CEO, {
-    projectId: project.id,
-    title: "Research qualified leads",
-    assigneeId: "main-overseer",
-    successCriteria: "Produce a sourced lead list",
-  });
+  const project = operations.createProject(ROLES.CEO, { title: "Revenue sprint", objective: "Build a measurable revenue pipeline" });
+  const task = operations.delegateTask(ROLES.CEO, { projectId: project.id, title: "Research qualified leads", assigneeId: "main-overseer", successCriteria: "Produce a sourced lead list" });
   assert.equal(project.status, "planned");
   assert.equal(task.status, "assigned");
   assert.equal(task.assigneeId, "main-overseer");
@@ -36,11 +28,7 @@ test("workers can update their assigned tasks but cannot update another worker's
   company.registerPerson(ROLES.CHO, { id: "worker-b", name: "Worker B", role: ROLES.WORKER });
   const operations = makeOperations({ company });
   const project = operations.createProject(ROLES.CEO, { title: "Test project" });
-  const task = operations.delegateTask(ROLES.CEO, {
-    projectId: project.id,
-    title: "Complete test",
-    assigneeId: "worker-a",
-  });
+  const task = operations.delegateTask(ROLES.CEO, { projectId: project.id, title: "Complete test", assigneeId: "worker-a" });
   const updated = operations.updateTask(ROLES.WORKER, task.id, { actorId: "worker-a", status: "in-progress", note: "Started" });
   assert.equal(updated.status, "in-progress");
   assert.throws(() => operations.updateTask(ROLES.WORKER, task.id, { actorId: "worker-b", status: "completed" }), /Unauthorized task update/);
@@ -48,24 +36,54 @@ test("workers can update their assigned tasks but cannot update another worker's
 
 test("projects and tasks survive company persistence", () => {
   let stored;
-  const firstCompany = makeCompany({
-    save: (snapshot) => { stored = snapshot; },
-  });
+  const firstCompany = makeCompany({ save: (snapshot) => { stored = snapshot; } });
   const firstOperations = makeOperations({ company: firstCompany });
   const project = firstOperations.createProject(ROLES.CEO, { title: "Persistent project" });
-  const task = firstOperations.delegateTask(ROLES.CEO, {
-    projectId: project.id,
-    title: "Persistent task",
-    assigneeId: "main-overseer",
-  });
-
+  const task = firstOperations.delegateTask(ROLES.CEO, { projectId: project.id, title: "Persistent task", assigneeId: "main-overseer" });
   assert.equal(stored.projects.length, 1);
   assert.equal(stored.tasks.length, 1);
-
   const restoredCompany = makeCompany({ load: () => stored });
   const restoredOperations = makeOperations({ company: restoredCompany });
   const snapshot = restoredOperations.inspect({ projectId: project.id });
-
   assert.equal(snapshot.projects[0].id, project.id);
   assert.equal(snapshot.tasks[0].id, task.id);
+});
+
+test("CEO execution review summarizes task states and isolates project scope", () => {
+  const company = makeCompany();
+  company.registerPerson(ROLES.CHO, { id: "worker-a", name: "Worker A", role: ROLES.WORKER });
+  const operations = makeOperations({ company });
+  const projectA = operations.createProject(ROLES.CEO, { title: "Project A" });
+  const projectB = operations.createProject(ROLES.CEO, { title: "Project B" });
+  const blocked = operations.delegateTask(ROLES.CEO, { projectId: projectA.id, title: "Blocked work", assigneeId: "worker-a" });
+  const failed = operations.delegateTask(ROLES.CEO, { projectId: projectA.id, title: "Failed work", assigneeId: "worker-a" });
+  const completed = operations.delegateTask(ROLES.CEO, { projectId: projectA.id, title: "Completed work", assigneeId: "worker-a" });
+  operations.delegateTask(ROLES.CEO, { projectId: projectB.id, title: "Other project", assigneeId: "worker-a" });
+
+  operations.updateTask(ROLES.WORKER, blocked.id, { actorId: "worker-a", status: "blocked", note: "Waiting on input" });
+  operations.updateTask(ROLES.WORKER, failed.id, { actorId: "worker-a", status: "failed", note: "Acceptance criteria missed" });
+  operations.updateTask(ROLES.WORKER, completed.id, { actorId: "worker-a", status: "completed", note: "Verified" });
+
+  const review = operations.reviewExecution(ROLES.CEO, { projectId: projectA.id });
+  assert.equal(review.projectId, projectA.id);
+  assert.equal(review.taskCount, 3);
+  assert.equal(review.counts.assigned, 0);
+  assert.equal(review.counts.blocked, 1);
+  assert.equal(review.counts.failed, 1);
+  assert.equal(review.counts.completed, 1);
+  assert.equal(review.attentionNeeded.length, 2);
+  assert.deepEqual(review.blocked.map((item) => item.id), [blocked.id]);
+  assert.deepEqual(review.failed.map((item) => item.id), [failed.id]);
+  assert.deepEqual(review.completed.map((item) => item.id), [completed.id]);
+
+  const all = operations.reviewExecution(ROLES.CEO);
+  assert.equal(all.taskCount, 4);
+  assert.equal(all.counts.assigned, 1);
+});
+
+test("CEO execution review is restricted to the CEO", () => {
+  const company = makeCompany();
+  const operations = makeOperations({ company });
+  assert.throws(() => operations.reviewExecution(ROLES.PA), /Unauthorized action|Only the CEO/);
+  assert.throws(() => operations.reviewExecution(ROLES.CHO), /Unauthorized action|Only the CEO/);
 });
