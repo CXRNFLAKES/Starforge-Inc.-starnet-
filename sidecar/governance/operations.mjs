@@ -180,8 +180,13 @@ export function makeOperations({ company, starnet = null } = {}) {
   }
 
   function reviewExecution(actorRole, { projectId = null } = {}) {
-    requireRole(actorRole, ACTIONS.CEO_OPERATE);
-    if (actorRole !== ROLES.CEO) throw new Error("Only the CEO may review operational execution");
+    if (actorRole === ROLES.CEO) {
+      requireRole(actorRole, ACTIONS.CEO_OPERATE);
+    } else if (actorRole === ROLES.PA) {
+      requireRole(actorRole, ACTIONS.COMPANY_READ);
+    } else {
+      throw new Error("Only the CEO or PA may review operational execution");
+    }
 
     const snapshot = company.snapshot();
     const tasks = snapshot.tasks.filter((item) => !projectId || item.projectId === projectId);
@@ -198,6 +203,7 @@ export function makeOperations({ company, starnet = null } = {}) {
       failed: tasks.filter((item) => item.status === "failed"),
       completed: tasks.filter((item) => item.status === "completed"),
       attentionNeeded: tasks.filter((item) => item.status === "blocked" || item.status === "failed"),
+      reviewScope: actorRole === ROLES.PA ? "independent-oversight" : "operational-review",
     });
   }
 
