@@ -116,6 +116,29 @@ export function makeLeadership({ company } = {}) {
     return structuredClone(reports);
   }
 
+  function reviewLeadershipReport(role, reportId) {
+    assertLeadershipCapability(role, "review_work");
+    if (!reportId) throw new Error("Leadership report id is required");
+
+    const report = company.snapshot().leadershipReports.find(item => item.id === reportId);
+    if (!report) throw new Error("Unknown leadership report");
+    if (!report.targets.some(target => target.role === role)) {
+      throw new Error(`Leadership report is not addressed to \${role}`);
+    }
+
+    const reviewer = actor(role);
+    company.audit(role, "leadership.review_report", {
+      leaderId: reviewer.id,
+      details: { reportId, sourceRole: ROLES.VICE_CEO },
+    });
+
+    return structuredClone({
+      report,
+      reviewer: { id: reviewer.id, name: reviewer.name, role: reviewer.role },
+      reviewScope: role === ROLES.PA ? "independent-oversight" : "operational-review",
+    });
+  }
+
   function reportToLeadership(role, report) {
     assertLeadershipCapability(role, "report_to_leadership");
     if (role !== ROLES.VICE_CEO) throw new Error("Only the Vice CEO may use the StarNet leadership report channel");
@@ -148,6 +171,7 @@ export function makeLeadership({ company } = {}) {
     operate,
     reportToLeadership,
     listLeadershipReports,
+    reviewLeadershipReport,
   };
 }
 
