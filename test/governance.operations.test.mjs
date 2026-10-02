@@ -392,7 +392,7 @@ test("CEO operations persist a failed StarNet execution and rethrow the engine e
   const stored = operations.inspect({ projectId: project.id });
   assert.equal(stored.tasks.length, 1);
   assert.equal(stored.tasks[0].status, "failed");
-  assert.equal(stored.tasks[0].note, "StarNet execution failed");
+  assert.equal(stored.tasks[0].note, "StarNet dispatch failed: StarNet execution failed");
 });
 test("StarNet Vice CEO can delegate through the StarNet execution bridge", async () => {
   const company = makeCompany();
