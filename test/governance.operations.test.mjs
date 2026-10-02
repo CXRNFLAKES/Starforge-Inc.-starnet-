@@ -86,6 +86,31 @@ test("CEO execution review summarizes task states and isolates project scope", (
   assert.equal(all.counts.assigned, 1);
 });
 
+test("PA can review operational execution as independent oversight without mutation authority", () => {
+  const company = makeCompany();
+  company.registerPerson(ROLES.CHO, { id: "worker-a", name: "Worker A", role: ROLES.WORKER });
+  const operations = makeOperations({ company });
+  const project = operations.createProject(ROLES.CEO, { title: "PA oversight project" });
+  const task = operations.delegateTask(ROLES.CEO, {
+    projectId: project.id, title: "Oversight task", assigneeId: "worker-a",
+  });
+  operations.updateTask(ROLES.WORKER, task.id, {
+    actorId: "worker-a", status: "blocked", note: "Waiting on input",
+  });
+
+  const review = operations.reviewExecution(ROLES.PA, { projectId: project.id });
+  assert.equal(review.reviewScope, "independent-oversight");
+  assert.equal(review.taskCount, 1);
+  assert.equal(review.counts.blocked, 1);
+  assert.equal(review.attentionNeeded[0].id, task.id);
+
+  assert.throws(
+    () => operations.updateTask(ROLES.PA, task.id, { status: "completed" }),
+    /Unauthorized task update/,
+  );
+  assert.equal(operations.inspect({ projectId: project.id }).tasks[0].status, "blocked");
+});
+
 test("CEO execution review is restricted to the CEO", () => {
   const company = makeCompany();
   const operations = makeOperations({ company });
