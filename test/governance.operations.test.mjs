@@ -298,7 +298,7 @@ test("StarForge leadership can inspect the live StarNet workforce without mutati
   assert.equal(ceo.workers[0].id, "researcher-1");
   assert.equal(pa.reviewScope, "independent-oversight");
   assert.equal(vice.reviewScope, "starnet-operational-review");
-  assert.throws(
+  await assert.rejects(
     () => operations.inspectStarNetWorkforce(ROLES.BOARD),
     /Only the CEO, PA, or StarNet Vice CEO/,
   );
