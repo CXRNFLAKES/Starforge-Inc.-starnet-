@@ -44,3 +44,26 @@ test('governance HTTP feed exposes bounded PA finance telemetry from the governe
   assert.equal(payload.finance.recentEntries.length,2);
   await rm(workspace,{recursive:true,force:true});
 });
+
+
+test("governance feed derives live worker status from StarNet run metadata", async () => {
+  const handler = makeStarForgeGovernanceHandler({
+    workspace: ".starforge-test",
+    roster: new Map([
+      ["agent-1", { name: "Nova", model: "test-model" }],
+      ["agent-2", { name: "Echo", model: "test-model" }],
+    ]),
+    runsMeta: new Map([
+      ["run-1", { agentId: "agent-1", startedAt: 123, source: "interactive" }],
+    ]),
+  });
+  let body = "";
+  const res = { writeHead() {}, end(value) { body = value; } };
+  await handler({ method: "GET", url: "/api/starforge/governance" }, res);
+  const payload = JSON.parse(body);
+  assert.equal(payload.workforce.source, "starnet-live-roster");
+  assert.equal(payload.workforce.workers.find((worker) => worker.id === "agent-1").status, "working");
+  assert.equal(payload.workforce.workers.find((worker) => worker.id === "agent-1").activeRun.id, "run-1");
+  assert.equal(payload.workforce.workers.find((worker) => worker.id === "agent-2").status, "idle");
+  assert.equal(payload.workforce.workers.find((worker) => worker.id === "agent-2").activeRun, null);
+});
