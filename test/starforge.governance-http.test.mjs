@@ -67,3 +67,26 @@ test("governance feed derives live worker status from StarNet run metadata", asy
   assert.equal(payload.workforce.workers.find((worker) => worker.id === "agent-2").status, "idle");
   assert.equal(payload.workforce.workers.find((worker) => worker.id === "agent-2").activeRun, null);
 });
+
+
+test("governance HTTP feed reads capital from the Company kernel when connected", async () => {
+  const { makeCompany } = await import("../sidecar/governance/company.mjs");
+  const { ROLES } = await import("../sidecar/governance/roles.mjs");
+  const company = makeCompany();
+  company.recordFinanceEntry(ROLES.CHO, {
+    id: "capital-http-kernel-001",
+    kind: "capital-injection",
+    amount: 5000,
+    currency: "EUR",
+  });
+  const handler = makeStarForgeGovernanceHandler({ workspace: ".starforge-http-kernel-test", company });
+  let body = "";
+  const res = { writeHead() {}, end(value) { body = value; } };
+  await handler({ method: "GET", url: "/api/starforge/governance" }, res);
+  const payload = JSON.parse(body);
+  assert.equal(payload.capital.netOperatingCapital, 5000);
+  assert.equal(payload.capital.source, "starforge-governed-company-ledger");
+  assert.equal(payload.level.level, 10);
+  assert.equal(payload.level.currentCapital, 5000);
+  assert.equal(payload.finance.recentEntries[0].amount, 5000);
+});
