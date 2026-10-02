@@ -12,8 +12,9 @@
     root.innerHTML='<div class="sf-hq-head"><div><div class="sf-kicker">STARFORGE HQ</div><h2>COMPANY COMMAND ROOM</h2><p>StarNet workforce · governed by StarForge</p></div><div class="sf-link-state" role="status">STARFORGE LINK · UI BRIDGE</div></div><article class="sf-capital"><div class="sf-section-label">COMPANY LEVEL</div><div class="sf-level-line"><strong class="sf-level">LVL —</strong><span class="sf-capital-value">CAPITAL FEED PENDING</span></div><div class="sf-meter"><i></i></div><div class="sf-next">Finance bridge not connected — no balance is invented.</div></article><div class="sf-leadership"></div><section class="sf-execution"><div class="sf-section-label">STARFORGE EXECUTION FEED</div><div class="sf-execution-stats"><span>IN PROGRESS <b data-sf="in-progress">—</b></span><span>COMPLETED <b data-sf="completed">—</b></span><span>FAILED <b data-sf="failed">—</b></span><span>BLOCKED <b data-sf="blocked">—</b></span></div><div class="sf-recent"></div></section><section class="sf-roster"><div class="sf-section-label">STARNET WORKFORCE</div><div class="sf-roster-meta"></div><div class="sf-workers"></div></section>';
     const leaders=root.querySelector('.sf-leadership');[['CHO','HUMAN OWNER'],['PA','OVERSIGHT'],['CEO','OPERATIONS'],['VICE CEO','STARNET LEAD']].forEach(([n,r])=>{const c=document.createElement('div');c.className='sf-leader';c.innerHTML='<b>'+esc(n)+'</b><span>'+esc(r)+'</span>';leaders.appendChild(c);});
     const meta=root.querySelector('.sf-roster-meta'),workers=root.querySelector('.sf-workers');
-    const executionStats={}; root.querySelectorAll('[data-sf]').forEach(el=>executionStats[el.dataset.sf]=el); const recentEl=root.querySelector('.sf-recent');
+    const executionStats={}; root.querySelectorAll('[data-sf]').forEach(el=>executionStats[el.dataset.sf]=el); const recentEl=root.querySelector('.sf-recent'); const financeStats={}; root.querySelectorAll('[data-fin]').forEach(el=>financeStats[el.dataset.fin]=el); const ledgerEl=root.querySelector('.sf-ledger');
     const levelEl=root.querySelector('.sf-level'),capitalEl=root.querySelector('.sf-capital-value'),meterEl=root.querySelector('.sf-meter i'),nextEl=root.querySelector('.sf-next');
+    const money=(amount,currency='EUR')=>{const n=Number(amount);return Number.isFinite(n)?new Intl.NumberFormat('en-IE',{style:'currency',currency:String(currency).toUpperCase(),maximumFractionDigits:0}).format(n):'—';};
     async function refreshGovernance(){
       try{
         const response=await fetch('/api/starforge/governance',{cache:'no-store'});
@@ -21,6 +22,8 @@
         const data=await response.json();
         const capital=data&&data.capital;
         const execution=data&&data.execution;
+        if(capital){ financeStats.cash.textContent=money(capital.availableCash,capital.currency); financeStats.tax.textContent=money(capital.taxReserve,capital.currency); financeStats.liabilities.textContent=money(capital.liabilities,capital.currency); financeStats.entries.textContent=String(capital.entryCount ?? 0); }
+        const entries=Array.isArray(data?.company?.finance?.entries)?data.company.finance.entries.slice(-5).reverse():[]; ledgerEl.replaceChildren(); if(!entries.length){ledgerEl.textContent='No finance ledger entries recorded yet.';} else entries.forEach(entry=>{const row=document.createElement('div');row.className='sf-ledger-row';row.innerHTML='<b>'+esc(String(entry.kind||'entry').replaceAll('-',' ').toUpperCase())+'</b><span>'+money(entry.amount,entry.currency)+'</span>';ledgerEl.appendChild(row);});
         for(const key of ['in-progress','completed','failed','blocked']) executionStats[key].textContent=Number(execution?.[{ 'in-progress':'inProgress', completed:'completed', failed:'failed', blocked:'blocked' }[key]] ?? 0);
         const recent=Array.isArray(execution?.recentTasks)?execution.recentTasks.slice().reverse():[];
         recentEl.replaceChildren();
