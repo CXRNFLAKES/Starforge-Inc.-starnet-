@@ -87,3 +87,64 @@ test("CEO execution review is restricted to the CEO", () => {
   assert.throws(() => operations.reviewExecution(ROLES.PA), /Unauthorized action|Only the CEO/);
   assert.throws(() => operations.reviewExecution(ROLES.CHO), /Unauthorized action|Only the CEO/);
 });
+
+import { makeStarNetAdapter } from "../sidecar/governance/starnet-adapter.mjs";
+
+test("StarForge can discover the live StarNet worker roster through the adapter", () => {
+  const adapter = makeStarNetAdapter({
+    roster: () => new Map([
+      ["researcher-1", { name: "Researcher", model: "model-a", capabilities: ["web"] }],
+      ["builder-1", { name: "Builder", model: "model-b", reasoningEffort: "high" }],
+    ]),
+    dispatch: () => ({ content: "unused" }),
+  });
+
+  assert.deepEqual(adapter.listWorkers(), [
+    { id: "researcher-1", name: "Researcher", model: "model-a", provider: null, reasoningEffort: null, capabilities: ["web"] },
+    { id: "builder-1", name: "Builder", model: "model-b", provider: null, reasoningEffort: "high", capabilities: [] },
+  ]);
+});
+
+test("StarForge delegates a governed task through the existing StarNet dispatch seam", () => {
+  let request;
+  const adapter = makeStarNetAdapter({
+    roster: () => new Map([["researcher-1", { name: "Researcher", model: "model-a" }]]),
+    dispatch: (value) => {
+      request = value;
+      return { content: '[{"agentId":"researcher-1","reason":"done"}]', summary: "dispatched 1 worker" };
+    },
+  });
+
+  const result = adapter.delegateTask(ROLES.CEO, {
+    id: "task-1",
+    projectId: "project-1",
+    assigneeId: "researcher-1",
+    title: "Research qualified leads",
+    successCriteria: "Produce a sourced lead list",
+    context: "Use the company's current revenue objective.",
+  });
+
+  assert.equal(result.taskId, "task-1");
+  assert.equal(result.projectId, "project-1");
+  assert.equal(result.assigneeId, "researcher-1");
+  assert.equal(request.workers[0].agentId, "researcher-1");
+  assert.match(request.workers[0].prompt, /Research qualified leads/);
+  assert.match(request.workers[0].prompt, /Success criteria/);
+  assert.equal(request.workers[0].context, "Use the company's current revenue objective.");
+});
+
+test("StarNet adapter fails closed for unauthorized or unknown worker delegation", () => {
+  const adapter = makeStarNetAdapter({
+    roster: () => new Map([["researcher-1", { name: "Researcher" }]]),
+    dispatch: () => ({ content: "should not run" }),
+  });
+
+  assert.throws(
+    () => adapter.delegateTask(ROLES.PA, { assigneeId: "researcher-1", title: "Research" }),
+    /Unauthorized action/,
+  );
+  assert.throws(
+    () => adapter.delegateTask(ROLES.CEO, { assigneeId: "missing-worker", title: "Research" }),
+    /not present in the live roster/,
+  );
+});
