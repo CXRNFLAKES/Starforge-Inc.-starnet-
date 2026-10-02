@@ -53,7 +53,14 @@ export function makeStarNetAdapter({ roster, dispatch } = {}) {
       parallel: false,
     };
 
-    const result = await dispatch(dispatchRequest);
+    let result;
+    try {
+      result = await dispatch(dispatchRequest);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(`StarNet dispatch failed: ${message}`, { cause: error });
+    }
+
     if (!result || typeof result !== "object") {
       throw new Error("StarNet dispatch returned an invalid result");
     }
