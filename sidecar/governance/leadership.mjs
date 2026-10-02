@@ -116,6 +116,18 @@ export function makeLeadership({ company } = {}) {
     return structuredClone(reports);
   }
 
+  function getLeadershipReport(role, reportId) {
+    assertLeadershipCapability(role, "review_work");
+    if (!reportId) throw new Error("Leadership report id is required");
+
+    const report = company.snapshot().leadershipReports.find(item => item.id === reportId);
+    if (!report) throw new Error("Unknown leadership report");
+    if (!report.targets.some(target => target.role === role)) {
+      throw new Error(`Leadership report is not addressed to ${role}`);
+    }
+
+    return structuredClone(report);
+  }
   function reviewLeadershipReport(role, reportId) {
     assertLeadershipCapability(role, "review_work");
     if (!reportId) throw new Error("Leadership report id is required");
@@ -171,6 +183,7 @@ export function makeLeadership({ company } = {}) {
     operate,
     reportToLeadership,
     listLeadershipReports,
+    getLeadershipReport,
     reviewLeadershipReport,
   };
 }
