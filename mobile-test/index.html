@@ -21,6 +21,9 @@ button:active{opacity:.75}.card{margin-top:12px;border:1px solid #263149;border-
 <div class="badge">SAFE MODE • NO REAL MONEY • NO PROVIDER CALLS</div>
 </section>
 <section class="card">
+<h2>🎮 StarForge HQ</h2><div class="row"><span>Company level</span><strong id="sfLevel">LVL —</strong></div><div class="row"><span>Net operating capital</span><strong id="sfCapital">€—</strong></div><div class="row"><span>Level 100 ceiling</span><strong>€10,000,000</strong></div><div class="muted">Level is derived from the governed capital snapshot; the test lab never invents a balance.</div>
+</section>
+<section class="card">
 <h2>⚙️ StarNet Workforce</h2>
 <div class="row"><span>Connection</span><strong id="wfMode" class="muted">NOT CONNECTED</strong></div>
 <div class="row"><span>Total workers</span><strong id="wfTotal">—</strong></div>
@@ -35,10 +38,13 @@ button:active{opacity:.75}.card{margin-top:12px;border:1px solid #263149;border-
 </div>
 <script>
 const statusEl=document.getElementById("status"), resultsEl=document.getElementById("results");
+const sfLevel=document.getElementById("sfLevel"), sfCapital=document.getElementById("sfCapital");
 document.getElementById("run").onclick=async()=>{
  statusEl.innerHTML="<div>⏳ Running...</div>"; resultsEl.innerHTML="";
  try{
   const r=await fetch("/api/test",{cache:"no-store"}); const data=await r.json();
+  sfLevel.textContent="LVL "+(data.companyLevel ?? "—");
+  sfCapital.textContent=new Intl.NumberFormat("en-IE",{style:"currency",currency:"EUR",maximumFractionDigits:0}).format(Number(data.capital?.netOperatingCapital ?? 0));
   statusEl.innerHTML="<div><strong>"+(data.failed===0?"🟢 ALL TESTS PASSED":"🔴 FAILURES DETECTED")+"</strong></div><div class='muted'>"+data.passed+"/"+data.total+" passed • "+data.mode+"</div>";
   resultsEl.innerHTML="<div class='card'>"+data.results.map(x=>"<div class='row'><span>"+x.name+"<br><span class='muted'>"+x.detail+"</span></span><strong class='"+(x.status==="PASS"?"pass":"fail")+"'>"+x.status+"</strong></div>").join("")+"</div>";
  }catch(e){statusEl.innerHTML="<div class='fail'>🔴 Connection failed</div><div class='muted'>"+e.message+"</div>"}
