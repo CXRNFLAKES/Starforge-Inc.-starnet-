@@ -171,6 +171,33 @@ export function makeOperations({ company, starnet = null } = {}) {
     return clone(task);
   }
 
+  function reviewStarNetExecution(actorRole, { projectId = null } = {}) {
+    if (actorRole === ROLES.CEO) requireRole(actorRole, ACTIONS.CEO_OPERATE);
+    else if (actorRole === ROLES.PA) requireRole(actorRole, ACTIONS.COMPANY_READ);
+    else if (actorRole === ROLES.VICE_CEO) requireRole(actorRole, ACTIONS.STARNET_DELEGATE);
+    else throw new Error("Only the CEO, PA, or StarNet Vice CEO may review StarNet execution");
+
+    const tasks = company.snapshot().tasks
+      .filter((item) => item.assigneeSource === "starnet")
+      .filter((item) => !projectId || item.projectId === projectId);
+
+    return clone({
+      projectId,
+      reviewScope: actorRole === ROLES.PA ? "independent-oversight"
+        : actorRole === ROLES.VICE_CEO ? "starnet-operational-review" : "operational-review",
+      taskCount: tasks.length,
+      counts: {
+        assigned: tasks.filter((item) => item.status === "assigned").length,
+        inProgress: tasks.filter((item) => item.status === "in-progress").length,
+        completed: tasks.filter((item) => item.status === "completed").length,
+        failed: tasks.filter((item) => item.status === "failed").length,
+        blocked: tasks.filter((item) => item.status === "blocked").length,
+      },
+      attentionNeeded: tasks.filter((item) => item.status === "blocked" || item.status === "failed"),
+      tasks,
+    });
+  }
+
   function inspect({ projectId = null, assigneeId = null } = {}) {
     return clone({
       projects: company.snapshot().projects.filter((item) => !projectId || item.id === projectId),
@@ -215,6 +242,7 @@ export function makeOperations({ company, starnet = null } = {}) {
     updateTask,
     inspect,
     reviewExecution,
+    reviewStarNetExecution,
   });
 }
 
