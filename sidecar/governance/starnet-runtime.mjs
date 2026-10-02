@@ -29,19 +29,41 @@ export function makeStarNetRuntimeBridge({ baseUrl = "", token = "", fetchImpl =
     },
   });
 
-  return Object.freeze({ baseUrl: root, listWorkers: () => adapter.listWorkers(), delegateTask: (...args) => adapter.delegateTask(...args), inspectWorkforce: async ({ activeRuns = [] } = {}) => {
-    const workers = adapter.listWorkers();
-    const working = new Set(activeRuns.map((run) => String(run.agentId ?? "")));
-    const enriched = workers.map((worker) => ({ ...worker, status: working.has(worker.id) ? "working" : "idle" }));
+  async function inspectWorkforce({ activeRuns = [] } = {}) {
+    // Remote StarNet rosters are asynchronous; do not route them through the synchronous
+    // adapter roster accessor. The adapter remains the governed dispatch boundary.
+    const body = await request("/api/roster");
+    const workers = Array.isArray(body?.agents) ? body.agents : [];
+    const working = new Map(
+      (Array.isArray(activeRuns) ? activeRuns : [])
+        .filter((run) => run && run.agentId != null)
+        .map((run) => [String(run.agentId), run]),
+    );
+    const enriched = workers
+      .map((worker) => ({
+        ...worker,
+        id: String(worker.id ?? worker.agentId ?? "").trim(),
+        status: working.has(String(worker.id ?? worker.agentId ?? "")) ? "working" : "idle",
+        activeRun: working.get(String(worker.id ?? worker.agentId ?? "")) ?? null,
+      }))
+      .filter((worker) => worker.id);
     return {
       source: "live-runtime",
       workerCount: enriched.length,
       counts: {
+        total: enriched.length,
         working: enriched.filter((w) => w.status === "working").length,
         idle: enriched.filter((w) => w.status === "idle").length,
       },
       workers: enriched,
-      statusSource: activeRuns.length ? "runtime-active-runs" : "roster-plus-active-runs",
+      statusSource: activeRuns.length ? "runtime-active-runs" : "runtime-roster",
     };
-  }});
+  }
+
+  return Object.freeze({
+    baseUrl: root,
+    listWorkers: () => adapter.listWorkers(),
+    delegateTask: (...args) => adapter.delegateTask(...args),
+    inspectWorkforce,
+  });
 }
