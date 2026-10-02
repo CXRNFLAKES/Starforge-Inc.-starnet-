@@ -110,6 +110,12 @@ export function makeLeadership({ company } = {}) {
     });
   }
 
+  function listLeadershipReports({ targetRole = null } = {}) {
+    const reports = company.snapshot().leadershipReports
+      .filter(report => !targetRole || report.targets.some(target => target.role === targetRole));
+    return structuredClone(reports);
+  }
+
   function reportToLeadership(role, report) {
     assertLeadershipCapability(role, "report_to_leadership");
     if (role !== ROLES.VICE_CEO) throw new Error("Only the Vice CEO may use the StarNet leadership report channel");
@@ -141,6 +147,7 @@ export function makeLeadership({ company } = {}) {
     requestApproval,
     operate,
     reportToLeadership,
+    listLeadershipReports,
   };
 }
 
