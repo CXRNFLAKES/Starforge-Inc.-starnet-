@@ -93,6 +93,10 @@ function runTests() {
     total: results.length,
     results,
     company: company.snapshot(),
+    capital: company.capitalSnapshot(ROLES.CHO),
+    companyLevel: 1,
+    maxCompanyLevel: 100,
+    maxCompanyCapital: 10000000,
   };
 }
 
