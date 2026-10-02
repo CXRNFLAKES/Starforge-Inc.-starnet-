@@ -70,3 +70,8 @@ test('StarForge HQ renders governed finance telemetry without inventing values',
   assert.match(hq,/capital\.taxReserve/);
   assert.match(hq,/capital\.liabilities/);
 });
+
+test('StarForge HQ renders only the bounded governed finance telemetry feed',()=>{
+  assert.match(hq,/finance\\?\\.recentEntries/);
+  assert.doesNotMatch(hq,/company\\?\\.finance\\?\\.entries/);
+});
