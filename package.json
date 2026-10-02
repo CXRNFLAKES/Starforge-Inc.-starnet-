@@ -162,8 +162,8 @@
     "release:promotion-gate": "node scripts/release-promotion-gate.mjs",
     "security:secrets": "node scripts/scan-history-secrets.mjs",
     "eval:skills": "node scripts/eval/skills.mjs",
-    "test:governance": "node --test test/governance.test.js",
-    "starforge:test": "node --test test/governance.test.js"
+    "test:governance": "node --test test/governance.test.js test/governance.testing.test.js",
+    "starforge:test": "node --test test/governance.test.js test/governance.testing.test.js"
   },
   "devDependencies": {
     "@napi-rs/canvas": "0.1.100",
