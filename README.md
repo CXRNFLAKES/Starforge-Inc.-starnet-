@@ -182,4 +182,4 @@ artwork, and must not present themselves as this project or as endorsed by it.
 Use GitHub Codespaces from an Android 9 phone to launch the isolated StarForge governance test environment. The Codespace configuration installs dependencies, starts the test server, and forwards port 8799 automatically.
 
 
-<!-- StarForge CI baseline trigger: preserve functionality from last known green run #51. -->
+<!-- StarForge CI verification run #73: verify the complete current green baseline before any new feature work. -->
