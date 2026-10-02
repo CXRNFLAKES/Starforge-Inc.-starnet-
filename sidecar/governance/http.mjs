@@ -1,4 +1,5 @@
 import { companyLevelTelemetry } from "./capital-level.mjs";
+import { ROLES } from "./roles.mjs";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 
@@ -61,7 +62,7 @@ function financeSummary(state) {
   };
 }
 
-export function makeStarForgeGovernanceHandler({ workspace, roster = new Map(), runsMeta = new Map(), runtime = null } = {}) {
+export function makeStarForgeGovernanceHandler({ workspace, roster = new Map(), runsMeta = new Map(), runtime = null, company = null } = {}) {
   if (!workspace) throw new TypeError("StarForge governance workspace is required");
   const list = () => roster instanceof Map
     ? Array.from(roster.entries()).map(([id, value]) => ({ id, ...(value || {}) }))
@@ -112,10 +113,15 @@ export function makeStarForgeGovernanceHandler({ workspace, roster = new Map(), 
       }) : workers;
       workforceSource = "live-runtime-roster";
     }
-    const tasks = Array.isArray(persisted?.tasks) ? persisted.tasks : [];
+    const governedSnapshot = company && typeof company.snapshot === "function" ? company.snapshot() : persisted;
+    const tasks = Array.isArray(governedSnapshot?.tasks) ? governedSnapshot.tasks : [];
     const starNetTasks = tasks.filter((task) => task.assigneeSource === "starnet");
-    const capital = financeSummary(persisted);
-    const level = capital ? companyLevelTelemetry(capital.netOperatingCapital) : null;
+    const capital = company && typeof company.capitalSnapshot === "function"
+      ? { ...company.capitalSnapshot(ROLES.CHO), source: "starforge-governed-company-ledger" }
+      : financeSummary(persisted);
+    const financeTelemetry = company && typeof company.financeTelemetrySnapshot === "function"
+      ? company.financeTelemetrySnapshot(ROLES.PA, { limit: 5 })
+      : capital;
 
     return send(res, 200, {
       ok: true,
@@ -123,14 +129,12 @@ export function makeStarForgeGovernanceHandler({ workspace, roster = new Map(), 
       safe: true,
       readOnly: true,
       workspace,
-      company: persisted,
+      company: governedSnapshot,
       capital,
       level,
-      finance: capital ? {
-        ...capital,
-        recentEntries: Array.isArray(persisted?.finance?.entries)
-          ? persisted.finance.entries.slice(-5).reverse()
-          : [],
+      finance: financeTelemetry ? {
+        ...financeTelemetry,
+        recentEntries: Array.isArray(financeTelemetry.recentEntries) ? financeTelemetry.recentEntries : [],
       } : null,
       workforce: {
         workers,
