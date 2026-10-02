@@ -1,5 +1,6 @@
 import http from "node:http";
 import { readFile } from "node:fs/promises";
+import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { makeTestingCompany } from "../sidecar/governance/testing.mjs";
@@ -22,8 +23,8 @@ const runtime = process.env.STARNET_RUNTIME_URL
   : null;
 
 const company = makeCompany({
-  load: () => { try { return JSON.parse(require("node:fs").readFileSync(STATE_FILE, "utf8")); } catch (_) { return undefined; } },
-  save: (state) => { require("node:fs").mkdirSync(dirname(STATE_FILE), { recursive: true }); require("node:fs").writeFileSync(STATE_FILE, JSON.stringify(state, null, 2)); },
+  load: () => { try { return JSON.parse(readFileSync(STATE_FILE, "utf8")); } catch (_) { return undefined; } },
+  save: (state) => { mkdirSync(dirname(STATE_FILE), { recursive: true }); writeFileSync(STATE_FILE, JSON.stringify(state, null, 2)); },
 });
 const governanceHandler = makeStarForgeGovernanceHandler({
   workspace: join(ROOT, "../.starforge-mobile-test"),
