@@ -107,6 +107,30 @@ test("CEO and PA can retrieve persisted Vice CEO reports through the leadership 
   assert.equal(ceoReports[0].report.workforce.blocked, 1);
 });
 
+test("CEO and PA can retrieve one addressed Vice CEO report without exposing others", () => {
+  const company = makeCompany();
+  const leadership = makeLeadership({ company });
+  const first = leadership.reportToLeadership(ROLES.VICE_CEO, { status: "green", workforce: { active: 4 } });
+  const second = leadership.reportToLeadership(ROLES.VICE_CEO, { status: "yellow", workforce: { active: 2 } });
+
+  const ceoReport = leadership.getLeadershipReport(ROLES.CEO, first.details.reportId);
+  const paReport = leadership.getLeadershipReport(ROLES.PA, second.details.reportId);
+
+  assert.equal(ceoReport.id, first.details.reportId);
+  assert.equal(ceoReport.report.status, "green");
+  assert.equal(paReport.id, second.details.reportId);
+  assert.equal(paReport.report.status, "yellow");
+
+  assert.throws(
+    () => leadership.getLeadershipReport(ROLES.VICE_CEO, first.details.reportId),
+    /Leadership report is not addressed to vice-ceo/,
+  );
+  assert.throws(
+    () => leadership.getLeadershipReport(ROLES.BOARD, first.details.reportId),
+    /Unauthorized capability/,
+  );
+});
+
 test("CEO and PA can review only their addressed Vice CEO reports", () => {
   const company = makeCompany();
   const leadership = makeLeadership({ company });
