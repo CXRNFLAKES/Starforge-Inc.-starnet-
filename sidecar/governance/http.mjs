@@ -83,14 +83,32 @@ export function makeStarForgeGovernanceHandler({ workspace, roster = new Map(), 
     } catch (_) {}
 
     const activeRuns = runs();
-    let workers = list();
+    const activeByAgent = new Map(
+      activeRuns
+        .filter((run) => run && run.agentId != null)
+        .map((run) => [String(run.agentId), run]),
+    );
+    let workers = list().map((worker) => {
+      const id = String(worker.id ?? worker.agentId ?? "").trim();
+      const activeRun = activeByAgent.get(id) ?? null;
+      return {
+        ...worker,
+        status: activeRun ? "working" : "idle",
+        activeRun,
+      };
+    });
     let workforceSource = "starnet-live-roster";
     if (runtime && typeof runtime.inspectWorkforce === "function") {
       const inspected = await runtime.inspectWorkforce({ activeRuns });
       workers = Array.isArray(inspected?.workers) ? inspected.workers : workers;
       workforceSource = inspected?.source || "live-runtime";
     } else if (runtime && typeof runtime.listWorkers === "function") {
-      workers = await runtime.listWorkers();
+      const runtimeWorkers = await runtime.listWorkers();
+      workers = Array.isArray(runtimeWorkers) ? runtimeWorkers.map((worker) => {
+        const id = String(worker.id ?? worker.agentId ?? "").trim();
+        const activeRun = activeByAgent.get(id) ?? null;
+        return { ...worker, status: activeRun ? "working" : "idle", activeRun };
+      }) : workers;
       workforceSource = "live-runtime-roster";
     }
     const tasks = Array.isArray(persisted?.tasks) ? persisted.tasks : [];
