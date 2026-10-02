@@ -6,12 +6,14 @@ import { makeTestingCompany } from "../sidecar/governance/testing.mjs";
 import { ROLES } from "../sidecar/governance/roles.mjs";
 import { ACTIONS, assertCan } from "../sidecar/governance/authority.mjs";
 import { makeStarForgeGovernanceHandler } from "../sidecar/governance/http.mjs";
+import { makeCompany } from "../sidecar/governance/company.mjs";
 import { makeStarNetRuntimeBridge } from "../sidecar/governance/starnet-runtime.mjs";
 
 const ROOT = dirname(fileURLToPath(import.meta.url));
 const UI = join(ROOT, "../mobile-test/index.html");
 const HOST = process.env.HOST || "0.0.0.0";
 const PORT = Number(process.env.PORT || 8799);
+const STATE_FILE = join(ROOT, "../.starforge-mobile-test/state.json");
 const runtime = process.env.STARNET_RUNTIME_URL
   ? makeStarNetRuntimeBridge({
       baseUrl: process.env.STARNET_RUNTIME_URL,
@@ -19,8 +21,13 @@ const runtime = process.env.STARNET_RUNTIME_URL
     })
   : null;
 
+const company = makeCompany({
+  load: () => { try { return JSON.parse(require("node:fs").readFileSync(STATE_FILE, "utf8")); } catch (_) { return undefined; } },
+  save: (state) => { require("node:fs").mkdirSync(dirname(STATE_FILE), { recursive: true }); require("node:fs").writeFileSync(STATE_FILE, JSON.stringify(state, null, 2)); },
+});
 const governanceHandler = makeStarForgeGovernanceHandler({
   workspace: join(ROOT, "../.starforge-mobile-test"),
+  company,
   roster: new Map(),
   runsMeta: new Map(),
   runtime,
