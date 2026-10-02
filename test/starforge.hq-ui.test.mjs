@@ -18,7 +18,7 @@ test('StarForge HQ is mounted inside the existing StarNet UI',()=>{
 
 test('StarForge HQ does not invent capital or worker status',()=>{
   assert.match(hq,/Finance bridge not connected/);
-  assert.match(hq,/LVL 100 = €10M net operating capital/);
+  assert.match(hq,/\[100,10000000\]/);
   assert.match(hq,/StationUI\.present/);
   assert.match(hq,/StationUI\.isAgentRunning/);
 });
