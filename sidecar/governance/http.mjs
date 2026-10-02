@@ -122,6 +122,7 @@ export function makeStarForgeGovernanceHandler({ workspace, roster = new Map(), 
     const financeTelemetry = company && typeof company.financeTelemetrySnapshot === "function"
       ? company.financeTelemetrySnapshot(ROLES.PA, { limit: 5 })
       : capital;
+    const level = companyLevelTelemetry(capital?.netOperatingCapital);
 
     return send(res, 200, {
       ok: true,
