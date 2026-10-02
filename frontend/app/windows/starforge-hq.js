@@ -21,7 +21,7 @@
         const data=await response.json();
         const capital=data&&data.capital;
         const execution=data&&data.execution;
-        for(const key of ['in-progress','completed','failed','blocked']) executionStats[key].textContent=Number(execution?.({ 'in-progress':'inProgress', completed:'completed', failed:'failed', blocked:'blocked' }[key]) ?? 0);
+        for(const key of ['in-progress','completed','failed','blocked']) executionStats[key].textContent=Number(execution?.[{ 'in-progress':'inProgress', completed:'completed', failed:'failed', blocked:'blocked' }[key]] ?? 0);
         const recent=Array.isArray(execution?.recentTasks)?execution.recentTasks.slice().reverse():[];
         recentEl.replaceChildren();
         if(!recent.length){recentEl.textContent='No governed StarNet tasks recorded yet.';} else recent.slice(0,5).forEach(task=>{const row=document.createElement('div');row.className='sf-task';row.innerHTML='<b>'+esc(task.title||'Untitled task')+'</b><span>'+esc(String(task.status||'unknown').toUpperCase())+' · '+esc(task.assigneeId||'unassigned')+'</span>';recentEl.appendChild(row);});
