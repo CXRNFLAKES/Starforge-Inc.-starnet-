@@ -16,7 +16,10 @@
         for(const w of workers){
           const card=document.createElement('button');card.type='button';card.className='sf-room-worker';
           const run=w.activeRun, activity=run?.title||run?.task||run?.label||'Awaiting assignment';
-          card.innerHTML='<div class="sf-room-avatar">◆</div><div class="sf-room-main"><b>'+esc(w.name||w.id||'Unnamed worker')+'</b><span>'+esc(w.role||'StarNet agent')+' · '+esc(w.model||'model unavailable')+'</span><small>'+esc(activity)+'</small></div><span class="sf-room-status '+(w.status==='working'?'working':'idle')+'">'+esc(String(w.status||'unknown').toUpperCase())+'</span><span class="sf-open">OPEN ›</span>';
+          const tasks=Array.isArray(data?.execution?.recentTasks)?data.execution.recentTasks.filter(t=>String(t.assigneeId)===String(w.id)):[];
+          const completed=tasks.filter(t=>t.status==='completed').length, failed=tasks.filter(t=>t.status==='failed').length;
+          const xp=completed*100; const level=Math.max(1,Math.floor(xp/500)+1);
+          card.innerHTML='<div class="sf-room-avatar">◆</div><div class="sf-room-main"><b>'+esc(w.name||w.id||'Unnamed worker')+'</b><span>'+esc(w.role||'StarNet agent')+' · '+esc(w.model||'model unavailable')+'</span><small>'+esc(activity)+'</small><small>LVL '+level+' · XP '+xp+' · ✓ '+completed+' · ✕ '+failed+'</small></div><span class="sf-room-status '+(w.status==='working'?'working':'idle')+'">'+esc(String(w.status||'unknown').toUpperCase())+'</span><span class="sf-open">OPEN ›</span>';
           card.addEventListener('click',()=>{const agents=Array.isArray(StationUI.present)?StationUI.present:[];const i=agents.findIndex(a=>String(a.id||a.agentId)===String(w.id));if(i>=0&&typeof StationUI.openAgent==='function')StationUI.openAgent(i);});
           grid.appendChild(card);
         }
