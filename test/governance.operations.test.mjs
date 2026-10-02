@@ -110,6 +110,22 @@ test("StarNet adapter awaits async dispatch results and preserves completion pay
   assert.equal(result.result.summary, "1 worker completed");
 });
 
+test("StarNet adapter fails closed on invalid dispatch results", async () => {
+  const adapter = makeStarNetAdapter({
+    roster: () => [{ id: "worker-a", name: "Worker A" }],
+    dispatch: async () => null,
+  });
+
+  await assert.rejects(
+    () => adapter.delegateTask(ROLES.CEO, {
+      assigneeId: "worker-a",
+      title: "Invalid result test",
+    }),
+    /StarNet dispatch returned an invalid result/,
+  );
+});
+
+
 test("StarNet delegation preserves the dispatch request at the governance boundary", async () => {
   const company = makeCompany();
   let captured = null;
