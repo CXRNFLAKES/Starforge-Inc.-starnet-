@@ -83,6 +83,40 @@ test("CEO, PA, and Vice CEO can review StarNet execution within separate scopes"
   assert.throws(() => operations.reviewStarNetExecution(ROLES.BOARD), /Only the CEO, PA, or StarNet Vice CEO/);
 });
 
+test("StarNet delegation preserves the dispatch request at the governance boundary", async () => {
+  const company = makeCompany();
+  let captured = null;
+  const operations = makeOperations({
+    company,
+    starnet: {
+      listWorkers: () => [{ id: "worker-a", name: "Worker A" }],
+      delegateTask: async (_role, task) => {
+        captured = task;
+        return { result: { content: "done" } };
+      },
+    },
+  });
+
+  const project = operations.createProject(ROLES.CEO, { title: "Boundary test" });
+  await operations.delegateToStarNet(ROLES.CEO, {
+    projectId: project.id,
+    title: "Research",
+    assigneeId: "worker-a",
+    successCriteria: "Return verified findings",
+    context: "Company context",
+  });
+
+  assert.deepEqual(captured, {
+    id: company.snapshot().tasks[0].id,
+    projectId: project.id,
+    assigneeId: "worker-a",
+    title: "Research",
+    successCriteria: "Return verified findings",
+    context: "Company context",
+  });
+});
+
+
 test("CEO execution review summarizes task states and isolates project scope", () => {
   const company = makeCompany();
   company.registerPerson(ROLES.CHO, { id: "worker-a", name: "Worker A", role: ROLES.WORKER });
