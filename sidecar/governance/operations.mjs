@@ -95,7 +95,7 @@ export function makeOperations({ company, starnet = null } = {}) {
     if (![ROLES.CEO, ROLES.VICE_CEO].includes(actorRole)) {
       throw new Error("Only the CEO or StarNet Vice CEO may delegate StarNet work");
     }
-    if (!starnet || typeof starnet.listWorkers !== "function" || typeof starnet.delegateTask !== "function") {
+    if (!starnet || (typeof starnet.listWorkers !== "function" && typeof starnet.listWorkersAsync !== "function") || typeof starnet.delegateTask !== "function") {
       throw new Error("StarNet adapter is required for StarNet delegation");
     }
     if (!projectId || !title || !assigneeId) throw new Error("Project, task title, and assignee are required");
