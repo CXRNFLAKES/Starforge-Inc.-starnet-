@@ -245,3 +245,28 @@ test("CEO operations persist a failed StarNet execution and rethrow the engine e
   assert.equal(stored.tasks[0].status, "failed");
   assert.equal(stored.tasks[0].note, "StarNet execution failed");
 });
+test("StarNet Vice CEO can delegate through the StarNet execution bridge", async () => {
+  const company = makeCompany();
+  const starnet = makeStarNetAdapter({
+    roster: () => new Map([["researcher-1", { name: "Researcher", model: "model-a" }]]),
+    dispatch: async (request) => ({
+      content: JSON.stringify([{ agentId: request.workers[0].agentId, reason: "done" }]),
+      summary: "dispatched 1 worker",
+    }),
+  });
+  const operations = makeOperations({ company, starnet });
+  const project = operations.createProject(ROLES.CEO, { title: "Vice CEO StarNet project" });
+
+  const result = await operations.delegateToStarNet(ROLES.VICE_CEO, {
+    projectId: project.id,
+    title: "Execute StarNet research",
+    assigneeId: "researcher-1",
+    successCriteria: "Return the requested research",
+  });
+
+  assert.equal(result.task.delegatedBy, ROLES.VICE_CEO);
+  assert.equal(result.task.assigneeSource, "starnet");
+  assert.equal(result.task.status, "completed");
+  assert.equal(result.worker.id, "researcher-1");
+  assert.equal(result.result.summary, "dispatched 1 worker");
+});
