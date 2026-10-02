@@ -12,6 +12,28 @@
     root.innerHTML='<div class="sf-hq-head"><div><div class="sf-kicker">STARFORGE HQ</div><h2>COMPANY COMMAND ROOM</h2><p>StarNet workforce · governed by StarForge</p></div><div class="sf-link-state" role="status">STARFORGE LINK · UI BRIDGE</div></div><article class="sf-capital"><div class="sf-section-label">COMPANY LEVEL</div><div class="sf-level-line"><strong class="sf-level">LVL —</strong><span class="sf-capital-value">CAPITAL FEED PENDING</span></div><div class="sf-meter"><i></i></div><div class="sf-next">Finance bridge not connected — no balance is invented.</div></article><div class="sf-leadership"></div><section class="sf-roster"><div class="sf-section-label">STARNET WORKFORCE</div><div class="sf-roster-meta"></div><div class="sf-workers"></div></section>';
     const leaders=root.querySelector('.sf-leadership');[['CHO','HUMAN OWNER'],['PA','OVERSIGHT'],['CEO','OPERATIONS'],['VICE CEO','STARNET LEAD']].forEach(([n,r])=>{const c=document.createElement('div');c.className='sf-leader';c.innerHTML='<b>'+esc(n)+'</b><span>'+esc(r)+'</span>';leaders.appendChild(c);});
     const meta=root.querySelector('.sf-roster-meta'),workers=root.querySelector('.sf-workers');
+    const levelEl=root.querySelector('.sf-level'),capitalEl=root.querySelector('.sf-capital-value'),meterEl=root.querySelector('.sf-meter i'),nextEl=root.querySelector('.sf-next');
+    async function refreshGovernance(){
+      try{
+        const response=await fetch('/api/starforge/governance',{cache:'no-store'});
+        if(!response.ok) throw new Error('governance feed unavailable');
+        const data=await response.json();
+        const capital=data&&data.capital;
+        const net=Number(capital&&capital.netOperatingCapital);
+        const level=levelForCapital(net);
+        if(level===null) throw new Error('governance feed returned invalid capital');
+        levelEl.textContent='LVL '+level;
+        capitalEl.textContent=new Intl.NumberFormat('en-IE',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(net)+' NET OPERATING CAPITAL';
+        const next=nextMilestone(level);
+        const previous=MILESTONES.find(([,threshold],i)=>MILESTONES[i+1]&&MILESTONES[i+1][0]===level)?.[1] ?? 0;
+        const target=next?next[1]:10000000;
+        const span=Math.max(1,target-previous);
+        const progress=next?Math.max(0,Math.min(100,((net-previous)/span)*100)):100;
+        meterEl.style.width=progress+'%';
+        nextEl.textContent=next?'NEXT LEVEL · '+new Intl.NumberFormat('en-IE',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(next[1])+' · '+new Intl.NumberFormat('en-IE',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(Math.max(0,next[1]-net))+' TO GO':'MAX LEVEL · €10,000,000+';
+      }catch(_){ levelEl.textContent='LVL —'; capitalEl.textContent='CAPITAL FEED PENDING'; meterEl.style.width='0'; nextEl.textContent='Finance bridge unavailable — no balance is invented.'; }
+    }
+    refreshGovernance();
     function paint(){const agents=Array.isArray(StationUI.present)?StationUI.present:[];const live=agents.map(agent=>({agent,status:statusForAgent(agent)}));const working=live.filter(x=>x.status[1]==='working').length;meta.textContent=agents.length+' WORKER'+(agents.length===1?'':'S')+' · '+working+' WORKING · '+(agents.length-working)+' IDLE';workers.replaceChildren();if(!agents.length){const e=document.createElement('div');e.className='sf-empty';e.textContent='No StarNet workers are currently exposed by the live station roster.';workers.appendChild(e);return;}for(const item of live){const a=item.agent,c=document.createElement('article');c.className='sf-worker';c.innerHTML='<div class="sf-avatar">◆</div><div class="sf-worker-main"><b>'+esc(a.name||a.id||'Unnamed worker')+'</b><span>'+esc(a.role||'StarNet agent')+'</span></div><span class="sf-status '+item.status[1]+'">'+item.status[0]+'</span>';workers.appendChild(c);}}
     paint();const timer=window.setInterval(()=>{if(root.isConnected)paint();else window.clearInterval(timer);},500);body.appendChild(root);
   }
