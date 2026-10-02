@@ -85,6 +85,7 @@ function runTests() {
   const passed = results.filter((x) => x.status === "PASS").length;
   return {
     mode: "android-9-test",
+    starforgeHq: true,
     safe: true,
     sideEffects: "none",
     passed,
