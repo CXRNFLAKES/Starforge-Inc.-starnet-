@@ -259,6 +259,33 @@ test("CEO execution review is restricted to CEO or PA oversight", () => {
 });
 
 
+test("StarForge leadership can inspect the live StarNet workforce without mutating it", () => {
+  const company = makeCompany();
+  const starnet = makeStarNetAdapter({
+    roster: () => new Map([
+      ["researcher-1", { name: "Researcher", model: "model-a", capabilities: ["research"] }],
+      ["builder-1", { name: "Builder", model: "model-b", capabilities: ["code"] }],
+      ["analyst-1", { name: "Analyst", model: "model-c", capabilities: ["analysis"] }],
+    ]),
+    dispatch: () => ({ content: "unused" }),
+  });
+  const operations = makeOperations({ company, starnet });
+
+  const ceo = operations.inspectStarNetWorkforce(ROLES.CEO);
+  const pa = operations.inspectStarNetWorkforce(ROLES.PA);
+  const vice = operations.inspectStarNetWorkforce(ROLES.VICE_CEO);
+
+  assert.equal(ceo.source, "live-roster");
+  assert.equal(ceo.workerCount, 3);
+  assert.equal(ceo.workers[0].id, "researcher-1");
+  assert.equal(pa.reviewScope, "independent-oversight");
+  assert.equal(vice.reviewScope, "starnet-operational-review");
+  assert.throws(
+    () => operations.inspectStarNetWorkforce(ROLES.BOARD),
+    /Only the CEO, PA, or StarNet Vice CEO/,
+  );
+});
+
 test("StarForge can discover the live StarNet worker roster through the adapter", () => {
   const adapter = makeStarNetAdapter({
     roster: () => new Map([
