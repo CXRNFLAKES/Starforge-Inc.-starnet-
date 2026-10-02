@@ -1,3 +1,4 @@
+import { companyLevelTelemetry } from "./capital-level.mjs";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 
@@ -114,6 +115,7 @@ export function makeStarForgeGovernanceHandler({ workspace, roster = new Map(), 
     const tasks = Array.isArray(persisted?.tasks) ? persisted.tasks : [];
     const starNetTasks = tasks.filter((task) => task.assigneeSource === "starnet");
     const capital = financeSummary(persisted);
+    const level = capital ? companyLevelTelemetry(capital.netOperatingCapital) : null;
 
     return send(res, 200, {
       ok: true,
@@ -123,6 +125,7 @@ export function makeStarForgeGovernanceHandler({ workspace, roster = new Map(), 
       workspace,
       company: persisted,
       capital,
+      level,
       finance: capital ? {
         ...capital,
         recentEntries: Array.isArray(persisted?.finance?.entries)
