@@ -54,6 +54,35 @@ test("projects and tasks survive company persistence", () => {
   assert.equal(snapshot.tasks[0].id, task.id);
 });
 
+test("CEO, PA, and Vice CEO can review StarNet execution within separate scopes", async () => {
+  const company = makeCompany();
+  const operations = makeOperations({
+    company,
+    starnet: {
+      listWorkers: () => [{ id: "worker-a", name: "Worker A" }],
+      delegateTask: async () => ({ result: { content: "done" } }),
+    },
+  });
+  const project = operations.createProject(ROLES.CEO, { title: "StarNet review project" });
+  const task = await operations.delegateToStarNet(ROLES.CEO, {
+    projectId: project.id, title: "StarNet task", assigneeId: "worker-a",
+  });
+
+  const ceo = operations.reviewStarNetExecution(ROLES.CEO, { projectId: project.id });
+  const pa = operations.reviewStarNetExecution(ROLES.PA, { projectId: project.id });
+  const vice = operations.reviewStarNetExecution(ROLES.VICE_CEO, { projectId: project.id });
+
+  assert.equal(task.task.status, "completed");
+  assert.equal(ceo.reviewScope, "operational-review");
+  assert.equal(pa.reviewScope, "independent-oversight");
+  assert.equal(vice.reviewScope, "starnet-operational-review");
+  assert.equal(ceo.counts.completed, 1);
+  assert.equal(pa.tasks[0].assigneeSource, "starnet");
+  assert.equal(vice.tasks[0].id, task.task.id);
+
+  assert.throws(() => operations.reviewStarNetExecution(ROLES.BOARD), /Only the CEO, PA, or StarNet Vice CEO/);
+});
+
 test("CEO execution review summarizes task states and isolates project scope", () => {
   const company = makeCompany();
   company.registerPerson(ROLES.CHO, { id: "worker-a", name: "Worker A", role: ROLES.WORKER });
