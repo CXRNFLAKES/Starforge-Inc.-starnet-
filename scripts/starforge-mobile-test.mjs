@@ -5,11 +5,17 @@ import { fileURLToPath } from "node:url";
 import { makeTestingCompany } from "../sidecar/governance/testing.mjs";
 import { ROLES } from "../sidecar/governance/roles.mjs";
 import { ACTIONS, assertCan } from "../sidecar/governance/authority.mjs";
+import { makeStarForgeGovernanceHandler } from "../sidecar/governance/http.js";
 
 const ROOT = dirname(fileURLToPath(import.meta.url));
 const UI = join(ROOT, "../mobile-test/index.html");
 const HOST = process.env.HOST || "0.0.0.0";
 const PORT = Number(process.env.PORT || 8799);
+const governanceHandler = makeStarForgeGovernanceHandler({
+  workspace: join(ROOT, "../.starforge-mobile-test"),
+  roster: new Map(),
+  runsMeta: new Map(),
+});
 
 function expectBlocked(fn) {
   try { fn(); return { status: "FAIL", detail: "Unauthorized action was allowed" }; }
@@ -102,6 +108,9 @@ function runTests() {
 
 const server = http.createServer(async (req, res) => {
   try {
+    if (req.url === "/api/starforge/governance") {
+      return governanceHandler(req, res);
+    }
     if (req.url === "/api/test") {
       const body = JSON.stringify(runTests());
       res.writeHead(200, { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" });
