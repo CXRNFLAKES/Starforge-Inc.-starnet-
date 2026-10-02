@@ -30,17 +30,15 @@
         if(!recent.length){recentEl.textContent='No governed StarNet tasks recorded yet.';} else recent.slice(0,5).forEach(task=>{const row=document.createElement('div');row.className='sf-task';row.innerHTML='<b>'+esc(task.title||'Untitled task')+'</b><span>'+esc(String(task.status||'unknown').toUpperCase())+' · '+esc(task.assigneeId||'unassigned')+'</span>';recentEl.appendChild(row);});
         if(!capital || capital.source!=='starforge-governed-company-ledger') throw new Error('governed finance source unavailable');
         const net=Number(capital.netOperatingCapital);
-        const level=levelForCapital(net);
-        if(level===null) throw new Error('governance feed returned invalid capital');
-        levelEl.textContent='LVL '+level;
+        const levelFeed=data?.level;
+        if(!levelFeed || levelFeed.source!=='starforge-governed-company-ledger') throw new Error('authoritative company level unavailable');
+        if(Number(levelFeed.currentCapital)!==net) throw new Error('company level capital does not match governed capital');
+        levelEl.textContent='LVL '+String(levelFeed.level);
         capitalEl.textContent=new Intl.NumberFormat('en-IE',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(net)+' NET OPERATING CAPITAL';
-        const next=nextMilestone(level);
-        const previous=MILESTONES.find(([,threshold],i)=>MILESTONES[i+1]&&MILESTONES[i+1][0]===level)?.[1] ?? 0;
-        const target=next?next[1]:10000000;
-        const span=Math.max(1,target-previous);
-        const progress=next?Math.max(0,Math.min(100,((net-previous)/span)*100)):100;
-        meterEl.style.width=progress+'%';
-        nextEl.textContent=next?'NEXT LEVEL · '+new Intl.NumberFormat('en-IE',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(next[1])+' · '+new Intl.NumberFormat('en-IE',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(Math.max(0,next[1]-net))+' TO GO':'MAX LEVEL · €10,000,000+';
+        meterEl.style.width=Math.max(0,Math.min(100,Number(levelFeed.progressPercent)||0))+'%';
+        nextEl.textContent=levelFeed.nextLevel
+          ? 'NEXT LEVEL · '+new Intl.NumberFormat('en-IE',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(levelFeed.nextThreshold)+' · '+new Intl.NumberFormat('en-IE',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(levelFeed.remainingToNext)+' TO GO'
+          : 'MAX LEVEL · €10,000,000+';
       }catch(_){ levelEl.textContent='LVL —'; capitalEl.textContent='CAPITAL FEED PENDING'; meterEl.style.width='0'; nextEl.textContent='Finance bridge unavailable — no balance is invented.'; }
     }
     refreshGovernance();
