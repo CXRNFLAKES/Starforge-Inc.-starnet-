@@ -88,7 +88,6 @@ test("CEO execution review is restricted to the CEO", () => {
   assert.throws(() => operations.reviewExecution(ROLES.CHO), /Unauthorized action|Only the CEO/);
 });
 
-import { makeStarNetAdapter } from "../sidecar/governance/starnet-adapter.mjs";
 
 test("StarForge can discover the live StarNet worker roster through the adapter", () => {
   const adapter = makeStarNetAdapter({
@@ -105,7 +104,7 @@ test("StarForge can discover the live StarNet worker roster through the adapter"
   ]);
 });
 
-test("StarForge delegates a governed task through the existing StarNet dispatch seam", () => {
+test("StarForge delegates a governed task through the existing StarNet dispatch seam", async () => {
   let request;
   const adapter = makeStarNetAdapter({
     roster: () => new Map([["researcher-1", { name: "Researcher", model: "model-a" }]]),
@@ -115,7 +114,7 @@ test("StarForge delegates a governed task through the existing StarNet dispatch 
     },
   });
 
-  const result = adapter.delegateTask(ROLES.CEO, {
+  const result = await adapter.delegateTask(ROLES.CEO, {
     id: "task-1",
     projectId: "project-1",
     assigneeId: "researcher-1",
@@ -133,18 +132,46 @@ test("StarForge delegates a governed task through the existing StarNet dispatch 
   assert.equal(request.workers[0].context, "Use the company's current revenue objective.");
 });
 
-test("StarNet adapter fails closed for unauthorized or unknown worker delegation", () => {
+test("StarNet adapter fails closed for unauthorized or unknown worker delegation", async () => {
   const adapter = makeStarNetAdapter({
     roster: () => new Map([["researcher-1", { name: "Researcher" }]]),
     dispatch: () => ({ content: "should not run" }),
   });
 
-  assert.throws(
+  await assert.rejects(
     () => adapter.delegateTask(ROLES.PA, { assigneeId: "researcher-1", title: "Research" }),
     /Unauthorized action/,
   );
-  assert.throws(
+  await assert.rejects(
     () => adapter.delegateTask(ROLES.CEO, { assigneeId: "missing-worker", title: "Research" }),
     /not present in the live roster/,
   );
+});
+
+
+test("StarForge adapter can drive the real StarNet team.dispatch engine", async () => {
+  const runCalls = [];
+  const dispatchTool = makeOrchestrationTools({
+    runOnce: async (options) => {
+      runCalls.push(options);
+      return { reason: "done", messages: [{ role: "assistant", content: "worker completed the governed research task" }], usd: 0.1 };
+    },
+    roster: () => new Map([["researcher-1", { name: "Researcher", model: "model-a", system: "RESEARCH SYSTEM" }]]),
+    key: "test-key", model: "lead-model",
+    newId: (() => { let n = 0; return () => "bridge-run-" + (++n); })(),
+  });
+  const adapter = makeStarNetAdapter({
+    roster: () => new Map([["researcher-1", { name: "Researcher", model: "model-a", capabilities: ["research"] }]]),
+    dispatch: (request) => dispatchTool.run(request, { agentId: "starforge-ceo", emit: () => {}, signal: new AbortController().signal }),
+  });
+  const result = await adapter.delegateTask(ROLES.CEO, {
+    id: "task-real-engine-1", projectId: "project-bridge", assigneeId: "researcher-1",
+    title: "Research qualified leads", successCriteria: "Return a concise sourced lead list",
+    context: "This request came through StarForge governance.",
+  });
+  assert.equal(runCalls.length, 1);
+  assert.equal(runCalls[0].agentId, "researcher-1");
+  assert.match(runCalls[0].messages.at(-1).content, /Research qualified leads/);
+  assert.match(runCalls[0].messages.at(-1).content, /Success criteria/);
+  assert.equal(result.result.content.includes("worker completed the governed research task"), true);
 });
