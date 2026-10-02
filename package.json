@@ -162,10 +162,10 @@
     "release:promotion-gate": "node scripts/release-promotion-gate.mjs",
     "security:secrets": "node scripts/scan-history-secrets.mjs",
     "eval:skills": "node scripts/eval/skills.mjs",
-    "test:governance": "node --test test/governance.test.js test/governance.testing.test.js",
-    "starforge:test": "node --test test/governance.test.js test/governance.testing.test.js",
+    "test:governance": "node --test test/governance.test.mjs test/governance.testing.test.mjs",
+    "starforge:test": "node --test test/governance.test.mjs test/governance.testing.test.mjs",
     "starforge:mobile-test": "node scripts/starforge-mobile-test.mjs",
-    "test:starforge:android9": "node --test test/starforge.android9.test.js"
+    "test:starforge:android9": "node --test test/starforge.android9.test.mjs"
   },
   "devDependencies": {
     "@napi-rs/canvas": "0.1.100",
