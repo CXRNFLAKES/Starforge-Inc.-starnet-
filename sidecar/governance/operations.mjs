@@ -105,7 +105,10 @@ export function makeOperations({ company, starnet = null } = {}) {
     if (project.status === "cancelled" || project.status === "completed") {
       throw new Error("Cannot delegate into a closed project");
     }
-    const worker = starnet.listWorkers().find((item) => item.id === String(assigneeId).trim());
+    const roster = typeof starnet.listWorkersAsync === "function"
+      ? await starnet.listWorkersAsync()
+      : await starnet.listWorkers();
+    const worker = roster.find((item) => item.id === String(assigneeId).trim());
     if (!worker) throw new Error("StarNet worker is not present in the live roster");
 
     const now = new Date().toISOString();
@@ -198,7 +201,7 @@ export function makeOperations({ company, starnet = null } = {}) {
     });
   }
 
-  function inspectStarNetWorkforce(actorRole, { activeRuns = [] } = {}) {
+  async function inspectStarNetWorkforce(actorRole, { activeRuns = [] } = {}) {
     if (![ROLES.CEO, ROLES.PA, ROLES.VICE_CEO].includes(actorRole)) {
       throw new Error("Only the CEO, PA, or StarNet Vice CEO may inspect the StarNet workforce");
     }
@@ -207,7 +210,7 @@ export function makeOperations({ company, starnet = null } = {}) {
       throw new Error("StarNet adapter workforce inspection is required");
     }
 
-    const snapshot = starnet.inspectWorkforce({ activeRuns });
+    const snapshot = await starnet.inspectWorkforce({ activeRuns });
     return clone({
       ...snapshot,
       reviewScope: actorRole === ROLES.PA ? "independent-oversight"
