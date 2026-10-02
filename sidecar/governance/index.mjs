@@ -5,3 +5,5 @@ export * from "./board.mjs";
 export * from "./risk-engine.mjs";
 export * from "./fact-checker.mjs";
 export * from "./decision-packet.mjs";
+
+export * from "./operations.mjs";
