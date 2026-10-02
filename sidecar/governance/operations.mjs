@@ -62,7 +62,7 @@ export function makeOperations({ company } = {}) {
     if (actorRole !== ROLES.CEO) throw new Error("Only the CEO may delegate operational tasks");
     if (!projectId || !title || !assigneeId) throw new Error("Project, task title, and assignee are required");
 
-    const project = state.projects.find((item) => item.id === projectId);
+    const project = company.snapshot().projects.find((item) => item.id === projectId);
     if (!project) throw new Error("Unknown project");
     if (project.status === "cancelled" || project.status === "completed") {
       throw new Error("Cannot delegate into a closed project");
