@@ -35,6 +35,11 @@ export function defaultState() {
     boardMeetings: [],
     decisionPackets: [],
     audit: [],
+    finance: {
+      currency: "EUR",
+      openingCapital: 0,
+      entries: [],
+    },
   };
 }
 
@@ -53,6 +58,11 @@ function normalize(state) {
     boardMeetings: Array.isArray(state?.boardMeetings) ? state.boardMeetings : [],
     decisionPackets: Array.isArray(state?.decisionPackets) ? state.decisionPackets : [],
     audit: Array.isArray(state?.audit) ? state.audit : [],
+    finance: {
+      ...base.finance,
+      ...(state?.finance ?? {}),
+      entries: Array.isArray(state?.finance?.entries) ? state.finance.entries : [],
+    },
   };
 }
 
@@ -199,6 +209,45 @@ export function makeCompany({ load, save } = {}) {
       this.audit(actorRole, "governance.decision-packet.recorded", { packetId: entry.id, requestId: entry.request.id }, false);
       persist();
       return structuredClone(entry);
+    },
+
+    recordFinanceEntry(actorRole, entry) {
+      assertCan(actorRole, ACTIONS.FINANCE_RECORD);
+      if (!entry?.id || !entry?.kind || !entry?.amount || !entry?.currency) {
+        throw new Error("Finance entry requires id, kind, amount, and currency");
+      }
+      const amount = Number(entry.amount);
+      if (!Number.isFinite(amount) || amount <= 0) throw new Error("Finance entry amount must be positive");
+      const kind = String(entry.kind);
+      if (!["capital-injection", "revenue", "expense", "tax-reserve", "liability", "liability-payment"].includes(kind)) {
+        throw new Error("Invalid finance entry kind");
+      }
+      const currency = String(entry.currency).toUpperCase();
+      if (currency !== state.finance.currency) throw new Error("Finance entry currency does not match company currency");
+      const recorded = {
+        ...structuredClone(entry),
+        id: String(entry.id),
+        kind,
+        amount,
+        currency,
+        recordedBy: actorRole,
+        recordedAt: entry.recordedAt ?? new Date().toISOString(),
+      };
+      state.finance.entries.push(recorded);
+      state.company.updatedAt = recorded.recordedAt;
+      this.audit(actorRole, "finance.entry.recorded", { entryId: recorded.id, kind, amount }, false);
+      persist();
+      return structuredClone(recorded);
+    },
+
+    financeSnapshot(actorRole) {
+      assertCan(actorRole, ACTIONS.FINANCE_REPORT);
+      return this._financeSnapshot();
+    },
+
+    capitalSnapshot(actorRole) {
+      assertCan(actorRole, ACTIONS.COMPANY_READ);
+      return this._financeSnapshot({ summaryOnly: true });
     },
 
     recordDecision(actorRole, decision) {
