@@ -89,10 +89,11 @@ export function makeCompany({ load, save } = {}) {
       currency: state.finance.currency,
       openingCapital: Number(state.finance.openingCapital) || 0,
       cash,
-      availableCash: Math.max(0, cash - taxReserve),
+      // Tax reserves are already removed from cash above. Do not subtract the reserve a second time.
+      availableCash: Math.max(0, cash),
       taxReserve,
       liabilities,
-      netOperatingCapital: Math.max(0, cash - taxReserve) - liabilities,
+      netOperatingCapital: Math.max(0, cash) - liabilities,
       entryCount: entries.length,
     };
     return summaryOnly ? summary : { ...summary, entries: structuredClone(entries) };
