@@ -1,0 +1,205 @@
+import { ACTIONS, assertCan } from "./authority.mjs";
+import { ROLES } from "./roles.mjs";
+import { makeTestingCompany } from "./testing.mjs";
+
+export const INTEGRATION_MODE = "testing";
+export const SIDE_EFFECTS = "none";
+
+function clone(value) {
+  return structuredClone(value);
+}
+
+export function makeIntegrationLab(overrides = {}) {
+  const company = makeTestingCompany({
+    mission: overrides.mission ?? "TEST: Operate StarForge as a governed AI company",
+    objective: overrides.objective ?? "TEST: validate PA, Board, CEO, Risk, CHO, approval, and recovery flows",
+  });
+
+  const state = {
+    mode: INTEGRATION_MODE,
+    sideEffects: SIDE_EFFECTS,
+    requests: [],
+    riskAssessments: [],
+    meetings: [],
+    approvals: [],
+    recoveries: [],
+    events: [],
+  };
+
+  const emit = (actorRole, event, details = {}) => {
+    company.audit(actorRole, event, details);
+    state.events.push({ actorRole, event, details: clone(details) });
+  };
+
+  return {
+    snapshot() {
+      return {
+        company: company.snapshot(),
+        lab: clone(state),
+      };
+    },
+
+    requestExpense(actorRole, request) {
+      assertCan(actorRole, ACTIONS.CEO_REQUEST_APPROVAL);
+      if (!request?.id || !request?.amount || !request?.currency || !request?.purpose) {
+        throw new Error("Expense request requires id, amount, currency, and purpose");
+      }
+      const entry = {
+        ...request,
+        requestedBy: actorRole,
+        status: "pending-risk",
+      };
+      state.requests.push(entry);
+      emit(actorRole, "governance.request.created", { requestId: entry.id, amount: entry.amount });
+      return clone(entry);
+    },
+
+    assessRisk(actorRole, requestId, assessment = {}) {
+      assertCan(actorRole, ACTIONS.RISK_ASSESS);
+      const request = state.requests.find((item) => item.id === requestId);
+      if (!request) throw new Error(`Unknown request: ${requestId}`);
+      const entry = {
+        requestId,
+        assessorRole: actorRole,
+        rating: assessment.rating ?? "insufficient-information",
+        confidence: assessment.confidence ?? 0,
+        reasons: Array.isArray(assessment.reasons) ? [...assessment.reasons] : [],
+      };
+      state.riskAssessments.push(entry);
+      request.status = "pa-review";
+      emit(actorRole, "risk.assessment.completed", entry);
+      return clone(entry);
+    },
+
+    paReview(actorRole, requestId, review = {}) {
+      assertCan(actorRole, ACTIONS.PA_REVIEW);
+      const request = state.requests.find((item) => item.id === requestId);
+      if (!request) throw new Error(`Unknown request: ${requestId}`);
+      const entry = {
+        requestId,
+        reviewerRole: actorRole,
+        label: review.label ?? "UNVERIFIED CLAIM",
+        findings: Array.isArray(review.findings) ? [...review.findings] : [],
+        recommendation: review.recommendation ?? "request-more-information",
+      };
+      request.status = review.escalateToCho ? "cho-decision" : "board-review";
+      state.riskAssessments.push({ type: "pa-review", ...entry });
+      emit(actorRole, "pa.review.completed", entry);
+      return clone(entry);
+    },
+
+    conveneBoard(actorRole, requestId) {
+      assertCan(actorRole, ACTIONS.BOARD_CONVENE);
+      const meeting = {
+        id: `meeting-${state.meetings.length + 1}`,
+        requestId,
+        chair: actorRole,
+        status: "open",
+      };
+      state.meetings.push(meeting);
+      emit(actorRole, "board.meeting.started", { meetingId: meeting.id, requestId });
+      return clone(meeting);
+    },
+
+    boardDecision(actorRole, requestId, decision = {}) {
+      assertCan(actorRole, ACTIONS.BOARD_DECIDE);
+      const request = state.requests.find((item) => item.id === requestId);
+      if (!request) throw new Error(`Unknown request: ${requestId}`);
+      const entry = {
+        requestId,
+        actorRole,
+        decision: decision.decision ?? "escalate",
+        rationale: decision.rationale ?? "",
+      };
+      request.status = entry.decision === "approve-routine" ? "approved" : "cho-decision";
+      emit(actorRole, "board.decision", entry);
+      return clone(entry);
+    },
+
+    choDecision(actorRole, requestId, decision = {}) {
+      assertCan(actorRole, ACTIONS.CHO_DECIDE);
+      const request = state.requests.find((item) => item.id === requestId);
+      if (!request) throw new Error(`Unknown request: ${requestId}`);
+      const allowed = new Set(["approve", "deny", "request-changes", "discuss"]);
+      if (!allowed.has(decision.decision)) throw new Error("Invalid CHO decision");
+      request.status = decision.decision === "approve" ? "approved" :
+        decision.decision === "deny" ? "denied" : "needs-changes";
+      const entry = { requestId, actorRole, decision: decision.decision, rationale: decision.rationale ?? "" };
+      state.approvals.push(entry);
+      company.recordDecision(actorRole, entry);
+      emit(actorRole, "approval.cho-decision", entry);
+      return clone(entry);
+    },
+
+    executeApproved(actorRole, requestId) {
+      assertCan(actorRole, ACTIONS.APPROVAL_EXECUTE);
+      const request = state.requests.find((item) => item.id === requestId);
+      if (!request) throw new Error(`Unknown request: ${requestId}`);
+      if (request.status !== "approved") throw new Error("Only approved requests may execute");
+      request.status = "simulated-executed";
+      emit(actorRole, "expense.execution.simulated", { requestId });
+      return clone(request);
+    },
+
+    recover(actorRole, recovery) {
+      assertCan(actorRole, ACTIONS.CEO_OPERATE);
+      const entry = {
+        agentId: recovery.agentId,
+        reason: recovery.reason ?? "failed task",
+        mission: recovery.mission ?? "repair and verify failed work",
+        status: "assigned",
+      };
+      state.recoveries.push(entry);
+      emit(actorRole, "recovery.mission.assigned", entry);
+      return clone(entry);
+    },
+
+    assertSafe() {
+      const snapshot = this.snapshot();
+      if (snapshot.lab.mode !== INTEGRATION_MODE || snapshot.lab.sideEffects !== SIDE_EFFECTS) {
+        throw new Error("Integration lab is not in safe testing mode");
+      }
+      return true;
+    },
+  };
+}
+
+export function runIntegrationScenario() {
+  const lab = makeIntegrationLab();
+  const expense = lab.requestExpense(ROLES.CEO, {
+    id: "expense-demo-001",
+    amount: 250,
+    currency: "EUR",
+    purpose: "TEST: prototype research budget",
+  });
+
+  lab.assessRisk(ROLES.RISK, expense.id, {
+    rating: "medium",
+    confidence: 0.9,
+    reasons: ["prototype spend", "limited amount", "return not yet proven"],
+  });
+
+  lab.paReview(ROLES.PA, expense.id, {
+    label: "SUPPORTED ESTIMATE",
+    findings: ["No provider or payment system is connected in this test"],
+    recommendation: "escalate-to-board",
+  });
+
+  lab.conveneBoard(ROLES.BOARD, expense.id);
+  lab.boardDecision(ROLES.BOARD, expense.id, {
+    decision: "escalate",
+    rationale: "Simulation requires CHO decision for non-routine risk",
+  });
+  lab.choDecision(ROLES.CHO, expense.id, {
+    decision: "approve",
+    rationale: "TEST: explicitly approved by human authority",
+  });
+  lab.executeApproved(ROLES.CHO, expense.id);
+  lab.recover(ROLES.CEO, {
+    agentId: "worker-demo-001",
+    reason: "simulated failed research task",
+  });
+
+  lab.assertSafe();
+  return lab.snapshot();
+}
