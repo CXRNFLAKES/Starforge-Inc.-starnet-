@@ -31,7 +31,18 @@ function makeStarForgeGovernanceHandler({ workspace, roster, runsMeta } = {}) {
   return async function handleStarForgeGovernance(req, res) {
     try {
       const c = await company();
-      const capital = c.capitalSnapshot('pa');
+      const finance = c.financeTelemetrySnapshot('pa', { limit: 5 });
+      const capital = {
+        currency: finance.currency,
+        openingCapital: finance.openingCapital,
+        cash: finance.cash,
+        availableCash: finance.availableCash,
+        taxReserve: finance.taxReserve,
+        liabilities: finance.liabilities,
+        netOperatingCapital: finance.netOperatingCapital,
+        entryCount: finance.entryCount,
+        source: 'starforge-governed-company-ledger'
+      };
       const workers = Array.from(roster || []).map(([agentId, agent]) => {
         const runs = Array.from(runsMeta || []).filter(([, meta]) => String(meta.agentId || '') === String(agentId));
         return {
@@ -49,6 +60,7 @@ function makeStarForgeGovernanceHandler({ workspace, roster, runsMeta } = {}) {
         ok: true,
         source: 'starforge-governance',
         capital,
+        finance,
         workforce: {
           source: 'live-starnet-runtime',
           workerCount: workers.length,
