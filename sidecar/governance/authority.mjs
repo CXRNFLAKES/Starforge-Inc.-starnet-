@@ -16,6 +16,7 @@ export const ACTIONS = Object.freeze({
   STARNET_REPORT: "starnet.report",
   FINANCE_RECORD: "finance.record",
   FINANCE_REPORT: "finance.report",
+  FINANCE_TELEMETRY: "finance.telemetry",
   RISK_ASSESS: "risk.assess",
   APPROVAL_EXECUTE: "approval.execute",
   WORKER_EXECUTE: "worker.execute",
@@ -26,6 +27,7 @@ const roleActions = Object.freeze({
   [ROLES.PA]: new Set([
     ACTIONS.COMPANY_READ, ACTIONS.PA_ADVISE_CHO, ACTIONS.PA_REVIEW,
     ACTIONS.PA_INVESTIGATE, ACTIONS.BOARD_CONVENE, ACTIONS.RISK_ASSESS,
+    ACTIONS.FINANCE_TELEMETRY,
   ]),
   [ROLES.BOARD]: new Set([
     ACTIONS.COMPANY_READ, ACTIONS.BOARD_CONVENE, ACTIONS.BOARD_DECIDE,
