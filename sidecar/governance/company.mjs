@@ -13,9 +13,17 @@ export function defaultState() {
       name: "StarForge",
       mission: "",
       objective: "",
+      status: "active",
+      phase: 1,
+      cho: {
+        id: "cho",
+        name: "Human Owner",
+        role: ROLES.CHO,
+      },
       createdAt: now,
       updatedAt: now,
     },
+    objectives: [],
     people: [
       { id: "cho", name: "CHO", role: ROLES.CHO },
       { id: "main-overseer", name: "Main Overseer", role: ROLES.PA },
@@ -34,6 +42,7 @@ function normalize(state) {
     ...state,
     company: { ...base.company, ...(state?.company ?? {}) },
     people: Array.isArray(state?.people) ? state.people : base.people,
+    objectives: Array.isArray(state?.objectives) ? state.objectives : [],
     decisions: Array.isArray(state?.decisions) ? state.decisions : [],
     audit: Array.isArray(state?.audit) ? state.audit : [],
   };
@@ -49,6 +58,15 @@ export function makeCompany({ load, save } = {}) {
       return structuredClone(state);
     },
 
+    setChoProfile(actorRole, { id = "cho", name = "Human Owner" } = {}) {
+      assertCan(actorRole, ACTIONS.COMPANY_CONFIGURE);
+      state.company.cho = { id: String(id), name: String(name), role: ROLES.CHO };
+      state.company.updatedAt = new Date().toISOString();
+      this.audit(actorRole, "company.cho.profile.updated", { choId: state.company.cho.id });
+      persist();
+      return this.snapshot();
+    },
+
     setMission(actorRole, { mission = "", objective = "" } = {}) {
       assertCan(actorRole, ACTIONS.COMPANY_CONFIGURE);
       state.company.mission = String(mission);
@@ -57,6 +75,24 @@ export function makeCompany({ load, save } = {}) {
       this.audit(actorRole, "company.mission.updated", { mission, objective });
       persist();
       return this.snapshot();
+    },
+
+    createObjective(actorRole, { title, description = "", status = "active" } = {}) {
+      assertCan(actorRole, ACTIONS.COMPANY_CONFIGURE);
+      if (!title) throw new Error("Objective title is required");
+      const objective = {
+        id: randomUUID(),
+        title: String(title),
+        description: String(description),
+        status: String(status),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      state.objectives.push(objective);
+      state.company.updatedAt = objective.updatedAt;
+      this.audit(actorRole, "company.objective.created", { objectiveId: objective.id });
+      persist();
+      return structuredClone(objective);
     },
 
     registerPerson(actorRole, person) {
