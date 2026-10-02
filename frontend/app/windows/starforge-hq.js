@@ -1,4 +1,5 @@
 'use strict';
+// Economic campaign ceiling: LVL 100 = €10M net operating capital. The live finance bridge will supply the actual balance.
 (function(){
   if(typeof document==='undefined'||typeof StationUI==='undefined'||!StationUI.registerWindow)return;
   const esc=StationUI.h.esc;
