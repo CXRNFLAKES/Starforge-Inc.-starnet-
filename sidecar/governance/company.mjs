@@ -159,7 +159,11 @@ export function makeCompany({ load, save } = {}) {
     },
 
     updateTask(actorRole, task) {
-      const allowed = actorRole === ROLES.CEO ? ACTIONS.CEO_OPERATE : ACTIONS.WORKER_EXECUTE;
+      const allowed = actorRole === ROLES.CEO
+        ? ACTIONS.CEO_OPERATE
+        : actorRole === ROLES.VICE_CEO
+          ? ACTIONS.STARNET_DELEGATE
+          : ACTIONS.WORKER_EXECUTE;
       assertCan(actorRole, allowed);
       const index = state.tasks.findIndex((item) => item.id === task?.id);
       if (index < 0) throw new Error("Unknown task");
