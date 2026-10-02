@@ -312,6 +312,7 @@ const WorldModel = (() => {
      and nothing is destroyed. It also means the Guardian goldens all shift. */
   const ROOM_KINDS = {
     hab:      { label: 'HAB',      floor: 'hull',     mat: 'spine' },
+    starforge_hq: { label: 'STARFORGE HQ', floor: 'cobalt', mat: 'panel' },
     bridge:   { label: 'BRIDGE',   floor: 'cobalt',   mat: 'panel' },
     lab:      { label: 'LAB',      floor: 'sterile',  mat: 'tile'  },
     factory:  { label: 'FOUNDRY',  floor: 'rust',     mat: 'tread' },
