@@ -10,6 +10,54 @@ function safeMethod(req) {
   return String(req.method || "GET").toUpperCase();
 }
 
+function financeSummary(state) {
+  const finance = state?.finance ?? {};
+  const currency = String(finance.currency ?? "EUR").toUpperCase();
+  let cash = Number(finance.openingCapital) || 0;
+  let taxReserve = 0;
+  let liabilities = 0;
+  const entries = Array.isArray(finance.entries) ? finance.entries : [];
+
+  for (const entry of entries) {
+    const amount = Number(entry.amount);
+    if (!Number.isFinite(amount) || amount <= 0 || String(entry.currency ?? "").toUpperCase() !== currency) continue;
+    switch (entry.kind) {
+      case "capital-injection":
+      case "revenue":
+        cash += amount;
+        break;
+      case "expense":
+        cash -= amount;
+        break;
+      case "tax-reserve":
+        cash -= amount;
+        taxReserve += amount;
+        break;
+      case "liability":
+        liabilities += amount;
+        break;
+      case "liability-payment":
+        cash -= amount;
+        liabilities = Math.max(0, liabilities - amount);
+        break;
+      default:
+        break;
+    }
+  }
+
+  return {
+    currency,
+    openingCapital: Number(finance.openingCapital) || 0,
+    cash,
+    availableCash: Math.max(0, cash),
+    taxReserve,
+    liabilities,
+    netOperatingCapital: Math.max(0, cash) - liabilities,
+    entryCount: entries.length,
+    source: "starforge-governed-company-ledger",
+  };
+}
+
 export function makeStarForgeGovernanceHandler({ workspace, roster = new Map(), runsMeta = new Map() } = {}) {
   if (!workspace) throw new TypeError("StarForge governance workspace is required");
   const list = () => roster instanceof Map
@@ -32,6 +80,9 @@ export function makeStarForgeGovernanceHandler({ workspace, roster = new Map(), 
       persisted = JSON.parse(await readFile(file, "utf8"));
     } catch (_) {}
 
+    const workers = list();
+    const activeRuns = runs();
+
     return send(res, 200, {
       ok: true,
       mode: "android-9-test",
@@ -39,8 +90,13 @@ export function makeStarForgeGovernanceHandler({ workspace, roster = new Map(), 
       readOnly: true,
       workspace,
       company: persisted,
-      workforce: { workers: list(), count: list().length },
-      activeRuns: runs(),
+      capital: financeSummary(persisted),
+      workforce: {
+        workers,
+        count: workers.length,
+        source: "starnet-live-roster",
+      },
+      activeRuns,
     });
   };
 }
