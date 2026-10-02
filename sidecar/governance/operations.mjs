@@ -100,14 +100,14 @@ export function makeOperations({ company } = {}) {
     return clone(task);
   }
 
-  function updateTask(actorRole, taskId, { status, note = "" } = {}) {
+  function updateTask(actorRole, taskId, { actorId = null, status, note = "" } = {}) {
     const task = state.tasks.find((item) => item.id === taskId);
     if (!task) throw new Error("Unknown task");
     const assignee = person(task.assigneeId);
 
     if (actorRole === ROLES.CEO) {
       requireRole(actorRole, ACTIONS.CEO_OPERATE);
-    } else if (assignee?.role === actorRole) {
+    } else if (actorId === task.assigneeId && assignee?.role === actorRole) {
       requireRole(actorRole, ACTIONS.WORKER_EXECUTE);
     } else {
       throw new Error("Unauthorized task update");
