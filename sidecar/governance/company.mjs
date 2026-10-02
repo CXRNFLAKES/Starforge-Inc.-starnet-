@@ -31,6 +31,7 @@ export function defaultState() {
       { id: "sub-overseer", name: "Sub-Overseer", role: ROLES.CEO },
     ],
     decisions: [],
+    boardMeetings: [],
     audit: [],
   };
 }
@@ -44,6 +45,7 @@ function normalize(state) {
     people: Array.isArray(state?.people) ? state.people : base.people,
     objectives: Array.isArray(state?.objectives) ? state.objectives : [],
     decisions: Array.isArray(state?.decisions) ? state.decisions : [],
+    boardMeetings: Array.isArray(state?.boardMeetings) ? state.boardMeetings : [],
     audit: Array.isArray(state?.audit) ? state.audit : [],
   };
 }
