@@ -75,3 +75,12 @@ test('StarForge HQ renders only the bounded governed finance telemetry feed',()=
   assert.match(hq,/finance\?\.recentEntries/);
   assert.doesNotMatch(hq,/company\?\.finance\?\.entries/);
 });
+
+
+test('StarForge HQ renders governed mission and project state read-only',()=>{
+  assert.match(hq,/data-mission="title"/);
+  assert.match(hq,/data-mission="objective"/);
+  assert.match(hq,/company\?\.projects/);
+  assert.match(hq,/projects\.slice\(-5\)/);
+  assert.match(hq,/Mission Control/i);
+});
