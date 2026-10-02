@@ -15,5 +15,6 @@ jobs:
         with:
           node-version: 18
       - run: npm ci
+      - run: npm run starforge:preflight
       - run: npm run starforge:test
       - run: node --test test/starforge.android9.test.mjs
