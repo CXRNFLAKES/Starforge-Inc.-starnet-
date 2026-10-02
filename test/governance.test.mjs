@@ -6,7 +6,7 @@ import { defaultState, makeCompany } from "../sidecar/governance/company.mjs";
 
 test("defines the StarForge constitutional roles", () => {
   assert.deepEqual(Object.values(ROLES), [
-    "cho", "pa", "board", "ceo", "accountant", "cfo", "risk", "executive", "worker"
+    "cho", "pa", "board", "ceo", "vice-ceo", "accountant", "cfo", "risk", "executive", "worker"
   ]);
 });
 
@@ -36,8 +36,9 @@ test("default company contains the executive structure", () => {
   const state = defaultState();
   assert.equal(state.company.id, "starforge");
   assert.deepEqual(state.company.cho, { id: "cho", name: "Human Owner", role: ROLES.CHO });
-  assert.equal(state.people.find(p => p.role === ROLES.PA).name, "Main Overseer");
-  assert.equal(state.people.find(p => p.role === ROLES.CEO).name, "Sub-Overseer");
+  assert.equal(state.people.find(p => p.role === ROLES.PA).name, "PA / Chief of Staff");
+  assert.equal(state.people.find(p => p.role === ROLES.CEO).name, "StarForge CEO");
+  assert.equal(state.people.find(p => p.role === ROLES.VICE_CEO).name, "StarNet Vice CEO");
 });
 
 test("company mutations require CHO authority", () => {
@@ -55,7 +56,6 @@ test("decision recording is CHO-reserved", () => {
   assert.equal(decision.title, "test");
   assert.equal(company.snapshot().decisions.length, 1);
 });
-
 
 test("company identity establishes the human CHO and Phase 1 state", () => {
   const company = makeCompany();
@@ -141,7 +141,6 @@ test("CHO cannot record a second decision for the same request", () => {
     rationale: "second",
   }), /already recorded/);
 });
-
 
 test("CHO request decisions require a valid decision and non-empty rationale", () => {
   const company = makeCompany();
