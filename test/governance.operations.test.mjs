@@ -45,3 +45,27 @@ test("workers can update their assigned tasks but cannot update another worker's
   assert.equal(updated.status, "in-progress");
   assert.throws(() => operations.updateTask(ROLES.WORKER, task.id, { actorId: "worker-b", status: "completed" }), /Unauthorized task update/);
 });
+
+test("projects and tasks survive company persistence", () => {
+  let stored;
+  const firstCompany = makeCompany({
+    save: (snapshot) => { stored = snapshot; },
+  });
+  const firstOperations = makeOperations({ company: firstCompany });
+  const project = firstOperations.createProject(ROLES.CEO, { title: "Persistent project" });
+  const task = firstOperations.delegateTask(ROLES.CEO, {
+    projectId: project.id,
+    title: "Persistent task",
+    assigneeId: "main-overseer",
+  });
+
+  assert.equal(stored.projects.length, 1);
+  assert.equal(stored.tasks.length, 1);
+
+  const restoredCompany = makeCompany({ load: () => stored });
+  const restoredOperations = makeOperations({ company: restoredCompany });
+  const snapshot = restoredOperations.inspect({ projectId: project.id });
+
+  assert.equal(snapshot.projects[0].id, project.id);
+  assert.equal(snapshot.tasks[0].id, task.id);
+});
