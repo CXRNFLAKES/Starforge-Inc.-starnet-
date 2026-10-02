@@ -97,6 +97,34 @@ export function makeCompany({ load, save } = {}) {
       return structuredClone(objective);
     },
 
+    recordBoardMeeting(actorRole, meeting) {
+      assertCan(actorRole, ACTIONS.BOARD_CONVENE);
+      if (!meeting?.id || !meeting?.objective) throw new Error("Invalid board meeting");
+      state.boardMeetings.push(structuredClone(meeting));
+      state.company.updatedAt = meeting.updatedAt;
+      this.audit(actorRole, "board.meeting.convened", {
+        meetingId: meeting.id,
+        objective: meeting.objective,
+      }, false);
+      persist();
+      return structuredClone(meeting);
+    },
+
+    updateBoardMeeting(actorRole, meeting) {
+      assertCan(actorRole, ACTIONS.BOARD_DECIDE);
+      const index = state.boardMeetings.findIndex((item) => item.id === meeting?.id);
+      if (index < 0) throw new Error("Unknown board meeting");
+      state.boardMeetings[index] = structuredClone(meeting);
+      state.company.updatedAt = meeting.updatedAt;
+      this.audit(actorRole, "board.decision.recorded", {
+        meetingId: meeting.id,
+        decisionCount: meeting.decisions?.length ?? 0,
+        actionItemCount: meeting.actionItems?.length ?? 0,
+      }, false);
+      persist();
+      return structuredClone(meeting);
+    },
+
     registerPerson(actorRole, person) {
       assertCan(actorRole, ACTIONS.COMPANY_CONFIGURE);
       if (!person?.id || !person?.name || !person?.role) throw new Error("Invalid person");
