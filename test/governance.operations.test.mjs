@@ -156,7 +156,7 @@ test("StarNet adapter fails closed for unauthorized or unknown worker delegation
 
 test("StarForge adapter can drive the real StarNet team.dispatch engine", async () => {
   const runCalls = [];
-  const dispatchTool = makeOrchestrationTools({
+  const orchestration = makeOrchestrationTools({
     runOnce: async (options) => {
       runCalls.push(options);
       return { reason: "done", messages: [{ role: "assistant", content: "worker completed the governed research task" }], usd: 0.1 };
@@ -165,11 +165,10 @@ test("StarForge adapter can drive the real StarNet team.dispatch engine", async 
     key: "test-key", model: "lead-model",
     newId: (() => { let n = 0; return () => "bridge-run-" + (++n); })(),
   });
-  const dispatch = typeof dispatchTool.run === "function"
+  const dispatchTool = orchestration.dispatchTool;
+  const dispatch = dispatchTool && typeof dispatchTool.run === "function"
     ? dispatchTool.run.bind(dispatchTool)
-    : (dispatchTool.run && typeof dispatchTool.run.run === "function"
-      ? dispatchTool.run.run.bind(dispatchTool.run)
-      : null);
+    : null;
   assert.equal(typeof dispatch, "function");
 
   const adapter = makeStarNetAdapter({
