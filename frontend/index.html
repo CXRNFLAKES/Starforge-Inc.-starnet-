@@ -51,6 +51,7 @@
 <link rel="stylesheet" href="css/overseer-setup.css">
 <link rel="stylesheet" href="css/comms-layout.css">
 <link rel="stylesheet" href="css/project-home.css">
+<link rel="stylesheet" href="css/starforge-hq.css">
 
 <link rel="stylesheet" href="css/titlebar.css"><!-- custom window chrome (Windows desktop shell): themed titlebar + MIN/MAX/CLOSE; inert unless body.sn-chrome (titlebar.js) -->
 
@@ -695,7 +696,7 @@
              ROUTINES = WHEN it runs, LOOPS = UNTIL it is done, TASKS = WHERE live work sits,
              QUESTS = progress only. -->
 
-        <button class="bb" data-term="tasks" data-hint="task"><span class="bb-i">☑</span><span class="bb-tx"><b>TASKS</b><small>track planned work, review results &amp; mark complete</small></span></button>
+        <button class="bb" data-term="tasks" data-hint="task"><span class="bb-i">☑</span><span class="bb-tx"><b>TASKS</b><small>track planned work, review results &amp; mark complete</small></span></button><button class="bb" data-term="starforge-hq"><span class="bb-i">★</span><span class="bb-tx"><b>STARFORGE HQ</b><small>company command room — live StarNet workforce</small></span></button>
         <button class="bb" data-term="deliverables" data-hint="deliverable"><span class="bb-i">▣</span><span class="bb-tx"><b>DELIVERABLES</b><small>outputs, Workshop builds &amp; cleanup</small></span></button>
         <button class="bb" id="bb-missions" data-hint="recipe"><span class="bb-i">❒</span><span class="bb-tx"><b>RECIPES</b><small>ready-made jobs to launch — they land on TASKS</small></span></button>
         <button class="bb" data-term="automation" data-hint="automation"><span class="bb-i">∞</span><span class="bb-tx"><b>AUTOMATION</b><small>routines &amp; loops — any job on a schedule, or repeated until it’s done</small></span></button>
@@ -903,7 +904,8 @@
 <script src="app/schedpicker.js"></script><!-- the WHEN builder (cadence keys + day chips + clock) the ROUTINES lane mounts; types a real schedule into the same text input the form always posted -->
 <script src="app/windows/routines.js"></script><!-- ROUTINES lane — scheduled autonomous runs (thin CRUD client over /api/cron) -->
 <script src="app/windows/loops.js"></script><!-- LOOPS lane — standing objectives (thin polling client over /api/loops); needs loop-templates.js above -->
-<script src="app/windows/connectors.js"></script><!-- TOOLSETS & CONNECTORS — toolset kill-switches, MCP manager, catalog + service keys (Spotify flow embedded) -->
+<script src="app/windows/connectors.js"></script>
+<script src="app/windows/starforge-hq.js"></script><!-- TOOLSETS & CONNECTORS — toolset kill-switches, MCP manager, catalog + service keys (Spotify flow embedded) -->
 <script src="app/windows/messaging.js"></script><!-- CHANNELS — messaging platforms catalog (Telegram/Discord/Slack/Matrix/Signal cards) -->
 <script src="app/navdock.js"></script>
 <script src="app/emergency-control.js"></script>
