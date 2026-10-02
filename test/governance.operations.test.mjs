@@ -3,6 +3,11 @@ import assert from "node:assert/strict";
 import { ROLES } from "../sidecar/governance/roles.mjs";
 import { makeCompany } from "../sidecar/governance/company.mjs";
 import { makeOperations } from "../sidecar/governance/operations.mjs";
+import { makeStarNetAdapter } from "../sidecar/governance/starnet-adapter.mjs";
+import { createRequire } from "node:module";
+
+const require = createRequire(import.meta.url);
+const { makeOrchestrationTools } = require("../sidecar/tools/builtin/orchestration.js");
 
 test("CEO can create projects and delegate tasks without CHO execution authority", () => {
   const company = makeCompany();
