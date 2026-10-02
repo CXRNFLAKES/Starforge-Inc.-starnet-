@@ -71,6 +71,33 @@ export function makeCompany({ load, save } = {}) {
 
   const persist = () => save?.(structuredClone(state));
 
+  function financeData({ summaryOnly = false } = {}) {
+    const entries = state.finance.entries;
+    let cash = Number(state.finance.openingCapital) || 0;
+    let taxReserve = 0;
+    let liabilities = 0;
+    for (const entry of entries) {
+      const amount = Number(entry.amount);
+      if (!Number.isFinite(amount) || amount <= 0) continue;
+      if (entry.kind === "capital-injection" || entry.kind === "revenue") cash += amount;
+      else if (entry.kind === "expense") cash -= amount;
+      else if (entry.kind === "tax-reserve") { cash -= amount; taxReserve += amount; }
+      else if (entry.kind === "liability") liabilities += amount;
+      else if (entry.kind === "liability-payment") { cash -= amount; liabilities = Math.max(0, liabilities - amount); }
+    }
+    const summary = {
+      currency: state.finance.currency,
+      openingCapital: Number(state.finance.openingCapital) || 0,
+      cash,
+      availableCash: Math.max(0, cash - taxReserve),
+      taxReserve,
+      liabilities,
+      netOperatingCapital: Math.max(0, cash - taxReserve) - liabilities,
+      entryCount: entries.length,
+    };
+    return summaryOnly ? summary : { ...summary, entries: structuredClone(entries) };
+  }
+
   return {
     snapshot() { return structuredClone(state); },
 
@@ -242,12 +269,12 @@ export function makeCompany({ load, save } = {}) {
 
     financeSnapshot(actorRole) {
       assertCan(actorRole, ACTIONS.FINANCE_REPORT);
-      return this._financeSnapshot();
+      return financeData();
     },
 
     capitalSnapshot(actorRole) {
       assertCan(actorRole, ACTIONS.COMPANY_READ);
-      return this._financeSnapshot({ summaryOnly: true });
+      return financeData({ summaryOnly: true });
     },
 
     recordDecision(actorRole, decision) {
