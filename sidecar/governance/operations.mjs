@@ -14,11 +14,6 @@ export function makeOperations({ company } = {}) {
     throw new Error("makeOperations requires a company");
   }
 
-  const state = {
-    projects: [],
-    tasks: [],
-  };
-
   function person(id) {
     return company.snapshot().people.find((item) => item.id === id) ?? null;
   }
@@ -45,8 +40,7 @@ export function makeOperations({ company } = {}) {
       createdAt: now,
       updatedAt: now,
     };
-    state.projects.push(project);
-    company.audit(actorRole, "operations.project.created", { projectId: project.id });
+    company.recordProject(actorRole, project);
     return clone(project);
   }
 
@@ -55,11 +49,11 @@ export function makeOperations({ company } = {}) {
     if (actorRole !== ROLES.CEO) throw new Error("Only the CEO may control project status");
     if (!PROJECT_STATUSES.includes(status)) throw new Error("Invalid project status");
 
-    const project = state.projects.find((item) => item.id === projectId);
+    const project = company.snapshot().projects.find((item) => item.id === projectId);
     if (!project) throw new Error("Unknown project");
     project.status = status;
     project.updatedAt = new Date().toISOString();
-    company.audit(actorRole, "operations.project.status", { projectId, status });
+    company.updateProject(actorRole, project);
     return clone(project);
   }
 
@@ -91,17 +85,12 @@ export function makeOperations({ company } = {}) {
       createdAt: now,
       updatedAt: now,
     };
-    state.tasks.push(task);
-    company.audit(actorRole, "operations.task.delegated", {
-      taskId: task.id,
-      projectId,
-      assigneeId,
-    });
+    company.recordTask(actorRole, task);
     return clone(task);
   }
 
   function updateTask(actorRole, taskId, { actorId = null, status, note = "" } = {}) {
-    const task = state.tasks.find((item) => item.id === taskId);
+    const task = company.snapshot().tasks.find((item) => item.id === taskId);
     if (!task) throw new Error("Unknown task");
     const assignee = person(task.assigneeId);
 
@@ -117,14 +106,14 @@ export function makeOperations({ company } = {}) {
     task.status = status;
     task.note = String(note);
     task.updatedAt = new Date().toISOString();
-    company.audit(actorRole, "operations.task.status", { taskId, status });
+    company.updateTask(actorRole, task);
     return clone(task);
   }
 
   function inspect({ projectId = null, assigneeId = null } = {}) {
     return clone({
-      projects: state.projects.filter((item) => !projectId || item.id === projectId),
-      tasks: state.tasks.filter((item) => !projectId || item.projectId === projectId)
+      projects: company.snapshot().projects.filter((item) => !projectId || item.id === projectId),
+      tasks: company.snapshot().tasks.filter((item) => !projectId || item.projectId === projectId)
         .filter((item) => !assigneeId || item.assigneeId === assigneeId),
     });
   }
