@@ -6,7 +6,6 @@ import { join } from "node:path";
 import { makeStarForgeGovernanceHandler } from "../sidecar/governance/http.mjs";
 
 async function request(handler, method="GET") {
-  const chunks=[];
   const res={writeHead(status,headers){this.status=status;this.headers=headers;},end(body){this.body=body;}};
   await handler({method,url:"/api/starforge/governance"},res);
   return {status:res.status,body:JSON.parse(res.body)};
@@ -31,6 +30,17 @@ test("mobile governance feed derives capital from the governed company ledger",a
   assert.equal(result.body.capital.liabilities,250);
   assert.equal(result.body.capital.netOperatingCapital,900);
   assert.equal(result.body.capital.source,"starforge-governed-company-ledger");
+  await import("node:fs/promises").then(({rm})=>rm(workspace,{recursive:true,force:true}));
+});
+
+test("finance telemetry is absent when no governed finance source exists",async()=>{
+  const workspace=await mkdtemp(join(tmpdir(),"starforge-http-no-finance-"));
+  const handler=makeStarForgeGovernanceHandler({workspace});
+  const result=await request(handler);
+  assert.equal(result.status,200);
+  assert.equal(result.body.capital,null);
+  assert.equal(result.body.finance,null);
+  await import("node:fs/promises").then(({rm})=>rm(workspace,{recursive:true,force:true}));
 });
 
 test("mobile governance bridge remains read-only",async()=>{
@@ -38,4 +48,5 @@ test("mobile governance bridge remains read-only",async()=>{
   const handler=makeStarForgeGovernanceHandler({workspace});
   const result=await request(handler,"POST");
   assert.equal(result.status,405);
+  await import("node:fs/promises").then(({rm})=>rm(workspace,{recursive:true,force:true}));
 });
