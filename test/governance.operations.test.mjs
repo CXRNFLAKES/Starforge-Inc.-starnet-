@@ -304,6 +304,30 @@ test("StarForge leadership can inspect the live StarNet workforce without mutati
   );
 });
 
+
+test("StarForge leadership workforce inspection preserves live working and idle status", () => {
+  const company = makeCompany();
+  const starnet = makeStarNetAdapter({
+    roster: () => [
+      { id: "worker-a", name: "Worker A" },
+      { id: "worker-b", name: "Worker B" },
+    ],
+    dispatch: async () => ({ content: "unused" }),
+  });
+  const operations = makeOperations({ company, starnet });
+
+  const snapshot = operations.inspectStarNetWorkforce(ROLES.CEO, {
+    activeRuns: [{ agentId: "worker-b", runId: "run-9" }],
+  });
+
+  assert.equal(snapshot.workerCount, 2);
+  assert.equal(snapshot.counts.working, 1);
+  assert.equal(snapshot.counts.idle, 1);
+  assert.equal(snapshot.workers.find((worker) => worker.id === "worker-b").status, "working");
+  assert.equal(snapshot.workers.find((worker) => worker.id === "worker-a").status, "idle");
+  assert.equal(snapshot.reviewScope, "operational-review");
+});
+
 test("StarForge can discover the live StarNet worker roster through the adapter", () => {
   const adapter = makeStarNetAdapter({
     roster: () => new Map([
