@@ -173,3 +173,10 @@ implication.
 MIT means you may fork, modify, and redistribute the code, including commercially. What you
 may not do is ship it as StarNet: forks and derivatives must use their own name, logo, and
 artwork, and must not present themselves as this project or as endorsed by it.
+
+
+## 📱 Android 9 Test Lab
+
+[![Open StarForge Android 9 Test Lab](https://github.com/codespaces/badge.svg)](https://codespaces.new/CXRNFLAKES/Starforge-Inc.-starnet-?branch=starforge%2Fgovernance-kernel)
+
+Use GitHub Codespaces from an Android 9 phone to launch the isolated StarForge governance test environment. The Codespace configuration installs dependencies, starts the test server, and forwards port 8799 automatically.
