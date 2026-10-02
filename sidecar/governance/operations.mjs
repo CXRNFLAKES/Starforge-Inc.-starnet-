@@ -92,7 +92,9 @@ export function makeOperations({ company, starnet = null } = {}) {
   async function delegateToStarNet(actorRole, { projectId, title, assigneeId, priority = "normal", successCriteria = "", context = "" } = {}) {
     requireRole(actorRole, ACTIONS.CEO_DELEGATE);
     requireRole(actorRole, ACTIONS.STARNET_DELEGATE);
-    if (actorRole !== ROLES.CEO) throw new Error("Only the CEO may delegate StarNet work");
+    if (![ROLES.CEO, ROLES.VICE_CEO].includes(actorRole)) {
+      throw new Error("Only the CEO or StarNet Vice CEO may delegate StarNet work");
+    }
     if (!starnet || typeof starnet.listWorkers !== "function" || typeof starnet.delegateTask !== "function") {
       throw new Error("StarNet adapter is required for StarNet delegation");
     }
