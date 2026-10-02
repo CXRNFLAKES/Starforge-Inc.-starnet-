@@ -35,7 +35,7 @@ test("PA can review/investigate but cannot make CHO decisions", () => {
 test("default company contains the executive structure", () => {
   const state = defaultState();
   assert.equal(state.company.id, "starforge");
-  assert.equal(state.people.find(p => p.role === ROLES.CHO).name, "CHO");
+  assert.deepEqual(state.company.cho, { id: "cho", name: "Human Owner", role: ROLES.CHO });
   assert.equal(state.people.find(p => p.role === ROLES.PA).name, "Main Overseer");
   assert.equal(state.people.find(p => p.role === ROLES.CEO).name, "Sub-Overseer");
 });
