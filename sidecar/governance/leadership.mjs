@@ -1,40 +1,35 @@
 import { ROLES } from "./roles.mjs";
-import { ACTIONS, assertCan, can } from "./authority.mjs";
+import { ACTIONS, assertCan } from "./authority.mjs";
 
 const LEADERSHIP_CAPABILITIES = Object.freeze({
   [ROLES.PA]: Object.freeze([
-    "coordinate",
-    "research",
-    "review_work",
-    "inspect_company",
-    "communicate",
-    "brief_cho",
-    "investigate",
-    "convene_board",
-    "assess_risk",
-    "maintain_memory",
+    "coordinate", "research", "review_work", "inspect_company", "communicate",
+    "brief_cho", "investigate", "convene_board", "assess_risk", "maintain_memory",
   ]),
   [ROLES.CEO]: Object.freeze([
-    "coordinate",
-    "research",
-    "review_work",
-    "inspect_company",
-    "communicate",
-    "spawn_agents",
-    "delegate",
-    "create_projects",
-    "manage_operations",
-    "monitor_performance",
-    "reassign_workers",
-    "request_approval",
-    "execute_approved_plans",
+    "coordinate", "research", "review_work", "inspect_company", "communicate",
+    "spawn_agents", "delegate", "create_projects", "manage_operations",
+    "monitor_performance", "reassign_workers", "request_approval",
+    "execute_approved_plans", "direct_starnet",
+  ]),
+  [ROLES.VICE_CEO]: Object.freeze([
+    "coordinate", "research", "review_work", "inspect_company", "communicate",
+    "lead_starnet", "delegate_starnet", "monitor_performance",
+    "reassign_starnet_workers", "report_to_leadership",
   ]),
 });
 
 const RESERVED_CAPABILITIES = Object.freeze({
   [ROLES.PA]: Object.freeze(["brief_cho", "investigate", "convene_board", "assess_risk"]),
-  [ROLES.CEO]: Object.freeze(["spawn_agents", "delegate", "create_projects", "manage_operations",
-    "monitor_performance", "reassign_workers", "request_approval", "execute_approved_plans"]),
+  [ROLES.CEO]: Object.freeze([
+    "spawn_agents", "delegate", "create_projects", "manage_operations",
+    "monitor_performance", "reassign_workers", "request_approval",
+    "execute_approved_plans", "direct_starnet",
+  ]),
+  [ROLES.VICE_CEO]: Object.freeze([
+    "lead_starnet", "delegate_starnet", "monitor_performance",
+    "reassign_starnet_workers", "report_to_leadership",
+  ]),
 });
 
 export function leadershipProfile(role) {
@@ -82,7 +77,7 @@ export function makeLeadership({ company } = {}) {
     if (!targetRole || !message) throw new Error("Communication target and message are required");
     const leader = actor(role);
     const target = company.snapshot().people.find(p => p.role === targetRole);
-    if (!target) throw new Error(`Unknown communication target: ${targetRole}`);
+    if (!target) throw new Error("Unknown communication target: " + targetRole);
     return act(role, "communicate", {
       details: { targetRole, targetId: target.id, message: String(message) },
     });
@@ -114,14 +109,30 @@ export function makeLeadership({ company } = {}) {
     });
   }
 
+  function reportToLeadership(role, report) {
+    assertLeadershipCapability(role, "report_to_leadership");
+    if (role !== ROLES.VICE_CEO) throw new Error("Only the Vice CEO may use the StarNet leadership report channel");
+    if (!report || typeof report !== "object") throw new Error("StarNet leadership report is required");
+    const targets = [ROLES.CEO, ROLES.PA].map(targetRole => {
+      const target = company.snapshot().people.find(p => p.role === targetRole);
+      if (!target) throw new Error(`Missing StarForge ${targetRole} reporting target`);
+      return { role: target.role, id: target.id, name: target.name };
+    });
+    return act(role, "report_to_leadership", {
+      action: ACTIONS.STARNET_REPORT,
+      details: { report: structuredClone(report), targets },
+    });
+  }
+
   return {
-    profiles: () => [leadershipProfile(ROLES.PA), leadershipProfile(ROLES.CEO)],
+    profiles: () => [leadershipProfile(ROLES.PA), leadershipProfile(ROLES.CEO), leadershipProfile(ROLES.VICE_CEO)],
     actor,
     act,
     communicate,
     briefCho,
     requestApproval,
     operate,
+    reportToLeadership,
   };
 }
 

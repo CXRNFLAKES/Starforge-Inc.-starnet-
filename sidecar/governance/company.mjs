@@ -16,11 +16,7 @@ export function defaultState() {
       objective: "",
       status: "active",
       phase: 1,
-      cho: {
-        id: "cho",
-        name: "Human Owner",
-        role: ROLES.CHO,
-      },
+      cho: { id: "cho", name: "Human Owner", role: ROLES.CHO },
       createdAt: now,
       updatedAt: now,
     },
@@ -29,9 +25,10 @@ export function defaultState() {
     tasks: [],
     people: [
       { id: "cho", name: "CHO", role: ROLES.CHO },
-      { id: "main-overseer", name: "Main Overseer", role: ROLES.PA },
+      { id: "main-overseer", name: "PA / Chief of Staff", role: ROLES.PA },
       { id: "board", name: "Board of Directors", role: ROLES.BOARD },
-      { id: "sub-overseer", name: "Sub-Overseer", role: ROLES.CEO },
+      { id: "starforge-ceo", name: "StarForge CEO", role: ROLES.CEO },
+      { id: "starnet-vice-ceo", name: "StarNet Vice CEO", role: ROLES.VICE_CEO },
     ],
     decisions: [],
     boardMeetings: [],
@@ -63,15 +60,13 @@ export function makeCompany({ load, save } = {}) {
   const persist = () => save?.(structuredClone(state));
 
   return {
-    snapshot() {
-      return structuredClone(state);
-    },
+    snapshot() { return structuredClone(state); },
 
     setChoProfile(actorRole, { id = "cho", name = "Human Owner" } = {}) {
       assertCan(actorRole, ACTIONS.COMPANY_CONFIGURE);
       state.company.cho = { id: String(id), name: String(name), role: ROLES.CHO };
       state.company.updatedAt = new Date().toISOString();
-      this.audit(actorRole, "company.cho.profile.updated", { choId: state.company.cho.id } , false);
+      this.audit(actorRole, "company.cho.profile.updated", { choId: state.company.cho.id }, false);
       persist();
       return this.snapshot();
     },
@@ -81,7 +76,7 @@ export function makeCompany({ load, save } = {}) {
       state.company.mission = String(mission);
       state.company.objective = String(objective);
       state.company.updatedAt = new Date().toISOString();
-      this.audit(actorRole, "company.mission.updated", { mission, objective } , false);
+      this.audit(actorRole, "company.mission.updated", { mission, objective }, false);
       persist();
       return this.snapshot();
     },
@@ -90,16 +85,12 @@ export function makeCompany({ load, save } = {}) {
       assertCan(actorRole, ACTIONS.COMPANY_CONFIGURE);
       if (!title) throw new Error("Objective title is required");
       const objective = {
-        id: randomUUID(),
-        title: String(title),
-        description: String(description),
-        status: String(status),
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        id: randomUUID(), title: String(title), description: String(description),
+        status: String(status), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
       };
       state.objectives.push(objective);
       state.company.updatedAt = objective.updatedAt;
-      this.audit(actorRole, "company.objective.created", { objectiveId: objective.id } , false);
+      this.audit(actorRole, "company.objective.created", { objectiveId: objective.id }, false);
       persist();
       return structuredClone(objective);
     },
@@ -109,10 +100,7 @@ export function makeCompany({ load, save } = {}) {
       if (!meeting?.id || !meeting?.objective) throw new Error("Invalid board meeting");
       state.boardMeetings.push(structuredClone(meeting));
       state.company.updatedAt = meeting.updatedAt;
-      this.audit(actorRole, "board.meeting.convened", {
-        meetingId: meeting.id,
-        objective: meeting.objective,
-      }, false);
+      this.audit(actorRole, "board.meeting.convened", { meetingId: meeting.id, objective: meeting.objective }, false);
       persist();
       return structuredClone(meeting);
     },
@@ -124,9 +112,7 @@ export function makeCompany({ load, save } = {}) {
       state.boardMeetings[index] = structuredClone(meeting);
       state.company.updatedAt = meeting.updatedAt;
       this.audit(actorRole, "board.decision.recorded", {
-        meetingId: meeting.id,
-        decisionCount: meeting.decisions?.length ?? 0,
-        actionItemCount: meeting.actionItems?.length ?? 0,
+        meetingId: meeting.id, decisionCount: meeting.decisions?.length ?? 0, actionItemCount: meeting.actionItems?.length ?? 0,
       }, false);
       persist();
       return structuredClone(meeting);
@@ -136,7 +122,7 @@ export function makeCompany({ load, save } = {}) {
       assertCan(actorRole, ACTIONS.COMPANY_CONFIGURE);
       if (!person?.id || !person?.name || !person?.role) throw new Error("Invalid person");
       state.people.push({ id: String(person.id), name: String(person.name), role: person.role });
-      this.audit(actorRole, "company.person.registered", { personId: person.id, role: person.role } , false);
+      this.audit(actorRole, "company.person.registered", { personId: person.id, role: person.role }, false);
       persist();
       return this.snapshot();
     },
@@ -173,9 +159,7 @@ export function makeCompany({ load, save } = {}) {
     },
 
     updateTask(actorRole, task) {
-      const allowed = actorRole === ROLES.CEO
-        ? ACTIONS.CEO_OPERATE
-        : ACTIONS.WORKER_EXECUTE;
+      const allowed = actorRole === ROLES.CEO ? ACTIONS.CEO_OPERATE : ACTIONS.WORKER_EXECUTE;
       assertCan(actorRole, allowed);
       const index = state.tasks.findIndex((item) => item.id === task?.id);
       if (index < 0) throw new Error("Unknown task");
@@ -189,11 +173,7 @@ export function makeCompany({ load, save } = {}) {
     recordDecisionPacket(actorRole, packet) {
       assertCan(actorRole, ACTIONS.PA_ADVISE_CHO);
       if (!packet?.request?.id) throw new Error("Decision packet requires request id");
-      const entry = {
-        id: randomUUID(),
-        createdAt: new Date().toISOString(),
-        ...structuredClone(packet),
-      };
+      const entry = { id: randomUUID(), createdAt: new Date().toISOString(), ...structuredClone(packet) };
       state.decisionPackets.push(entry);
       this.audit(actorRole, "governance.decision-packet.recorded", { packetId: entry.id, requestId: entry.request.id }, false);
       persist();
@@ -202,47 +182,25 @@ export function makeCompany({ load, save } = {}) {
 
     recordDecision(actorRole, decision) {
       assertCan(actorRole, ACTIONS.CHO_DECIDE);
-      if (decision?.decision !== undefined && !isValidDecision(decision.decision)) {
-        throw new Error("Invalid CHO decision");
-      }
-      if (decision?.requestId && !String(decision.rationale ?? "").trim()) {
-        throw new Error("CHO decision rationale is required");
-      }
+      if (decision?.decision !== undefined && !isValidDecision(decision.decision)) throw new Error("Invalid CHO decision");
+      if (decision?.requestId && !String(decision.rationale ?? "").trim()) throw new Error("CHO decision rationale is required");
       if (decision?.requestId) {
-        const packet = state.decisionPackets.find(
-          (item) => item.request?.id === decision.requestId,
-        );
+        const packet = state.decisionPackets.find(item => item.request?.id === decision.requestId);
         if (!packet) throw new Error("CHO decision requires a recorded decision packet");
-        if (decision.packetId !== packet.id) {
-          throw new Error("CHO decision packet reference does not match the recorded packet");
-        }
-        if (state.decisions.some((item) => item.requestId === decision.requestId)) {
-          throw new Error("CHO decision already recorded for this request");
-        }
+        if (decision.packetId !== packet.id) throw new Error("CHO decision packet reference does not match the recorded packet");
+        if (state.decisions.some(item => item.requestId === decision.requestId)) throw new Error("CHO decision already recorded for this request");
       }
-      const entry = {
-        id: randomUUID(),
-        createdAt: new Date().toISOString(),
-        ...decision,
-      };
+      const entry = { id: randomUUID(), createdAt: new Date().toISOString(), ...decision };
       state.decisions.push(entry);
       this.audit(actorRole, "governance.decision.recorded", {
-        decisionId: entry.id,
-        requestId: entry.requestId ?? null,
-        packetId: entry.packetId ?? null,
-      } , false);
+        decisionId: entry.id, requestId: entry.requestId ?? null, packetId: entry.packetId ?? null,
+      }, false);
       persist();
       return entry;
     },
 
     audit(actorRole, event, details = {}, persistAudit = true) {
-      const entry = {
-        id: randomUUID(),
-        at: new Date().toISOString(),
-        actorRole,
-        event,
-        details,
-      };
+      const entry = { id: randomUUID(), at: new Date().toISOString(), actorRole, event, details };
       state.audit.push(entry);
       if (persistAudit) persist();
       return entry;

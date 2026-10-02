@@ -9,9 +9,7 @@ function clone(value) {
 function normalizeRoster(source) {
   const rows = source instanceof Map
     ? Array.from(source.entries()).map(([id, value]) => ({ id, ...(value || {}) }))
-    : Array.isArray(source)
-      ? source
-      : [];
+    : Array.isArray(source) ? source : [];
 
   return rows
     .map((row) => ({
@@ -30,12 +28,10 @@ export function makeStarNetAdapter({ roster, dispatch } = {}) {
   if (typeof roster !== "function") throw new TypeError("StarNet roster function is required");
   if (typeof dispatch !== "function") throw new TypeError("StarNet dispatch function is required");
 
-  function listWorkers() {
-    return normalizeRoster(roster());
-  }
+  function listWorkers() { return normalizeRoster(roster()); }
 
   function delegateTask(actorRole, task = {}) {
-    assertCan(actorRole, ACTIONS.CEO_DELEGATE);
+    assertCan(actorRole, ACTIONS.STARNET_DELEGATE);
 
     const agentId = String(task.assigneeId ?? "").trim();
     const title = String(task.title ?? "").trim();
@@ -48,27 +44,18 @@ export function makeStarNetAdapter({ roster, dispatch } = {}) {
     const prompt = String(
       task.prompt ??
       [title, task.successCriteria ? `Success criteria: ${task.successCriteria}` : ""]
-        .filter(Boolean)
-        .join("\n\n"),
+        .filter(Boolean).join("\n\n"),
     ).trim();
-
     if (!prompt) throw new Error("StarNet delegation requires a non-empty task prompt");
 
     const result = dispatch({
-      workers: [{
-        agentId,
-        prompt,
-        context: task.context ?? "",
-      }],
+      workers: [{ agentId, prompt, context: task.context ?? "" }],
       parallel: false,
     });
 
     return clone({
-      taskId: task.id ?? null,
-      projectId: task.projectId ?? null,
-      assigneeId: agentId,
-      worker,
-      result,
+      taskId: task.id ?? null, projectId: task.projectId ?? null,
+      assigneeId: agentId, worker, delegatedBy: actorRole, result,
     });
   }
 

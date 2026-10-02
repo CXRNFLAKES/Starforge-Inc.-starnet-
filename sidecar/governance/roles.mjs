@@ -3,6 +3,7 @@ export const ROLES = Object.freeze({
   PA: "pa",
   BOARD: "board",
   CEO: "ceo",
+  VICE_CEO: "vice-ceo",
   ACCOUNTANT: "accountant",
   CFO: "cfo",
   RISK: "risk",
@@ -11,10 +12,11 @@ export const ROLES = Object.freeze({
 });
 
 export const ROLE_DESCRIPTIONS = Object.freeze({
-  [ROLES.CHO]: "Human owner and final authority.",
+  [ROLES.cho ?? ROLES.CHO]: "Human owner and final authority.",
   [ROLES.PA]: "Main Overseer / Chief of Staff; direct CHO interface and independent oversight.",
   [ROLES.BOARD]: "Governance body for strategy, oversight, and delegated approvals.",
-  [ROLES.CEO]: "Operational executive responsible for execution and delegation.",
+  [ROLES.CEO]: "StarForge operational executive responsible for company execution and delegation.",
+  [ROLES.VICE_CEO]: "StarNet team leader; coordinates the StarNet workforce and reports to the StarForge CEO and PA.",
   [ROLES.ACCOUNTANT]: "Bookkeeping, records, reporting, and tax-record support.",
   [ROLES.CFO]: "Financial strategy and management.",
   [ROLES.RISK]: "Independent risk assessment and controls.",
