@@ -102,6 +102,12 @@ export function makeStarForgeGovernanceHandler({ workspace, roster = new Map(), 
       workspace,
       company: persisted,
       capital: financeSummary(persisted),
+      finance: {
+        ...financeSummary(persisted),
+        recentEntries: Array.isArray(persisted?.finance?.entries)
+          ? persisted.finance.entries.slice(-5).reverse()
+          : [],
+      },
       workforce: {
         workers,
         count: workers.length,
