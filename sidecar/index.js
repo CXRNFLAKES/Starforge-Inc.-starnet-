@@ -337,7 +337,8 @@ const { foldInsights } = require('./insights.js');                  // H3.3: usa
 const { makeVerifyTool } = require('./tools/builtin/verify.js');    // the workbench verify.run check-runner
 const { makeLspManager } = require('./lsp-manager.js');             // lazy installed-language-server edit diagnostics
 const { makeOrchestrationTools } = require('./tools/builtin/orchestration.js');   // Stage 2: team.dispatch (lead->worker delegation)
-const { makeStationTools } = require('./tools/builtin/station.js');               // session verbs (list/create/focus) over the station bridge
+const { makeStationTools } = require('./tools/builtin/station.js');
+const { makeStarForgeGovernanceHandler } = require('./governance/http.js');               // session verbs (list/create/focus) over the station bridge
 const { makeRoutineTools } = require('./tools/builtin/routines.js'); // ROUTINES: agent-created StarNet cron jobs
 const { makeLoopTools } = require('./tools/builtin/loops.js');       // LOOPS: model-facing durable standing-objective controls
 const { makeCommsTools } = require('./tools/builtin/comms.js');      // COMMS: outbound reach — an agent messages a connected chat
@@ -564,6 +565,7 @@ if (!workspaceOwnerClaim.ok) {
 // Synchronous and idempotent: covers ordinary returns and every process.exit path. SIGKILL/TerminateProcess
 // cannot run handlers, so their valid PID-stamped claim is recovered by the next boot instead.
 process.once('exit', () => { try { workspaceOwner.release(); } catch (_) {} });
+const starforgeGovernanceHandler = makeStarForgeGovernanceHandler({ workspace: WORKSPACES, roster: agentRoster, runsMeta });
 
 // Capture lineage before this process stamps schema/cache/runtime files. It is bounded metadata only: names and
 // counts, never file contents. In packaged mode we also inspect known legacy roots and verified update snapshots;
@@ -9707,6 +9709,7 @@ const ROUTES = [
   { m: 'POST', exact: '/api/channels/telegram/owner/pair', h: handleTelegramOwnerPair },
   { m: 'POST', exact: '/api/channels/telegram/owner/revoke', h: handleTelegramOwnerRevoke },
   { m: 'POST', exact: '/api/roster', h: handleRoster },
+  { m: 'GET', exact: '/api/starforge/governance', h: starforgeGovernanceHandler },
   { m: 'POST', exact: '/api/agent/delete', h: handleAgentDelete },
   { m: 'POST', exact: '/api/dossier', h: handleDossier },
   { m: 'POST', exact: '/api/goals', h: handleGoals },   // GROWTH Tier 2: the active goal-arc summary for cron personas
