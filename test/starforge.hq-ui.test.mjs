@@ -35,3 +35,10 @@ test('StarForge HQ capital source is the governed company ledger',async()=>{
   assert.equal(capital.availableCash, 90000);
   assert.equal(capital.netOperatingCapital, 90000);
 });
+
+test('StarForge HQ consumes governed worker activity without replacing StarNet roster ownership',()=>{
+  assert.match(hq,/fetch\('\/api\/starforge\/governance'/);
+  assert.match(hq,/governance\?\.workforce\?\.workers/);
+  assert.match(hq,/activeRun/);
+  assert.match(hq,/status==='working'/);
+});
