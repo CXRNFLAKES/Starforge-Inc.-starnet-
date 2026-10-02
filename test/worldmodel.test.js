@@ -10,6 +10,12 @@ A.eq(s.rooms().length, 1, 'default station seeds exactly one room');
 A.ok(s.spawnRoomId(), 'spawn room id is set');
 const hab = s.rooms()[0];
 A.eq(hab.kind, 'hab', 'seed room is a hab');
+A.eq(s.ROOM_KINDS.starforge_hq.label, 'STARFORGE HQ', 'StarForge HQ room type is registered');
+A.eq(s.ROOM_KINDS.starforge_hq.floor, 'cobalt', 'StarForge HQ uses the command-room floor style');
+A.eq(s.ROOM_KINDS.starforge_hq.mat, 'panel', 'StarForge HQ uses the panel deck material');
+const hq = s.addRoom({ kind: 'starforge_hq', rect: { x1: 30, y1: 0, x2: 38, y2: 8 } });
+A.ok(hq.ok, 'StarForge HQ room can be placed in the station');
+A.eq(s.roomById(hq.id).kind, 'starforge_hq', 'placed HQ keeps its dedicated room kind');
 A.eq(s.spawnRoomId(), hab.id, 'seed room is the spawn room');
 
 /* ---- addRoom: valid, overlap, too-small ---- */
