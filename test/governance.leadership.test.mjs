@@ -34,7 +34,7 @@ test("leadership actions remain behind governance authority", () => {
     ACTIONS.CEO_REQUEST_APPROVAL);
   assert.equal(leadership.briefCho(ROLES.PA, "Daily company brief").role, ROLES.PA);
 
-  assert.throws(() => leadership.operate(ROLES.PA, "launch project"), /Only the CEO/);
+  assert.throws(() => leadership.operate(ROLES.PA, "launch project"), /Unauthorized capability/);
   assert.throws(() => leadership.requestApproval(ROLES.PA, { title: "x" }), /Unauthorized capability/);
   assert.throws(() => leadership.briefCho(ROLES.CEO, "x"), /Unauthorized capability/);
 });
