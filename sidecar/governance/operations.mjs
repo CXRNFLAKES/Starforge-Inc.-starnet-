@@ -9,7 +9,7 @@ function clone(value) {
   return structuredClone(value);
 }
 
-export function makeOperations({ company } = {}) {
+export function makeOperations({ company, starnet = null } = {}) {
   if (!company || typeof company.snapshot !== "function") {
     throw new Error("makeOperations requires a company");
   }
@@ -89,6 +89,64 @@ export function makeOperations({ company } = {}) {
     return clone(task);
   }
 
+  async function delegateToStarNet(actorRole, { projectId, title, assigneeId, priority = "normal", successCriteria = "", context = "" } = {}) {
+    requireRole(actorRole, ACTIONS.CEO_DELEGATE);
+    requireRole(actorRole, ACTIONS.STARNET_DELEGATE);
+    if (actorRole !== ROLES.CEO) throw new Error("Only the CEO may delegate StarNet work");
+    if (!starnet || typeof starnet.listWorkers !== "function" || typeof starnet.delegateTask !== "function") {
+      throw new Error("StarNet adapter is required for StarNet delegation");
+    }
+    if (!projectId || !title || !assigneeId) throw new Error("Project, task title, and assignee are required");
+
+    const project = company.snapshot().projects.find((item) => item.id === projectId);
+    if (!project) throw new Error("Unknown project");
+    if (project.status === "cancelled" || project.status === "completed") {
+      throw new Error("Cannot delegate into a closed project");
+    }
+    const worker = starnet.listWorkers().find((item) => item.id === String(assigneeId).trim());
+    if (!worker) throw new Error("StarNet worker is not present in the live roster");
+
+    const now = new Date().toISOString();
+    const task = {
+      id: randomUUID(),
+      projectId,
+      title: String(title),
+      assigneeId: String(assigneeId).trim(),
+      assigneeRole: ROLES.WORKER,
+      assigneeSource: "starnet",
+      priority: String(priority),
+      successCriteria: String(successCriteria),
+      status: "in-progress",
+      delegatedBy: actorRole,
+      createdAt: now,
+      updatedAt: now,
+    };
+    company.recordTask(actorRole, task);
+
+    try {
+      const result = await starnet.delegateTask(actorRole, {
+        id: task.id,
+        projectId: task.projectId,
+        assigneeId: task.assigneeId,
+        title: task.title,
+        successCriteria: task.successCriteria,
+        context,
+      });
+      task.status = "completed";
+      task.note = "StarNet execution completed";
+      task.execution = { provider: "starnet", result };
+      task.updatedAt = new Date().toISOString();
+      company.updateTask(actorRole, task);
+      return clone({ task, worker, result });
+    } catch (error) {
+      task.status = "failed";
+      task.note = error instanceof Error ? error.message : String(error);
+      task.updatedAt = new Date().toISOString();
+      company.updateTask(actorRole, task);
+      throw error;
+    }
+  }
+
   function updateTask(actorRole, taskId, { actorId = null, status, note = "" } = {}) {
     const task = company.snapshot().tasks.find((item) => item.id === taskId);
     if (!task) throw new Error("Unknown task");
@@ -144,6 +202,7 @@ export function makeOperations({ company } = {}) {
     createProject,
     setProjectStatus,
     delegateTask,
+    delegateToStarNet,
     updateTask,
     inspect,
     reviewExecution,
