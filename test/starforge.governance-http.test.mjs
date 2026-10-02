@@ -1,29 +1,25 @@
-import test from 'node:test';
-import assert from 'node:assert/strict';
-import { makeStarForgeGovernanceHandler } from '../sidecar/governance/http.js';
+import test from "node:test";
+import assert from "node:assert/strict";
+import { makeStarForgeGovernanceHandler } from "../sidecar/governance/http.mjs";
 
-function responseProbe(){
-  return { status:null, headers:null, body:null, writeHead(code,headers){this.status=code;this.headers=headers;}, end(body){this.body=body;} };
-}
+test("mobile governance bridge exposes read-only state", async () => {
+  const handler = makeStarForgeGovernanceHandler({ workspace: ".starforge-test", roster: new Map([["worker-1", { name: "Worker 1" }]]), runsMeta: new Map([["run-1", { status: "working" }]]) });
+  let status, body = "";
+  const res = { writeHead(code) { status = code; }, end(value) { body = value; } };
+  await handler({ method: "GET", url: "/api/starforge/governance" }, res);
+  assert.equal(status, 200);
+  const payload = JSON.parse(body);
+  assert.equal(payload.ok, true);
+  assert.equal(payload.readOnly, true);
+  assert.equal(payload.workforce.count, 1);
+  assert.equal(payload.activeRuns.length, 1);
+});
 
-test('StarForge governance HTTP feed exposes governed capital and live StarNet workforce',async()=>{
-  const root=await import('node:fs/promises').then(fs=>fs.mkdtemp('/tmp/starforge-http-'));
-  const roster=new Map([
-    ['alpha',{name:'Alpha',model:'test-model',provider:'test',role:'worker'}],
-    ['beta',{name:'Beta',model:'test-model',provider:'test',role:'worker'}],
-  ]);
-  const runsMeta=new Map([['run-1',{agentId:'alpha'}]]);
-  const handle=makeStarForgeGovernanceHandler({workspace:root,roster,runsMeta});
-  const res=responseProbe();
-  await handle({method:'GET',url:'/api/starforge/governance'},res);
-  assert.equal(res.status,200);
-  const body=JSON.parse(res.body);
-  assert.equal(body.ok,true);
-  assert.equal(body.source,'starforge-governance');
-  assert.equal(body.capital.netOperatingCapital,0);
-  assert.equal(body.workforce.source,'live-starnet-runtime');
-  assert.equal(body.workforce.workerCount,2);
-  assert.equal(body.workforce.counts.working,1);
-  assert.equal(body.workforce.counts.idle,1);
-  assert.equal(body.workforce.workers[0].status,'working');
+test("mobile governance bridge rejects write methods", async () => {
+  const handler = makeStarForgeGovernanceHandler({ workspace: ".starforge-test" });
+  let status, body = "";
+  const res = { writeHead(code) { status = code; }, end(value) { body = value; } };
+  await handler({ method: "POST", url: "/api/starforge/governance" }, res);
+  assert.equal(status, 405);
+  assert.match(JSON.parse(body).error, /read-only/);
 });
