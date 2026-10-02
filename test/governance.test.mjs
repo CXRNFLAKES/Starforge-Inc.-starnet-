@@ -108,6 +108,7 @@ test("CHO decisions with a request require the recorded decision packet", () => 
     requestId: "expense-missing-packet",
     packetId: "missing",
     decision: "approve",
+    rationale: "TEST: packet-missing validation",
   }), /requires a recorded decision packet/);
 
   const packet = company.recordDecisionPacket(ROLES.PA, {
