@@ -125,6 +125,22 @@ test("StarNet adapter fails closed on invalid dispatch results", async () => {
   );
 });
 
+test("StarNet adapter rejects malformed dispatch payloads without content", async () => {
+  const adapter = makeStarNetAdapter({
+    roster: () => [{ id: "worker-a", name: "Worker A" }],
+    dispatch: async () => ({ summary: "missing content" }),
+  });
+
+  await assert.rejects(
+    () => adapter.delegateTask(ROLES.CEO, {
+      assigneeId: "worker-a",
+      title: "Malformed result test",
+    }),
+    /StarNet dispatch returned a result without content/,
+  );
+});
+
+
 test("StarNet adapter normalizes provider dispatch failures", async () => {
   const adapter = makeStarNetAdapter({
     roster: () => [{ id: "worker-a", name: "Worker A" }],
