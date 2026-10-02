@@ -125,6 +125,22 @@ test("StarNet adapter fails closed on invalid dispatch results", async () => {
   );
 });
 
+test("StarNet adapter normalizes provider dispatch failures", async () => {
+  const adapter = makeStarNetAdapter({
+    roster: () => [{ id: "worker-a", name: "Worker A" }],
+    dispatch: async () => { throw new Error("provider unavailable"); },
+  });
+
+  await assert.rejects(
+    () => adapter.delegateTask(ROLES.CEO, {
+      assigneeId: "worker-a",
+      title: "Failure normalization",
+    }),
+    /StarNet dispatch failed: provider unavailable/,
+  );
+});
+
+
 
 test("StarNet delegation preserves the dispatch request at the governance boundary", async () => {
   const company = makeCompany();
