@@ -139,3 +139,21 @@ test("CHO cannot record a second decision for the same request", () => {
     rationale: "second",
   }), /already recorded/);
 });
+
+
+test("CHO request decisions require a valid decision and non-empty rationale", () => {
+  const company = makeCompany();
+  const packet = company.recordDecisionPacket(ROLES.PA, {
+    request: { id: "expense-rationale-001", purpose: "TEST" },
+  });
+  assert.throws(() => company.recordDecision(ROLES.CHO, {
+    requestId: "expense-rationale-001", packetId: packet.id, decision: "execute", rationale: "x",
+  }), /Invalid CHO decision/);
+  assert.throws(() => company.recordDecision(ROLES.CHO, {
+    requestId: "expense-rationale-001", packetId: packet.id, decision: "approve", rationale: "   ",
+  }), /rationale is required/);
+  const decision = company.recordDecision(ROLES.CHO, {
+    requestId: "expense-rationale-001", packetId: packet.id, decision: "approve", rationale: "Approved after review",
+  });
+  assert.equal(decision.rationale, "Approved after review");
+});
