@@ -165,9 +165,14 @@ test("StarForge adapter can drive the real StarNet team.dispatch engine", async 
     key: "test-key", model: "lead-model",
     newId: (() => { let n = 0; return () => "bridge-run-" + (++n); })(),
   });
+  const dispatch = typeof dispatchTool.run === "function"
+    ? dispatchTool.run.bind(dispatchTool)
+    : dispatchTool;
+  assert.equal(typeof dispatch, "function");
+
   const adapter = makeStarNetAdapter({
     roster: () => new Map([["researcher-1", { name: "Researcher", model: "model-a", capabilities: ["research"] }]]),
-    dispatch: (request) => dispatchTool.run(request, { agentId: "starforge-ceo", emit: () => {}, signal: new AbortController().signal }),
+    dispatch: (request) => dispatch(request, { agentId: "starforge-ceo", emit: () => {}, signal: new AbortController().signal }),
   });
   const result = await adapter.delegateTask(ROLES.CEO, {
     id: "task-real-engine-1", projectId: "project-bridge", assigneeId: "researcher-1",
