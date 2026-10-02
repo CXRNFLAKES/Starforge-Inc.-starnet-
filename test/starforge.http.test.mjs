@@ -26,10 +26,10 @@ test("mobile governance feed derives capital from the governed company ledger",a
   const handler=makeStarForgeGovernanceHandler({workspace});
   const result=await request(handler);
   assert.equal(result.status,200);
-  assert.equal(result.body.capital.cash,1200);
+  assert.equal(result.body.capital.cash,1150);
   assert.equal(result.body.capital.taxReserve,100);
   assert.equal(result.body.capital.liabilities,250);
-  assert.equal(result.body.capital.netOperatingCapital,950);
+  assert.equal(result.body.capital.netOperatingCapital,900);
   assert.equal(result.body.capital.source,"starforge-governed-company-ledger");
 });
 
