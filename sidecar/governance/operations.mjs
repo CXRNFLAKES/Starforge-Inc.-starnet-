@@ -124,7 +124,7 @@ export function makeOperations({ company, starnet = null } = {}) {
     company.recordTask(actorRole, task);
 
     try {
-      const result = await starnet.delegateTask(actorRole, {
+      const adapterResult = await starnet.delegateTask(actorRole, {
         id: task.id,
         projectId: task.projectId,
         assigneeId: task.assigneeId,
@@ -132,6 +132,7 @@ export function makeOperations({ company, starnet = null } = {}) {
         successCriteria: task.successCriteria,
         context,
       });
+      const result = adapterResult.result;
       task.status = "completed";
       task.note = "StarNet execution completed";
       task.execution = { provider: "starnet", result };
