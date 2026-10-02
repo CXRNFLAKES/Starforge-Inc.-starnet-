@@ -23,7 +23,7 @@
         const capital=data&&data.capital;
         const execution=data&&data.execution;
         if(capital){ financeStats.cash.textContent=money(capital.availableCash,capital.currency); financeStats.tax.textContent=money(capital.taxReserve,capital.currency); financeStats.liabilities.textContent=money(capital.liabilities,capital.currency); financeStats.entries.textContent=String(capital.entryCount ?? 0); }
-        const entries=Array.isArray(data?.company?.finance?.entries)?data.company.finance.entries.slice(-5).reverse():[]; ledgerEl.replaceChildren(); if(!entries.length){ledgerEl.textContent='No finance ledger entries recorded yet.';} else entries.forEach(entry=>{const row=document.createElement('div');row.className='sf-ledger-row';row.innerHTML='<b>'+esc(String(entry.kind||'entry').replaceAll('-',' ').toUpperCase())+'</b><span>'+money(entry.amount,entry.currency)+'</span>';ledgerEl.appendChild(row);});
+        const entries=Array.isArray(data?.finance?.recentEntries)?data.finance.recentEntries:[]; ledgerEl.replaceChildren(); if(!entries.length){ledgerEl.textContent='No finance ledger entries recorded yet.';} else entries.forEach(entry=>{const row=document.createElement('div');row.className='sf-ledger-row';row.innerHTML='<b>'+esc(String(entry.kind||'entry').replaceAll('-',' ').toUpperCase())+'</b><span>'+money(entry.amount,entry.currency)+'</span>';ledgerEl.appendChild(row);});
         for(const key of ['in-progress','completed','failed','blocked']) executionStats[key].textContent=Number(execution?.[{ 'in-progress':'inProgress', completed:'completed', failed:'failed', blocked:'blocked' }[key]] ?? 0);
         const recent=Array.isArray(execution?.recentTasks)?execution.recentTasks.slice().reverse():[];
         recentEl.replaceChildren();
