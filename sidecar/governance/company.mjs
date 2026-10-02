@@ -23,6 +23,7 @@ export function defaultState() {
     objectives: [],
     projects: [],
     tasks: [],
+    leadershipReports: [],
     people: [
       { id: "cho", name: "CHO", role: ROLES.CHO },
       { id: "main-overseer", name: "PA / Chief of Staff", role: ROLES.PA },
@@ -47,6 +48,7 @@ function normalize(state) {
     objectives: Array.isArray(state?.objectives) ? state.objectives : [],
     projects: Array.isArray(state?.projects) ? state.projects : [],
     tasks: Array.isArray(state?.tasks) ? state.tasks : [],
+    leadershipReports: Array.isArray(state?.leadershipReports) ? state.leadershipReports : [],
     decisions: Array.isArray(state?.decisions) ? state.decisions : [],
     boardMeetings: Array.isArray(state?.boardMeetings) ? state.boardMeetings : [],
     decisionPackets: Array.isArray(state?.decisionPackets) ? state.decisionPackets : [],
@@ -172,6 +174,21 @@ export function makeCompany({ load, save } = {}) {
       this.audit(actorRole, "operations.task.updated", { taskId: task.id, status: task.status }, false);
       persist();
       return structuredClone(task);
+    },
+
+    recordLeadershipReport(actorRole, report) {
+      assertCan(actorRole, ACTIONS.STARNET_REPORT);
+      if (!report?.id || !report?.report || !Array.isArray(report.targets)) {
+        throw new Error("Invalid leadership report");
+      }
+      state.leadershipReports.push(structuredClone(report));
+      state.company.updatedAt = report.createdAt ?? new Date().toISOString();
+      this.audit(actorRole, "leadership.report.recorded", {
+        reportId: report.id,
+        targetCount: report.targets.length,
+      }, false);
+      persist();
+      return structuredClone(report);
     },
 
     recordDecisionPacket(actorRole, packet) {
