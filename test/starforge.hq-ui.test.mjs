@@ -60,3 +60,13 @@ test('StarForge HQ keeps its retro HUD presentation separate from governed value
   assert.match(css,/sf-execution-stats/);
   assert.match(css,/sf-worker:hover/);
 });
+
+test('StarForge HQ renders governed finance telemetry without inventing values',()=>{
+  assert.match(hq,/data-fin="cash"/);
+  assert.match(hq,/data-fin="tax"/);
+  assert.match(hq,/data-fin="liabilities"/);
+  assert.match(hq,/company\?\.finance\?\.entries/);
+  assert.match(hq,/capital\.availableCash/);
+  assert.match(hq,/capital\.taxReserve/);
+  assert.match(hq,/capital\.liabilities/);
+});
