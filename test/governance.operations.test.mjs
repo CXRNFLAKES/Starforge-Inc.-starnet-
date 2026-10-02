@@ -114,7 +114,9 @@ test("PA can review operational execution as independent oversight without mutat
 test("CEO execution review is restricted to CEO or PA oversight", () => {
   const company = makeCompany();
   const operations = makeOperations({ company });
-  assert.doesNotThrow(() => operations.reviewExecution(ROLES.PA));
+  const paReview = operations.reviewExecution(ROLES.PA);
+  assert.equal(paReview.reviewScope, "independent-oversight");
+  assert.equal(paReview.taskCount, 0);
   assert.throws(() => operations.reviewExecution(ROLES.CHO), /Only the CEO or PA/);
 });
 
