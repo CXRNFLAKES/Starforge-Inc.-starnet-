@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#090b12">
+<title>StarForge — Android 9 Test Lab</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#090b12;color:#e8edf7;font-family:Arial,sans-serif}
+body{padding:14px}.wrap{max-width:560px;margin:auto}.top{border:1px solid #263149;border-radius:14px;padding:16px;background:#101522}
+h1{font-size:22px;margin:0 0 5px}.sub{color:#8e9bb5;font-size:13px}.badge{display:inline-block;margin-top:10px;padding:6px 9px;border-radius:8px;background:#17243a;color:#75b7ff;font-size:12px}
+button{width:100%;border:0;border-radius:12px;padding:15px;margin-top:12px;background:#4d7cff;color:white;font-size:16px;font-weight:700}
+button:active{opacity:.75}.card{margin-top:12px;border:1px solid #263149;border-radius:14px;padding:14px;background:#0e131f}.row{display:flex;gap:10px;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #1d2638}.row:last-child{border-bottom:0}.pass{color:#63e6a1}.fail{color:#ff7181}.muted{color:#8995aa;font-size:12px}.mono{font-family:monospace;font-size:12px;word-break:break-word}.footer{padding:14px 3px;color:#69758c;font-size:11px;text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+<section class="top">
+<h1>🧪 StarForge Test Lab</h1>
+<div class="sub">Android 9.0 compatibility / governance simulation</div>
+<div class="badge">SAFE MODE • NO REAL MONEY • NO PROVIDER CALLS</div>
+</section>
+<button id="run">RUN GOVERNANCE TEST</button>
+<div id="status" class="card"><div class="muted">Ready. Tap the button to run the server-side test suite.</div></div>
+<div id="results"></div>
+<div class="footer">StarForge mobile test surface • vanilla HTML/CSS/JS for Android 9-era browsers</div>
+</div>
+<script>
+const statusEl=document.getElementById("status"), resultsEl=document.getElementById("results");
+document.getElementById("run").onclick=async()=>{
+ statusEl.innerHTML="<div>⏳ Running...</div>"; resultsEl.innerHTML="";
+ try{
+  const r=await fetch("/api/test",{cache:"no-store"}); const data=await r.json();
+  statusEl.innerHTML="<div><strong>"+(data.failed===0?"🟢 ALL TESTS PASSED":"🔴 FAILURES DETECTED")+"</strong></div><div class='muted'>"+data.passed+"/"+data.total+" passed • "+data.mode+"</div>";
+  resultsEl.innerHTML="<div class='card'>"+data.results.map(x=>"<div class='row'><span>"+x.name+"<br><span class='muted'>"+x.detail+"</span></span><strong class='"+(x.status==="PASS"?"pass":"fail")+"'>"+x.status+"</strong></div>").join("")+"</div>";
+ }catch(e){statusEl.innerHTML="<div class='fail'>🔴 Connection failed</div><div class='muted'>"+e.message+"</div>"}
+};
+</script>
+</body>
+</html>
