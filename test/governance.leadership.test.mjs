@@ -106,3 +106,32 @@ test("CEO and PA can retrieve persisted Vice CEO reports through the leadership 
   assert.equal(ceoReports[0].report.status, "yellow");
   assert.equal(ceoReports[0].report.workforce.blocked, 1);
 });
+
+test("CEO and PA can review only their addressed Vice CEO reports", () => {
+  const company = makeCompany();
+  const leadership = makeLeadership({ company });
+  const result = leadership.reportToLeadership(ROLES.VICE_CEO, {
+    status: "green",
+    workforce: { active: 4, blocked: 0 },
+  });
+
+  const ceoReview = leadership.reviewLeadershipReport(ROLES.CEO, result.details.reportId);
+  const paReview = leadership.reviewLeadershipReport(ROLES.PA, result.details.reportId);
+
+  assert.equal(ceoReview.reviewScope, "operational-review");
+  assert.equal(paReview.reviewScope, "independent-oversight");
+  assert.equal(ceoReview.report.report.workforce.active, 4);
+  assert.equal(paReview.report.id, result.details.reportId);
+
+  assert.throws(
+    () => leadership.reviewLeadershipReport(ROLES.VICE_CEO, result.details.reportId),
+    /Leadership report is not addressed to vice-ceo/,
+  );
+  assert.throws(
+    () => leadership.reviewLeadershipReport(ROLES.BOARD, result.details.reportId),
+    /Unauthorized capability/,
+  );
+
+  const stored = company.snapshot().leadershipReports;
+  assert.equal(stored[0].report.workforce.active, 4);
+});
