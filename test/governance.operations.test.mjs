@@ -167,7 +167,9 @@ test("StarForge adapter can drive the real StarNet team.dispatch engine", async 
   });
   const dispatch = typeof dispatchTool.run === "function"
     ? dispatchTool.run.bind(dispatchTool)
-    : dispatchTool;
+    : (dispatchTool.run && typeof dispatchTool.run.run === "function"
+      ? dispatchTool.run.run.bind(dispatchTool.run)
+      : null);
   assert.equal(typeof dispatch, "function");
 
   const adapter = makeStarNetAdapter({
