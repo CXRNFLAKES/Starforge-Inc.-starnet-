@@ -152,16 +152,16 @@ export function makeIntegrationLab(overrides = {}) {
       if (!request) throw new Error(`Unknown request: ${requestId}`);
       const allowed = new Set(["approve", "deny", "request-changes", "discuss"]);
       if (!allowed.has(decision.decision)) throw new Error("Invalid CHO decision");
-      request.status = decision.decision === "approve" ? "approved" :
-        decision.decision === "deny" ? "denied" : "needs-changes";
       const packet = state.decisionPackets.find((item) => item.request?.id === requestId);
       if (!packet) throw new Error("CHO decision requires a recorded decision packet");
-      if (request.status !== "cho-decision") {
-        throw new Error("CHO decision requires a request awaiting CHO decision");
-      }
       if (state.approvals.some((item) => item.requestId === requestId)) {
         throw new Error("CHO decision already recorded for this request");
       }
+      if (request.status !== "cho-decision") {
+        throw new Error("CHO decision requires a request awaiting CHO decision");
+      }
+      request.status = decision.decision === "approve" ? "approved" :
+        decision.decision === "deny" ? "denied" : "needs-changes";
       const entry = {
         requestId,
         packetId: packet.id,
