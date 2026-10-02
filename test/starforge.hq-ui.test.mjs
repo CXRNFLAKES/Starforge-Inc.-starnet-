@@ -29,5 +29,9 @@ test('StarForge HQ capital source is the governed company ledger',async()=>{
   const company=makeCompany();
   company.recordFinanceEntry(ROLES.CHO,{id:'capital',kind:'capital-injection',amount:100000,currency:'EUR'});
   company.recordFinanceEntry(ROLES.CHO,{id:'tax',kind:'tax-reserve',amount:10000,currency:'EUR'});
-  assert.equal(company.capitalSnapshot(ROLES.CHO).netOperatingCapital,90000);
+  const capital = company.capitalSnapshot(ROLES.CHO);
+  assert.equal(capital.cash, 90000);
+  assert.equal(capital.taxReserve, 10000);
+  assert.equal(capital.availableCash, 90000);
+  assert.equal(capital.netOperatingCapital, 90000);
 });
