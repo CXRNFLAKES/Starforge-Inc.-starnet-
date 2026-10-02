@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 import { makeTestingCompany } from "../sidecar/governance/testing.mjs";
 import { ROLES } from "../sidecar/governance/roles.mjs";
 import { ACTIONS, assertCan } from "../sidecar/governance/authority.mjs";
-import { makeStarForgeGovernanceHandler } from "../sidecar/governance/http.js";
+import { makeStarForgeGovernanceHandler } from "../sidecar/governance/http.mjs";
 
 const ROOT = dirname(fileURLToPath(import.meta.url));
 const UI = join(ROOT, "../mobile-test/index.html");
