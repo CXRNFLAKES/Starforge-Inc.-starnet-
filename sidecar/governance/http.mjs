@@ -11,7 +11,9 @@ function safeMethod(req) {
 }
 
 function financeSummary(state) {
-  const finance = state?.finance ?? {};
+  const finance = state?.finance;
+  if (!finance || typeof finance !== "object" || Array.isArray(finance)) return null;
+
   const currency = String(finance.currency ?? "EUR").toUpperCase();
   let cash = Number(finance.openingCapital) || 0;
   let taxReserve = 0;
@@ -93,6 +95,7 @@ export function makeStarForgeGovernanceHandler({ workspace, roster = new Map(), 
     }
     const tasks = Array.isArray(persisted?.tasks) ? persisted.tasks : [];
     const starNetTasks = tasks.filter((task) => task.assigneeSource === "starnet");
+    const capital = financeSummary(persisted);
 
     return send(res, 200, {
       ok: true,
@@ -101,13 +104,13 @@ export function makeStarForgeGovernanceHandler({ workspace, roster = new Map(), 
       readOnly: true,
       workspace,
       company: persisted,
-      capital: financeSummary(persisted),
-      finance: {
-        ...financeSummary(persisted),
+      capital,
+      finance: capital ? {
+        ...capital,
         recentEntries: Array.isArray(persisted?.finance?.entries)
           ? persisted.finance.entries.slice(-5).reverse()
           : [],
-      },
+      } : null,
       workforce: {
         workers,
         count: workers.length,
