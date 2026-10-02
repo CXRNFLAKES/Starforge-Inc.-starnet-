@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { ROLES } from "./roles.mjs";
 import { ACTIONS, assertCan } from "./authority.mjs";
+import { isValidDecision } from "./decision-packet.mjs";
 
 export const SCHEMA_VERSION = 1;
 
@@ -152,6 +153,12 @@ export function makeCompany({ load, save } = {}) {
 
     recordDecision(actorRole, decision) {
       assertCan(actorRole, ACTIONS.CHO_DECIDE);
+      if (decision?.decision !== undefined && !isValidDecision(decision.decision)) {
+        throw new Error("Invalid CHO decision");
+      }
+      if (decision?.requestId && !String(decision.rationale ?? "").trim()) {
+        throw new Error("CHO decision rationale is required");
+      }
       if (decision?.requestId) {
         const packet = state.decisionPackets.find(
           (item) => item.request?.id === decision.requestId,
