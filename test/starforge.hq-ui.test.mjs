@@ -65,7 +65,7 @@ test('StarForge HQ renders governed finance telemetry without inventing values',
   assert.match(hq,/data-fin="cash"/);
   assert.match(hq,/data-fin="tax"/);
   assert.match(hq,/data-fin="liabilities"/);
-  assert.match(hq,/finance\?\.recentEntries/);
+  assert.match(hq,/data\?\.finance\?\.recentEntries/);
   assert.match(hq,/capital\.availableCash/);
   assert.match(hq,/capital\.taxReserve/);
   assert.match(hq,/capital\.liabilities/);
