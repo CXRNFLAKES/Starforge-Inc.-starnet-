@@ -42,3 +42,13 @@ test('StarForge HQ consumes governed worker activity without replacing StarNet r
   assert.match(hq,/activeRun/);
   assert.match(hq,/status==='working'/);
 });
+
+
+test('StarForge HQ HUD is presentation-only and keeps governed feed semantics',()=>{
+  const css=fs.readFileSync(new URL('../frontend/css/starforge-hq.css',import.meta.url),'utf8');
+  assert.match(css,/Retro-game HQ HUD/);
+  assert.match(css,/sf-execution-stats/);
+  assert.match(hq,/\/api\/starforge\/governance/);
+  assert.match(hq,/netOperatingCapital/);
+  assert.match(hq,/recentTasks/);
+});
