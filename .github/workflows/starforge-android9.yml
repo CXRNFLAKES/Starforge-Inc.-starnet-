@@ -9,6 +9,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: starforge-governance-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   governance:
     runs-on: ubuntu-latest
@@ -33,15 +37,26 @@ jobs:
           if git diff --cached --quiet; then
             echo "StarForge validation state already current."
           else
-            git commit -m "chore: checkpoint green StarForge state [skip ci]"
             for attempt in 1 2 3 4 5; do
               git fetch origin "${GITHUB_REF_NAME}"
-              git rebase "origin/${GITHUB_REF_NAME}" && git push origin "HEAD:${GITHUB_REF_NAME}" && break
+              git reset --hard "origin/${GITHUB_REF_NAME}"
+              node scripts/starforge-validation-checkpoint.mjs
+              git add .starforge/validation-state.json
+              if git diff --cached --quiet; then
+                echo "StarForge validation state already current."
+                break
+              fi
+              git commit -m "chore: checkpoint green StarForge state [skip ci]"
+              if git push origin "HEAD:${GITHUB_REF_NAME}"; then
+                break
+              fi
               if [ "$attempt" -eq 5 ]; then
                 echo "Unable to publish green validation checkpoint after $attempt attempts."
                 exit 1
               fi
-              git rebase --abort || true
+              sleep $((attempt * 2))
+            done
+          fi              git rebase --abort || true
               sleep $((attempt * 2))
             done
           fi
