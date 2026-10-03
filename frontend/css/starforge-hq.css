@@ -41,3 +41,4 @@
 .sf-mission-title{margin-top:7px;font-size:1.15em;font-weight:700;letter-spacing:.03em}.sf-mission-objective{margin-top:4px;font-size:.78em;opacity:.7}
 .sf-projects{display:grid;gap:5px;margin-top:10px}.sf-project{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-top:1px dotted rgba(255,255,255,.12);font-size:.72em}.sf-project span{opacity:.6;white-space:nowrap}
 @media(max-width:720px){.sf-project{display:block}.sf-project span{display:block;margin-top:2px}}
+.sf-tier{font-size:.68em;letter-spacing:.08em;opacity:.7;border:1px solid rgba(255,255,255,.16);padding:4px 7px}.sf-level-line{flex-wrap:wrap}
