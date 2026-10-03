@@ -9,7 +9,8 @@ const StationTemplates = (() => {
     { id: 'creative', name: 'CREATIVE STUDIO', rooms: 3, description: 'A warm design studio and a review room with an Inbox → Draft → Review → Outbox conveyor. Assign agents to the two prepared steps.', wings: [['creative','north'],['creativeReview','east']] },
     { id: 'research', name: 'RESEARCH STATION', rooms: 3, description: 'An analysis lab to the north and a dedicated reference archive to the east.', wings: [['research','north'],['archive','east']] },
     { id: 'engineering', name: 'ENGINEERING STATION', rooms: 5, description: 'Workshop, analysis lab, review room, and quiet lounge around your home station.', wings: [['engineering','west'],['review','east'],['research','north'],['reading','south']] },
-    { id: 'operations', name: 'OPERATIONS STATION', rooms: 5, description: 'Planning, communications, reference, and review rooms around a central home station.', wings: [['archive','west'],['comms','east'],['planning','north'],['review','south']] }
+    { id: 'operations', name: 'OPERATIONS STATION', rooms: 5, description: 'Planning, communications, reference, and review rooms around a central home station.', wings: [['archive','west'],['comms','east'],['planning','north'],['review','south']] },
+    { id: 'starforge', name: 'STARFORGE HQ', rooms: 3, description: 'A dedicated command room and worker room inside the StarNet station for the StarForge company.', wings: [['starforgeHQ','north'],['starforgeWorkers','east']] }
   ];
   const rooms = {
     cozyWorkshop: { name: 'WORKROOM', kind: 'factory', floorStyle: 'walnut', floorMat: 'plank', blueprint: ['front_desk',3,1], props: [['plant',1,1],['plant',16,1],['desk',2,7],['industrial_drawerbank',12,7],['bookshelf',14,9]] },
@@ -28,7 +29,9 @@ const StationTemplates = (() => {
     engineering: { name: 'WORKSHOP', kind: 'factory', floorStyle: 'hull', floorMat: 'tread', props: [['desk',3,1],['fabricator',11,1],['industrial_drawerbank',2,8],['crate',13,8]] },
     planning: { name: 'PLANNING', kind: 'bridge', floorStyle: 'cobalt', floorMat: 'resin', props: [['consoleL',2,1],['missionboard',7,0],['desk',13,1],['holotable',7,6],['plant',16,8]] },
     comms: { name: 'COMMS', kind: 'bridge', floorStyle: 'hull', floorMat: 'resin', props: [['consoleL',3,1],['screens',10,0],['rack',12,1],['plant',16,1]] },
-    archive: { name: 'ARCHIVE', kind: 'hab', floorStyle: 'walnut', floorMat: 'plank', props: [['bookshelf',2,1],['bookshelf',6,1],['bookshelf',10,1],['plant',16,1],['desk',3,7]] }
+    archive: { name: 'ARCHIVE', kind: 'hab', floorStyle: 'walnut', floorMat: 'plank', props: [['bookshelf',2,1],['bookshelf',6,1],['bookshelf',10,1],['plant',16,1],['desk',3,7]] },
+    starforgeHQ: { name: 'STARFORGE HQ', kind: 'bridge', floorStyle: 'violet', floorMat: 'resin', props: [['consoleL',2,1],['missionboard',7,0],['desk',13,1],['holotable',7,6],['screens',12,6],['plant',16,8]] },
+    starforgeWorkers: { name: 'WORKFORCE', kind: 'factory', floorStyle: 'indigo', floorMat: 'resin', props: [['desk',2,1],['desk',7,1],['desk',12,1],['desk',2,7],['desk',7,7],['desk',12,7],['rack',15,5],['industrial_roundtable',7,4]] }
   };
   const slots = {
     east: { x:21, y:0, hall:{x1:18,y1:4,x2:20,y2:6} },
