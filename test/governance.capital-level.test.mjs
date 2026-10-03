@@ -24,3 +24,18 @@ test('Invalid capital cannot produce a company level', () => {
   assert.equal(companyLevelForCapital(Number.NaN), null);
   assert.equal(companyLevelTelemetry(-1), null);
 });
+test('Company rank and unlocks are governed by the level telemetry', () => {
+  const startup = companyLevelTelemetry(0);
+  assert.equal(startup.rank, 'STARTUP');
+  assert.deepEqual(startup.unlocks, []);
+
+  const growth = companyLevelTelemetry(25_000);
+  assert.equal(growth.level, 20);
+  assert.equal(growth.rank, 'GROWING');
+  assert.deepEqual(growth.unlocks, [{ level: 20, name: 'GROWTH OPERATIONS' }]);
+
+  const legendary = companyLevelTelemetry(10_000_000);
+  assert.equal(legendary.level, 100);
+  assert.equal(legendary.rank, 'LEGENDARY');
+  assert.deepEqual(legendary.unlocks.at(-1), { level: 100, name: 'LEGENDARY STATUS' });
+});
