@@ -130,6 +130,31 @@ export function makeStarForgeGovernanceHandler({ workspace, roster = new Map(), 
     }
     workers = workers.map((worker) => {
       const performance = performanceByAgent.get(String(worker.id ?? worker.agentId ?? "").trim());
+      const completed = Math.max(0, Number(performance?.completed) || 0);
+      const failed = Math.max(0, Number(performance?.failed) || 0);
+      const blocked = Math.max(0, Number(performance?.blocked) || 0);
+      const taskCount = Math.max(0, Number(performance?.taskCount) || 0);
+      const xp = Math.max(0, (completed * 100) - (failed * 50) - (blocked * 25));
+      const workerLevel = Math.max(1, Math.floor(xp / 500) + 1);
+      const levelBase = (workerLevel - 1) * 500;
+      const xpProgressPercent = Math.max(0, Math.min(100, ((xp - levelBase) / 500) * 100));
+      const successRate = Number.isFinite(Number(performance?.reliabilityPercent))
+        ? Number(performance.reliabilityPercent)
+        : (taskCount ? Math.round((completed / taskCount) * 100) : null);
+      return {
+        ...worker,
+        performance: {
+          ...(performance ?? { taskCount: 0, completed: 0, failed: 0, blocked: 0, inProgress: 0, reliabilityPercent: null }),
+          xp,
+          level: workerLevel,
+          xpProgressPercent,
+          successRate,
+          recovery: failed >= 3 || blocked >= 2,
+        },
+      };
+    });
+    workers = workers.map((worker) => {
+      const performance = performanceByAgent.get(String(worker.id ?? worker.agentId ?? "").trim());
       if (!performance) return { ...worker, performance: { taskCount: 0, completed: 0, failed: 0, blocked: 0, inProgress: 0, reliabilityPercent: null } };
       const resolved = performance.completed + performance.failed;
       return {
