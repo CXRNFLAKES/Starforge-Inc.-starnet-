@@ -1,3 +1,43 @@
+
+const RANKS = Object.freeze([
+  [1, "STARTUP"],
+  [5, "BOOTSTRAPPED"],
+  [10, "EARLY GAME"],
+  [20, "GROWING"],
+  [30, "ESTABLISHED"],
+  [40, "SERIOUS BUSINESS"],
+  [50, "MID-GAME"],
+  [60, "MAJOR COMPANY"],
+  [70, "ENTERPRISE"],
+  [80, "POWERHOUSE"],
+  [90, "MEGA COMPANY"],
+  [100, "LEGENDARY"],
+]);
+
+const UNLOCKS = Object.freeze([
+  [20, "GROWTH OPERATIONS"],
+  [40, "SERIOUS BUSINESS OPERATIONS"],
+  [60, "MAJOR COMPANY OPERATIONS"],
+  [70, "ENTERPRISE OPERATIONS"],
+  [80, "POWERHOUSE OPERATIONS"],
+  [90, "MEGA COMPANY OPERATIONS"],
+  [100, "LEGENDARY STATUS"],
+]);
+
+function rankForLevel(level) {
+  let rank = "STARTUP";
+  for (const [threshold, name] of RANKS) {
+    if (level >= threshold) rank = name;
+    else break;
+  }
+  return rank;
+}
+
+function unlocksForLevel(level) {
+  return UNLOCKS.filter(([threshold]) => level >= threshold)
+    .map(([threshold, name]) => ({ level: threshold, name }));
+}
+
 const MILESTONES = Object.freeze([
   [1, 0], [5, 1_000], [10, 5_000], [20, 25_000], [30, 75_000],
   [40, 200_000], [50, 500_000], [60, 1_000_000], [70, 2_000_000],
@@ -39,6 +79,8 @@ export function companyLevelTelemetry(capital) {
     nextThreshold: next?.[1] ?? null,
     remainingToNext: next ? Math.max(0, next[1] - value) : 0,
     progressPercent,
+    rank: rankForLevel(level),
+    unlocks: unlocksForLevel(level),
     source: "starforge-governed-company-ledger",
   };
 }
