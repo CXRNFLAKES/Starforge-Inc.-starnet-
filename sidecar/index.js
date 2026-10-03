@@ -7,6 +7,7 @@
 'use strict';
 
 const http = require('node:http');
+const { makeStarForgeRoute } = require('./starforge-http.cjs');
 const fsp = require('node:fs/promises');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -9614,7 +9615,9 @@ async function handleGroups(req, res) {
     respondJson(res, 200, { ok: true, result: out });
   } catch (e) { if (!res.headersSent) respondJson(res, e.status || 400, { ok: false, error: redact(String(e.message || e)) }); }
 }
+const starforgeGovernanceRoute = makeStarForgeRoute({ workspace: WORKSPACES, roster: agentRoster, runsMeta });
 const ROUTES = [
+  { m: 'GET', exact: '/api/starforge/governance', h: starforgeGovernanceRoute },
   { m: 'GET', qsplit: '/api/groups', h: handleGroups },
   { m: 'POST', exact: '/api/groups', h: handleGroups },
   { m: 'POST', exact: '/api/update/prepare', h: handleUpdatePrepare },
