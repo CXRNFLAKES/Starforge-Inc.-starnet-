@@ -38,7 +38,7 @@ for(const P of [legacySprites,remasterContext.module.exports])for(const item of 
     assert.deepEqual(namedRooms.sort(),['HOME','STARFORGE HQ','WORKFORCE'].sort(),'starforge: dedicated physical company rooms');
     const workforce=s.rooms().find(r=>r.name==='WORKFORCE');
     assert.ok(workforce,'starforge: workforce room exists');
-    assert.equal(s.props().filter(p=>p.agentId).length,2,'starforge: only the standard hero/crew workstations are assigned by default');
+    assert.equal(s.props().filter(p=>p.agentId).length,0,'starforge: no fictional workers are assigned by the physical template');
     assert.ok(s.props().filter(p=>p.t==='desk').length>=7,'starforge: worker room has dedicated desk capacity');
   }
   if(item.id==='creative') {
