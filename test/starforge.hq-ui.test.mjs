@@ -93,7 +93,7 @@ test('mobile test endpoint derives company level from governed capital',()=>{
   assert.doesNotMatch(script,/companyLevel:\s*1,/);
 });
 
-test('StarForge HQ maps governed level to a transparent game rank',()=>{assert.match(hq,/LEGENDARY/);assert.match(hq,/MEGA COMPANY/);assert.match(hq,/POWERHOUSE/);assert.match(hq,/STARTUP/);assert.match(hq,/data-tier/);});
+test('StarForge HQ consumes governed game-rank telemetry',()=>{assert.match(hq,/levelFeed\.rank/);assert.match(hq,/levelFeed\.level/);assert.match(hq,/levelFeed\.source/);assert.match(hq,/governed-company-ledger/);assert.match(hq,/data-tier/);});
 
 
 test('StarForge HQ exposes explicit runtime connection state',()=>{
