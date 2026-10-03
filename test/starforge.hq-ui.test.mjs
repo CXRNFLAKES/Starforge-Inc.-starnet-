@@ -131,3 +131,13 @@ test('StarForge HQ uses the governed workforce feed as its roster authority',()=
   assert.match(hq,/worker\.activeRun/);
 });
 test('StarForge HQ defers live working status to the existing StarNet UI runtime when available',()=>{assert.match(hq,/StationUI\.isAgentRunning/);assert.match(hq,/runtimeStatus=stationRunning\?'working'/);assert.match(hq,/worker\.status==='working'/);});
+
+
+test('StarForge HQ progression HUD is derived from governed level telemetry',()=>{
+  assert.match(hq,/progressPercent/);
+  assert.match(hq,/LEVEL \'+String\(levelFeed\.level\)/);
+  assert.match(hq,/GROWTH OPERATIONS/);
+  assert.match(hq,/LEGENDARY STATUS/);
+  assert.match(css,/sf-level-detail/);
+  assert.match(css,/sf-unlocks/);
+});
