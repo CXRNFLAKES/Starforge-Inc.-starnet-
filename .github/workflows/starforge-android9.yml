@@ -34,5 +34,14 @@ jobs:
             echo "StarForge validation state already current."
           else
             git commit -m "chore: checkpoint green StarForge state [skip ci]"
-            git push
+            for attempt in 1 2 3 4 5; do
+              git fetch origin "${GITHUB_REF_NAME}"
+              git rebase "origin/${GITHUB_REF_NAME}" && git push origin "HEAD:${GITHUB_REF_NAME}" && break
+              if [ "$attempt" -eq 5 ]; then
+                echo "Unable to publish green validation checkpoint after $attempt attempts."
+                exit 1
+              fi
+              git rebase --abort || true
+              sleep $((attempt * 2))
+            done
           fi
