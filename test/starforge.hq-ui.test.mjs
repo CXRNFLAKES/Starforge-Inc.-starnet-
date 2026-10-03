@@ -157,3 +157,5 @@ test('StarForge HQ exposes the dedicated worker room through the existing StarNe
   assert.match(room,/\/api\/starforge\/governance/);
   assert.match(room,/StarNet owns execution/);
 });
+
+test('StarForge worker room exposes read-only per-worker drill-down',()=>{const room=fs.readFileSync(new URL('../frontend/app/windows/starforge-worker-room.js',import.meta.url),'utf8');const css=fs.readFileSync(new URL('../frontend/css/starforge-worker-room.css',import.meta.url),'utf8');assert.match(room,/sf-worker-detail/);assert.match(room,/showDetail\(w,recentTasks\)/);assert.match(room,/worker\?\.activeRun/);assert.match(room,/assigneeId/);assert.match(room,/data-detail-close/);assert.match(css,/sf-worker-detail/);assert.match(css,/@media\(max-width:720px\)/);});
