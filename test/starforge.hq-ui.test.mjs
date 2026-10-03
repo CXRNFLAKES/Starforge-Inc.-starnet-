@@ -135,7 +135,7 @@ test('StarForge HQ defers live working status to the existing StarNet UI runtime
 
 test('StarForge HQ progression HUD is derived from governed level telemetry',()=>{
   assert.match(hq,/progressPercent/);
-  assert.match(hq,/LEVEL \'+String\(levelFeed\.level\)/);
+  assert.match(hq,/LVL \'+String\(levelFeed\.level\)/);
   assert.match(hq,/GROWTH OPERATIONS/);
   assert.match(hq,/LEGENDARY STATUS/);
   assert.match(css,/sf-level-detail/);
