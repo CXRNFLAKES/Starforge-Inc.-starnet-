@@ -6,7 +6,7 @@ const remasterContext={module:{exports:{}},IndustrialTextures:{enabled:()=>true,
 require('node:vm').runInNewContext(require('node:fs').readFileSync(require.resolve('../frontend/app/propsprites.js'),'utf8'),remasterContext);
 const T=require('../frontend/app/stationtemplates.js');
 const approved=require('./fixtures/station-default-approved.json');
-assert.equal(T.catalog.length,7); // default, five purpose builds, and cozy workshop
+assert.equal(T.catalog.length,8); // default, six purpose builds, and cozy workshop
 for(const P of [legacySprites,remasterContext.module.exports])for(const item of T.catalog) {
   const doc=T.build(item.id,M,P,1000),s=M.create(doc);
   assert.equal(s.rooms().filter(r=>r.kind!=='corridor').length,item.rooms);
@@ -32,6 +32,14 @@ for(const P of [legacySprites,remasterContext.module.exports])for(const item of 
     assert.deepEqual(bound.errors,[],'cozy: connected routing plan');
     assert.equal(bound.reach['test-agent'],true,'cozy: inbox reaches assigned bay');
     assert.equal(Object.keys(pipeline.liveTiles(bound)).length,6,'cozy: both runs energized');
+  }
+  if(item.id==='starforge') {
+    const namedRooms=s.rooms().filter(r=>r.kind!=='corridor').map(r=>r.name);
+    assert.deepEqual(namedRooms.sort(),['HOME','STARFORGE HQ','WORKFORCE'].sort(),'starforge: dedicated physical company rooms');
+    const workforce=s.rooms().find(r=>r.name==='WORKFORCE');
+    assert.ok(workforce,'starforge: workforce room exists');
+    assert.equal(s.props().filter(p=>p.agentId).length,2,'starforge: only the standard hero/crew workstations are assigned by default');
+    assert.ok(s.props().filter(p=>p.t==='desk').length>=7,'starforge: worker room has dedicated desk capacity');
   }
   if(item.id==='creative') {
     const pipeline=require('../frontend/app/pipeline.js');
