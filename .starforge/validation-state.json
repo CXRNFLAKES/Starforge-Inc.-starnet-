@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "product": "StarForge",
+  "phase": "starforge-hq-governance-feed",
+  "validation": {
+    "status": "green",
+    "runNumber": 301,
+    "runId": 37092084061,
+    "sha": "46fdd09fe8d765a7f38e494235684a28d427e5e8",
+    "branch": "starforge/governance-kernel",
+    "recordedAt": "2026-10-03T03:07:23.596Z",
+    "source": "github-actions"
+  },
+  "history": [
+    {
+      "status": "green",
+      "runNumber": 301,
+      "runId": 37092084061,
+      "sha": "46fdd09fe8d765a7f38e494235684a28d427e5e8",
+      "branch": "starforge/governance-kernel",
+      "recordedAt": "2026-10-03T03:07:23.596Z",
+      "source": "github-actions"
+    }
+  ],
+  "updatedAt": "2026-10-03T03:07:23.596Z"
+}
