@@ -123,3 +123,10 @@ test('StarForge HQ exposes real StarNet runtime identity without inventing worke
   assert.match(hq,/item\.activeRun/);
   assert.match(hq,/StationUI\.openAgent/);
 });
+
+test('StarForge HQ uses the governed workforce feed as its roster authority',()=>{
+  assert.match(hq,/governance\?\.workforce\?\.workers/);
+  assert.match(hq,/governed workforce feed/);
+  assert.match(hq,/worker\.status==='working'/);
+  assert.match(hq,/worker\.activeRun/);
+});
