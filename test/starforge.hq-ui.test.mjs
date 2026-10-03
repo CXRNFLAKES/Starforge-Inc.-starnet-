@@ -92,3 +92,5 @@ test('mobile test endpoint derives company level from governed capital',()=>{
   assert.match(script,/companyLevel: level\?\.level/);
   assert.doesNotMatch(script,/companyLevel:\s*1,/);
 });
+
+test('StarForge HQ maps governed level to a transparent game rank',()=>{assert.match(hq,/LEGENDARY/);assert.match(hq,/MEGA COMPANY/);assert.match(hq,/POWERHOUSE/);assert.match(hq,/STARTUP/);assert.match(hq,/data-tier/);});
