@@ -9,3 +9,14 @@ test('Worker room exposes only reported StarNet run identity and capabilities',(
 
 
 test('Worker room exposes a read-only governed activity timeline',()=>{assert.match(js,/sf-room-activity/);assert.match(js,/activeRuns/);assert.match(js,/recentTasks/);assert.match(js,/updatedAt\|\|task\.createdAt/);assert.match(js,/LIVE ACTIVITY/);assert.doesNotMatch(js,/method\s*:\s*['"]POST/);assert.match(css,/sf-activity-row/);});
+
+test('Worker RPG telemetry is derived by the governed feed',()=>{
+  const http=fs.readFileSync(new URL('../sidecar/governance/http.mjs',import.meta.url),'utf8');
+  assert.match(http,/const xp = Math\.max\(0, \(completed \* 100\) - \(failed \* 50\) - \(blocked \* 25\)\)/);
+  assert.match(http,/xpProgressPercent/);
+  assert.match(http,/recovery: failed >= 3 \|\| blocked >= 2/);
+  assert.match(js,/performance\.xp/);
+  assert.match(js,/performance\.level/);
+  assert.match(js,/performance\.xpProgressPercent/);
+  assert.doesNotMatch(js,/completed\*100.*failed\*50.*blocked\*25/);
+});
