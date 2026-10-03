@@ -105,3 +105,14 @@ test('StarForge HQ exposes explicit runtime connection state',()=>{
   assert.match(hq,/STARFORGE LINK · LIVE STARNET/);
   assert.match(hq,/STARFORGE LINK · TEST BRIDGE/);
 });
+
+test('StarForge HQ worker performance is derived from governed StarNet tasks',()=>{
+  const http=fs.readFileSync(new URL('../sidecar/governance/http.mjs',import.meta.url),'utf8');
+  assert.match(http,/performanceByAgent/);
+  assert.match(http,/reliabilityPercent/);
+  assert.match(http,/performance:/);
+  assert.match(hq,/performance\?\.reliabilityPercent/);
+  assert.match(hq,/DONE/);
+  assert.match(hq,/FAILED/);
+  assert.match(hq,/NO TASK HISTORY/);
+});
