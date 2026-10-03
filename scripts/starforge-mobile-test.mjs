@@ -9,6 +9,7 @@ import { ACTIONS, assertCan } from "../sidecar/governance/authority.mjs";
 import { makeStarForgeGovernanceHandler } from "../sidecar/governance/http.mjs";
 import { makeCompany } from "../sidecar/governance/company.mjs";
 import { makeStarNetRuntimeBridge } from "../sidecar/governance/starnet-runtime.mjs";
+import { companyLevelTelemetry } from "../sidecar/governance/capital-level.mjs";
 
 const ROOT = dirname(fileURLToPath(import.meta.url));
 const UI = join(ROOT, "../mobile-test/index.html");
@@ -106,6 +107,8 @@ function runTests() {
   });
 
   const passed = results.filter((x) => x.status === "PASS").length;
+  const capital = company.capitalSnapshot(ROLES.CHO);
+  const level = companyLevelTelemetry(capital.netOperatingCapital);
   return {
     mode: "android-9-test",
     starforgeHq: true,
@@ -116,10 +119,11 @@ function runTests() {
     total: results.length,
     results,
     company: company.snapshot(),
-    capital: company.capitalSnapshot(ROLES.CHO),
-    companyLevel: 1,
-    maxCompanyLevel: 100,
-    maxCompanyCapital: 10000000,
+    capital,
+    level,
+    companyLevel: level?.level ?? null,
+    maxCompanyLevel: level?.maxLevel ?? 100,
+    maxCompanyCapital: level?.maxCapital ?? 10000000,
   };
 }
 
