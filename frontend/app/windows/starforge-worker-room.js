@@ -26,13 +26,11 @@
           const completed=Math.max(0,Number(performance.completed)||0);
           const failed=Math.max(0,Number(performance.failed)||0);
           const blocked=Math.max(0,Number(performance.blocked)||0);
-          const taskCount=Math.max(0,Number(performance.taskCount)||0);
-          const xp=Math.max(0,(completed*100)-(failed*50)-(blocked*25));
-          const level=Math.max(1,Math.floor(xp/500)+1);
-          const levelBase=(level-1)*500;
-          const levelProgress=Math.max(0,Math.min(100,((xp-levelBase)/500)*100));
-          const successRate=Number.isFinite(Number(performance.reliabilityPercent))?Number(performance.reliabilityPercent):(taskCount?Math.round((completed/taskCount)*100):null);
-          const recovery=failed>=3||blocked>=2;
+          const xp=Math.max(0,Number(performance.xp)||0);
+          const level=Math.max(1,Number(performance.level)||1);
+          const levelProgress=Math.max(0,Math.min(100,Number(performance.xpProgressPercent)||0));
+          const successRate=Number.isFinite(Number(performance.successRate))?Number(performance.successRate):null;
+          const recovery=performance.recovery===true;
           card.innerHTML='<div class="sf-room-avatar">◆</div><div class="sf-room-main"><b>'+esc(w.name||w.id||'Unnamed worker')+'</b><span>'+esc(w.role||'StarNet agent')+' · '+esc(w.model||'model unavailable')+'</span><small>'+esc(activity)+'</small><small>'+esc(runId?'RUN '+runId:'NO ACTIVE RUN')+(startedAt?' · STARTED '+startedAt:'')+'</small><small>'+esc(capabilities.length?capabilities.slice(0,4).join(' · '):'CAPABILITIES NOT REPORTED')+'</small><small>LVL '+level+' · XP '+xp+' · '+(successRate===null?'NO HISTORY':successRate+'% SUCCESS')+'</small><small>✓ '+completed+' · ✕ '+failed+' · ▣ '+blocked+(recovery?' · RECOVERY':'')+'</small><div class="sf-xp-track"><i style="width:'+levelProgress+'%"></i></div></div><span class="sf-room-status '+(w.status==='working'?'working':'idle')+'">'+esc(String(w.status||'unknown').toUpperCase())+'</span><span class="sf-open">OPEN ›</span>';
           card.addEventListener('click',()=>{const agents=Array.isArray(StationUI.present)?StationUI.present:[];const i=agents.findIndex(a=>String(a.id||a.agentId)===String(w.id));if(i>=0&&typeof StationUI.openAgent==='function')StationUI.openAgent(i);});
           grid.appendChild(card);
