@@ -116,6 +116,30 @@ export function makeStarForgeGovernanceHandler({ workspace, roster = new Map(), 
     const governedSnapshot = company && typeof company.snapshot === "function" ? company.snapshot() : persisted;
     const tasks = Array.isArray(governedSnapshot?.tasks) ? governedSnapshot.tasks : [];
     const starNetTasks = tasks.filter((task) => task.assigneeSource === "starnet");
+    const performanceByAgent = new Map();
+    for (const task of starNetTasks) {
+      const id = String(task.assigneeId ?? "").trim();
+      if (!id) continue;
+      const current = performanceByAgent.get(id) ?? { taskCount: 0, completed: 0, failed: 0, blocked: 0, inProgress: 0 };
+      current.taskCount += 1;
+      if (task.status === "completed") current.completed += 1;
+      else if (task.status === "failed") current.failed += 1;
+      else if (task.status === "blocked") current.blocked += 1;
+      else if (task.status === "in-progress") current.inProgress += 1;
+      performanceByAgent.set(id, current);
+    }
+    workers = workers.map((worker) => {
+      const performance = performanceByAgent.get(String(worker.id ?? worker.agentId ?? "").trim());
+      if (!performance) return { ...worker, performance: { taskCount: 0, completed: 0, failed: 0, blocked: 0, inProgress: 0, reliabilityPercent: null } };
+      const resolved = performance.completed + performance.failed;
+      return {
+        ...worker,
+        performance: {
+          ...performance,
+          reliabilityPercent: resolved > 0 ? Math.round((performance.completed / resolved) * 100) : null,
+        },
+      };
+    });
     const capital = company && typeof company.capitalSnapshot === "function"
       ? { ...company.capitalSnapshot(ROLES.CHO), source: "starforge-governed-company-ledger" }
       : financeSummary(persisted);
