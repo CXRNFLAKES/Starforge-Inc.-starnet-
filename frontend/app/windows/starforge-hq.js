@@ -41,7 +41,7 @@
         const levelFeed=data?.level;
         if(!levelFeed || levelFeed.source!=='starforge-governed-company-ledger') throw new Error('authoritative company level unavailable');
         if(Number(levelFeed.currentCapital)!==net) throw new Error('company level capital does not match governed capital');
-        const tier=levelFeed.level>=100?'LEGENDARY':levelFeed.level>=90?'MEGA COMPANY':levelFeed.level>=80?'POWERHOUSE':levelFeed.level>=70?'ENTERPRISE':levelFeed.level>=60?'MAJOR COMPANY':levelFeed.level>=50?'MID-GAME':levelFeed.level>=40?'SERIOUS BUSINESS':levelFeed.level>=30?'ESTABLISHED':levelFeed.level>=20?'GROWING':levelFeed.level>=10?'EARLY GAME':levelFeed.level>=5?'BOOTSTRAPPED':'STARTUP';
+        const tier=String(levelFeed.rank||'STARTUP');
         levelEl.textContent='LVL '+String(levelFeed.level); tierEl.textContent='RANK · '+tier;
         capitalEl.textContent=new Intl.NumberFormat('en-IE',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(net)+' NET OPERATING CAPITAL';
         meterEl.style.width=Math.max(0,Math.min(100,Number(levelFeed.progressPercent)||0))+'%';
@@ -51,13 +51,10 @@
         detail.textContent=levelFeed.nextLevel
           ? 'LEVEL '+String(levelFeed.level)+' · '+progress.toFixed(1)+'% THROUGH CURRENT LEVEL'
           : 'LEVEL 100 · LEGENDARY CAMPAIGN COMPLETE';
-        const unlockRows=[
-          [20,'GROWTH OPERATIONS'],[40,'SERIOUS BUSINESS OPERATIONS'],[60,'MAJOR COMPANY OPERATIONS'],
-          [70,'ENTERPRISE OPERATIONS'],[80,'POWERHOUSE OPERATIONS'],[90,'MEGA COMPANY OPERATIONS'],[100,'LEGENDARY STATUS']
-        ];
+        const governedUnlocks=Array.isArray(levelFeed.unlocks)?levelFeed.unlocks:[];
         unlocks.replaceChildren();
-        unlockRows.filter(([threshold])=>Number(levelFeed.level)>=threshold).slice(-3).reverse().forEach(([threshold,label])=>{
-          const row=document.createElement('span');row.className='sf-unlock';row.textContent='✓ LVL '+threshold+' · '+label;unlocks.appendChild(row);
+        governedUnlocks.slice(-3).reverse().forEach(unlock=>{
+          const row=document.createElement('span');row.className='sf-unlock';row.textContent='✓ LVL '+String(unlock.level)+' · '+String(unlock.name);unlocks.appendChild(row);
         });
         nextEl.textContent=levelFeed.nextLevel
           ? 'NEXT LEVEL · '+new Intl.NumberFormat('en-IE',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(levelFeed.nextThreshold)+' · '+new Intl.NumberFormat('en-IE',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(levelFeed.remainingToNext)+' TO GO'
