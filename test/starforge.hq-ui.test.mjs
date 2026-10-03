@@ -116,3 +116,10 @@ test('StarForge HQ worker performance is derived from governed StarNet tasks',()
   assert.match(hq,/FAILED/);
   assert.match(hq,/NO TASK HISTORY/);
 });
+
+test('StarForge HQ exposes real StarNet runtime identity without inventing worker data',()=>{
+  assert.match(hq,/a\.model\|\|'model unavailable'/);
+  assert.match(hq,/a\.provider/);
+  assert.match(hq,/item\.activeRun/);
+  assert.match(hq,/StationUI\.openAgent/);
+});
