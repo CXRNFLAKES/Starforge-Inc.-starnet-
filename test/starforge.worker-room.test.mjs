@@ -6,3 +6,6 @@ test('Worker room remains read-only',()=>{assert.doesNotMatch(js,/fetch\([^)]*,\
 test('Worker room derives RPG progression only from governed task history',()=>{assert.match(js,/performance=w\.performance\|\|\{\}/);assert.doesNotMatch(js,/const tasks=Array\.isArray\(data\?\.execution\?\.recentTasks\)/);assert.match(js,/completed\*100/);assert.match(js,/LVL '\+level/);assert.match(js,/XP '\+xp/);assert.match(js,/failed/);assert.match(js,/blocked/);assert.match(js,/successRate/);assert.match(js,/levelProgress/);assert.match(js,/RECOVERY/);assert.match(css,/sf-xp-track/);});
 
 test('Worker room exposes only reported StarNet run identity and capabilities',()=>{assert.match(js,/runId=run\?\.id\|\|run\?\.runId/);assert.match(js,/startedAt=run\?\.startedAt\|\|run\?\.createdAt/);assert.match(js,/capabilities=Array\.isArray\(w\.capabilities\)/);assert.match(js,/CAPABILITIES NOT REPORTED/);assert.match(js,/NO ACTIVE RUN/);});
+
+
+test('Worker room exposes a read-only governed activity timeline',()=>{assert.match(js,/sf-room-activity/);assert.match(js,/activeRuns/);assert.match(js,/recentTasks/);assert.match(js,/updatedAt\|\|task\.createdAt/);assert.match(js,/LIVE ACTIVITY/);assert.doesNotMatch(js,/method\s*:\s*['"]POST/);assert.match(css,/sf-activity-row/);});
