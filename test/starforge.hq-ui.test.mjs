@@ -141,3 +141,9 @@ test('StarForge HQ progression HUD is derived from governed level telemetry',()=
   assert.match(css,/sf-level-detail/);
   assert.match(css,/sf-unlocks/);
 });
+test('StarForge HQ consumes backend-governed rank and unlock telemetry',()=>{
+  assert.match(hq,/levelFeed\.rank/);
+  assert.match(hq,/levelFeed\.unlocks/);
+  assert.doesNotMatch(hq,/levelFeed\.level>=100\?'LEGENDARY'/);
+  assert.doesNotMatch(hq,/const unlockRows=\[/);
+});
