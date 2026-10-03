@@ -84,3 +84,11 @@ test('StarForge HQ renders governed mission and project state read-only',()=>{
   assert.match(hq,/projects\.slice\(-5\)/);
   assert.match(hq,/Mission Control/i);
 });
+
+
+test('mobile test endpoint derives company level from governed capital',()=>{
+  const script=fs.readFileSync(new URL('../scripts/starforge-mobile-test.mjs',import.meta.url),'utf8');
+  assert.match(script,/companyLevelTelemetry\(capital\.netOperatingCapital\)/);
+  assert.match(script,/companyLevel: level\?\.level/);
+  assert.doesNotMatch(script,/companyLevel:\s*1,/);
+});
