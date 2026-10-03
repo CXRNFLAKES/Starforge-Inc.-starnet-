@@ -147,3 +147,13 @@ test('StarForge HQ consumes backend-governed rank and unlock telemetry',()=>{
   assert.doesNotMatch(hq,/levelFeed\.level>=100\?'LEGENDARY'/);
   assert.doesNotMatch(hq,/const unlockRows=\[/);
 });
+
+test('StarForge HQ exposes the dedicated worker room through the existing StarNet window system',()=>{
+  assert.match(hq,/data-open-worker-room/);
+  assert.match(hq,/openTerm\('starforge-worker-room'\)/);
+  assert.match(index,/css\/starforge-worker-room\.css/);
+  const room=fs.readFileSync(new URL('../frontend/app/windows/starforge-worker-room.js',import.meta.url),'utf8');
+  assert.match(room,/StationUI\.registerWindow\(\s*['"]starforge-worker-room['"]/);
+  assert.match(room,/\/api\/starforge\/governance/);
+  assert.match(room,/StarNet owns execution/);
+});
