@@ -130,3 +130,4 @@ test('StarForge HQ uses the governed workforce feed as its roster authority',()=
   assert.match(hq,/worker\.status==='working'/);
   assert.match(hq,/worker\.activeRun/);
 });
+test('StarForge HQ defers live working status to the existing StarNet UI runtime when available',()=>{assert.match(hq,/StationUI\.isAgentRunning/);assert.match(hq,/runtimeStatus=stationRunning\?'working'/);assert.match(hq,/worker\.status==='working'/);});
