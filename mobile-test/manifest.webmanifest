@@ -1,0 +1,11 @@
+{
+  "name": "StarForge Android 9",
+  "short_name": "StarForge",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#090b12",
+  "theme_color": "#090b12",
+  "description": "StarForge governed company and StarNet workforce mobile shell.",
+  "icons": []
+}
