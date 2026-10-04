@@ -35,6 +35,9 @@ jobs:
       - name: APInex live free-model discovery gate
         if: ${{ env.APINEX_API_KEY != '' }}
         run: npm run test:starforge:apinex:live
+      - name: C2 real APInex business execution gate
+        if: ${{ env.APINEX_API_KEY != '' }}
+        run: node --test test/starforge.c2-apinex-business-live.test.mjs
       - name: Record green StarForge state
         if: success() && github.event_name == 'push' && github.ref == 'refs/heads/starforge/governance-kernel'
         run: |
