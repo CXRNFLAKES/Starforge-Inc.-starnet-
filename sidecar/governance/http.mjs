@@ -229,6 +229,15 @@ export function makeStarForgeGovernanceHandler({ workspace, roster = new Map(), 
       companyXp: Math.max(0, companyXpRaw),
       companyXpRaw,
       companyXpSource: "starforge-governed-task-ledger",
+      companyXpProgress: (() => {
+        const xp = Math.max(0, companyXpRaw);
+        const xpPerLevel = 500;
+        const gameplayLevel = Math.floor(xp / xpPerLevel) + 1;
+        const currentThreshold = (gameplayLevel - 1) * xpPerLevel;
+        const nextThreshold = gameplayLevel * xpPerLevel;
+        const progressPercent = Math.max(0, Math.min(100, ((xp - currentThreshold) / xpPerLevel) * 100));
+        return { gameplayLevel, xpPerLevel, currentXp: xp, currentThreshold, nextThreshold, remainingToNext: Math.max(0, nextThreshold - xp), progressPercent, source: "starforge-governed-task-ledger" };
+      })(),
       progressionSource: "starforge-governed-task-ledger",
     };
     const capital = company && typeof company.capitalSnapshot === "function"

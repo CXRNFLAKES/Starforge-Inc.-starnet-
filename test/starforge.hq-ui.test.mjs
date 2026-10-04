@@ -198,3 +198,17 @@ test('StarForge HQ renders governed mission activity from the task ledger',()=>{
   assert.match(hq,/item\.xpDelta/);
   assert.match(hq,/XP '\+\(Number\(item\.xpDelta\)>0\?/);
 });
+
+test('StarForge HQ exposes separate governed mission XP progression without replacing capital level',()=>{
+  const http=fs.readFileSync(new URL('../sidecar/governance/http.mjs',import.meta.url),'utf8');
+  assert.match(http,/companyXpProgress/);
+  assert.match(http,/gameplayLevel/);
+  assert.match(http,/xpPerLevel/);
+  assert.match(http,/remainingToNext/);
+  assert.match(http,/source: "starforge-governed-task-ledger"/);
+  assert.match(hq,/data-sf="company-xp-level"/);
+  assert.match(hq,/data-sf="company-xp-next"/);
+  assert.match(hq,/gameplay\?\.companyXpProgress/);
+  assert.match(hq,/xpProgress\.gameplayLevel/);
+  assert.match(hq,/xpProgress\.remainingToNext/);
+});
