@@ -7,7 +7,7 @@ const manifest = JSON.parse(fs.readFileSync(new URL("../mobile-test/manifest.web
 const sw = fs.readFileSync(new URL("../mobile-test/sw.js", import.meta.url), "utf8");
 
 test("Android 9 shell is installable as a standalone web app", () => {
-  assert.match(html, /rel=["']manifest\.webmanifest["']/);
+  assert.match(html, /rel=["']manifest["']/);\n  assert.match(html, /href=["']\/manifest\.webmanifest["']/);
   assert.match(html, /serviceWorker/);
   assert.equal(manifest.display, "standalone");
   assert.equal(manifest.start_url, "/");
