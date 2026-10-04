@@ -52,7 +52,8 @@ test("live StarNet runtime bridge delegates through the existing dispatch endpoi
 
 
 test("StarNet provider registry exposes APInex through the existing OpenAI-compatible adapter", async () => {
-  const registry = await import("../sidecar/providers/registry.js");
+  const module = await import("../sidecar/providers/registry.js");
+  const registry = module.default || module;
   const profile = registry.getProviderProfile("apinex");
   assert.equal(profile.id, "apinex");
   assert.equal(profile.adapter, "openai-compatible");
