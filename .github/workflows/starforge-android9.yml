@@ -26,6 +26,8 @@ jobs:
       - run: npm ci
       - name: C3 failure and security gate
         run: node --test test/starforge.c3-failure-security-gate.test.mjs
+      - name: C4 financial reality gate
+        run: node --test test/starforge.c4-financial-reality.test.mjs
       - run: npm run starforge:preflight
       - run: npm run starforge:test
       - run: npm run test:starforge:integration
