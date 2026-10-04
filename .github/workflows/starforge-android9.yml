@@ -46,6 +46,8 @@ jobs:
         run: node --test test/starforge.d7-cho-decision-integrity.test.mjs
       - name: D8 governance observability gate
         run: node --test test/starforge.d8-governance-observability.test.mjs
+      - name: D9 persistence integrity gate
+        run: node --test test/starforge.d9-persistence-integrity.test.mjs
       - run: npm run starforge:preflight
       - run: npm run starforge:test
       - run: npm run test:starforge:integration
