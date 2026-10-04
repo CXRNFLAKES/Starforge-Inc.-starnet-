@@ -74,7 +74,7 @@ test("D6 requires PA review before the Board can approve a routine expense", () 
     () => lab.boardDecision(ROLES.BOARD, expense.id, { decision: "approve-routine" }),
     /requires PA review/,
   );
-  assert.equal(lab.snapshot().lab.requests[0].status, "pending-risk");
+  assert.equal(lab.snapshot().lab.requests[0].status, "pa-review");
 });
 
 test("D6 keeps approval execution CHO-reserved and fail-closed", () => {
