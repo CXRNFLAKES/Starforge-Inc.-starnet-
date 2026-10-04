@@ -164,8 +164,8 @@ test('StarForge worker room exposes read-only per-worker drill-down',()=>{const 
 
 test('StarForge HQ renders governed company gameplay progression',()=>{
   assert.match(hq,/data-sf="company-xp"/);
-  assert.match(hq,/data\\?\\.gameplay\\?\\.companyXp/);
-  assert.match(hq,/data\\?\\.gameplay\\?\\.projects/);
+  assert.match(hq,/data\?\.gameplay\?\.companyXp/);
+  assert.match(hq,/data\?\.gameplay\?\.projects/);
   assert.match(hq,/progressPercent/);
   assert.match(hq,/companyXpSource/);
 });
