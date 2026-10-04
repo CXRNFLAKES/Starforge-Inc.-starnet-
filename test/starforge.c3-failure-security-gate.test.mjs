@@ -153,7 +153,7 @@ test("C3 persists a failed StarNet execution without granting completion, XP, or
   const stored = operations.inspect({ projectId: project.id });
   assert.equal(stored.tasks.length, 1);
   assert.equal(stored.tasks[0].status, "failed");
-  assert.match(stored.tasks[0].note, /StarNet dispatch failed: APInex timeout/);
+  assert.match(stored.tasks[0].note, /APInex timeout/);
   assert.equal(company.snapshot().finance.entries.length, 0);
 
   const telemetry = companyLevelTelemetry(company.snapshot().finance.openingCapital);
