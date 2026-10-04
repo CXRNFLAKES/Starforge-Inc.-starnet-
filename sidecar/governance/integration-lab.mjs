@@ -35,7 +35,9 @@ export function makeIntegrationLab(overrides = {}) {
   };
 
   const emit = (actorRole, event, details = {}) => {
-    company.audit(actorRole, event, details);
+    // D15 seals the production company audit boundary. The integration lab is
+    // deliberately side-effect-free, so keep its event stream local to the lab
+    // rather than reaching around the sealed company API.
     state.events.push({ actorRole, event, details: clone(details) });
   };
 
