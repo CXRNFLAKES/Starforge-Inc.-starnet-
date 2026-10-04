@@ -158,7 +158,7 @@ test("C3 persists a failed StarNet execution without granting completion, XP, or
 
   const telemetry = companyLevelTelemetry(company.snapshot().finance.openingCapital);
   assert.equal(telemetry.level, 1);
-  assert.equal(telemetry.netOperatingCapital, 0);
+  assert.equal(telemetry.currentCapital, 0);
 });
 
 test("C3 rejects malformed StarNet results and keeps the task failed", async () => {
