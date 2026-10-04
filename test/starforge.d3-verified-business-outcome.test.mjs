@@ -67,7 +67,8 @@ test("D3 verifies a completed governed business outcome before financial recogni
   assert.equal(verification.verified, true);
   assert.equal(verification.label, FACT_LABELS.VERIFIED_FACT);
   assert.equal(verification.taskId, execution.task.id);
-  assert.equal(company.snapshot().tasks[0].businessOutcome.verified, true);
+  const verifiedAudit = company.snapshot().audit.find((item) => item.event === "business.outcome.verified" && item.details.outcomeId === verification.outcomeId);
+  assert.equal(verifiedAudit?.details.verified, true);
   assert.equal(company.snapshot().finance.entries.length, 0);
 
   assert.throws(() => company.recordFinanceEntry(ROLES.ACCOUNTANT, {
