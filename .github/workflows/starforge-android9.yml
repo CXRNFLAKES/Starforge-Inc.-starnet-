@@ -32,6 +32,8 @@ jobs:
         run: node --test test/starforge.c5-hq-mobile-reality.test.mjs
       - name: D1 production APInex integration gate
         run: node --test test/starforge.d1-production-apinex-integration.test.mjs
+      - name: D2 governed model execution gate
+        run: node --test test/starforge.d2-governed-model-execution.test.mjs
       - run: npm run starforge:preflight
       - run: npm run starforge:test
       - run: npm run test:starforge:integration
