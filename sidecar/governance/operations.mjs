@@ -318,6 +318,7 @@ export function makeOperations({ company, starnet = null, modelRouter = null, fa
     setProjectStatus,
     delegateTask,
     delegateToStarNet,
+    verifyBusinessOutcome,
     updateTask,
     inspect,
     reviewExecution,
