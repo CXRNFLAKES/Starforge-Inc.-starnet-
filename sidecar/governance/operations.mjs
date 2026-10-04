@@ -76,10 +76,6 @@ export function makeOperations({ company, starnet = null, modelRouter = null } =
     if (!assignee) throw new Error("Unknown assignee");
     if (assignee.role === ROLES.CHO) throw new Error("CHO is not an operational worker target");
 
-    if (modelRoute && modelRoute.allowed !== true) {
-      throw new Error("StarForge model router did not approve the requested model");
-    }
-
     const now = new Date().toISOString();
     const task = {
       id: randomUUID(),
@@ -129,6 +125,9 @@ export function makeOperations({ company, starnet = null, modelRouter = null } =
         provider: provider || "apinex",
         model,
       });
+      if (!modelRoute || modelRoute.allowed !== true) {
+        throw new Error("StarForge model router did not approve the requested model");
+      }
     }
 
     const now = new Date().toISOString();
