@@ -169,3 +169,11 @@ test('StarForge HQ renders governed company gameplay progression',()=>{
   assert.match(hq,/progressPercent/);
   assert.match(hq,/companyXpSource/);
 });
+
+
+test('StarForge HQ renders governed objective progression telemetry',()=>{
+  assert.match(hq,/data-mission="objective-progress"/);
+  assert.match(hq,/gameplay\?\.objectiveProgress/);
+  assert.match(hq,/current\.progressPercent/);
+  assert.match(hq,/current\.companyXp/);
+});
