@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { ROLES } from "./roles.mjs";
 import { ACTIONS, assertCan } from "./authority.mjs";
+import { makeFactChecker } from "./fact-checker.mjs";
 
 const PROJECT_STATUSES = Object.freeze(["planned", "active", "paused", "completed", "cancelled"]);
 const TASK_STATUSES = Object.freeze(["queued", "assigned", "in-progress", "blocked", "completed", "failed"]);
@@ -9,7 +10,7 @@ function clone(value) {
   return structuredClone(value);
 }
 
-export function makeOperations({ company, starnet = null, modelRouter = null } = {}) {
+export function makeOperations({ company, starnet = null, modelRouter = null, factChecker = makeFactChecker() } = {}) {
   if (!company || typeof company.snapshot !== "function") {
     throw new Error("makeOperations requires a company");
   }
@@ -174,6 +175,41 @@ export function makeOperations({ company, starnet = null, modelRouter = null } =
       company.updateTask(actorRole, task);
       throw error;
     }
+  }
+
+  function verifyBusinessOutcome(actorRole, { taskId, claim, evidence = [] } = {}) {
+    if (actorRole !== ROLES.PA) {
+      throw new Error("Only the PA may verify a business outcome");
+    }
+    requireRole(actorRole, ACTIONS.PA_REVIEW);
+    if (!taskId) throw new Error("Business outcome verification requires a task id");
+
+    const task = company.snapshot().tasks.find((item) => item.id === taskId);
+    if (!task) throw new Error("Unknown task");
+    if (task.status !== "completed") {
+      throw new Error("Business outcome requires a completed task");
+    }
+    if (task.assigneeSource !== "starnet") {
+      throw new Error("Business outcome verification requires StarNet execution");
+    }
+
+    const checked = factChecker.check(claim, { evidence });
+    const outcomeId = randomUUID();
+    const verification = {
+      outcomeId,
+      taskId: task.id,
+      claim: checked.claim,
+      label: checked.label,
+      confidence: checked.confidence,
+      findings: checked.findings,
+      evidenceCount: checked.evidenceCount,
+      conflicts: checked.conflicts,
+      verified: checked.label === "VERIFIED FACT",
+      verifiedBy: actorRole,
+      verifiedAt: new Date().toISOString(),
+    };
+    company.audit(actorRole, "business.outcome.verified", verification, true);
+    return clone(verification);
   }
 
   function updateTask(actorRole, taskId, { actorId = null, status, note = "" } = {}) {
