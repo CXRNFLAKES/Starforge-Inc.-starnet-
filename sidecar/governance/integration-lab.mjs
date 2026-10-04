@@ -7,6 +7,7 @@ import { makeDecisionPacket } from "./decision-packet.mjs";
 
 export const INTEGRATION_MODE = "testing";
 export const SIDE_EFFECTS = "none";
+export const BOARD_ROUTINE_MAX_AMOUNT = 5000;
 
 function clone(value) {
   return structuredClone(value);
@@ -135,11 +136,24 @@ export function makeIntegrationLab(overrides = {}) {
       assertCan(actorRole, ACTIONS.BOARD_DECIDE);
       const request = state.requests.find((item) => item.id === requestId);
       if (!request) throw new Error(`Unknown request: ${requestId}`);
+      const risk = state.riskAssessments.find((item) => item.requestId === requestId && !item.type);
+      const paReview = state.riskAssessments.find((item) => item.requestId === requestId && item.type === "pa-review");
+      if (!risk) throw new Error("Board decision requires an independent risk assessment");
+      if (!paReview) throw new Error("Board decision requires PA review");
+      const amount = Number(request.amount);
+      const routineEligible = risk.rating === "low" && Number.isFinite(amount) && amount < BOARD_ROUTINE_MAX_AMOUNT;
+      const requestedDecision = decision.decision ?? "escalate";
+      if (requestedDecision === "approve-routine" && !routineEligible) {
+        request.status = "cho-decision";
+        throw new Error("Non-routine or high-exposure expense requires CHO decision");
+      }
       const entry = {
         requestId,
         actorRole,
-        decision: decision.decision ?? "escalate",
+        decision: requestedDecision,
         rationale: decision.rationale ?? "",
+        riskRating: risk.rating,
+        routineEligible,
       };
       request.status = entry.decision === "approve-routine" ? "approved" : "cho-decision";
       emit(actorRole, "board.decision", entry);
