@@ -58,6 +58,8 @@ jobs:
         run: node --test test/starforge.d13-recovery-outcome-integrity.test.mjs
       - name: D14 recovery persistence authority gate
         run: node --test test/starforge.d14-recovery-persistence-authority.test.mjs
+      - name: D15 governance audit integrity gate
+        run: node --test test/starforge.d15-governance-audit-integrity.test.mjs
       - run: npm run starforge:preflight
       - run: npm run starforge:test
       - run: npm run test:starforge:integration
