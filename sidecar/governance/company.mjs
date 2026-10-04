@@ -246,13 +246,30 @@ export function makeCompany({ load, save } = {}) {
     },
 
     updateRecoveryMission(actorRole, mission) {
-      assertCan(actorRole, ACTIONS.CEO_OPERATE);
       const index = state.recoveryMissions.findIndex((item) => item.id === mission?.id);
       if (index < 0) throw new Error("Unknown recovery mission");
       const current = state.recoveryMissions[index];
       if (current.status === "closed") throw new Error("Recovery mission is already closed");
       if (!mission?.status || !["assigned", "in-progress", "verified", "closed"].includes(mission.status)) {
         throw new Error("Invalid recovery mission status");
+      }
+      const nextStatus = mission.status;
+      const allowedTransitions = {
+        assigned: ["in-progress"],
+        "in-progress": ["verified"],
+        verified: ["closed"],
+      };
+      if (nextStatus === "verified") {
+        assertCan(actorRole, ACTIONS.PA_REVIEW);
+        if (current.status !== "in-progress") throw new Error("Recovery mission must be in-progress before verification");
+      } else if (nextStatus === "closed") {
+        assertCan(actorRole, ACTIONS.CEO_OPERATE);
+        if (current.status !== "verified") throw new Error("Recovery mission must be verified before closure");
+      } else {
+        assertCan(actorRole, ACTIONS.CEO_OPERATE);
+        if (!allowedTransitions[current.status]?.includes(nextStatus)) {
+          throw new Error("Invalid recovery mission transition");
+        }
       }
       const updated = {
         ...current,
