@@ -62,8 +62,8 @@ test("D11: recovery completes assigned -> in-progress -> verified -> closed", ()
 });
 
 test("D11: lifecycle is fail-closed before recovery is actually complete", () => {
-  const { operations } = setup("blocked");
-  const mission = assign(...Object.values({ company: setup("blocked").company, operations }));
+  const { company, operations } = setup("blocked");
+  const mission = assign(company, operations);
   assert.throws(
     () => operations.verifyRecoveryMission(ROLES.PA, mission.id, { evidence: ["premature"] }),
     /in-progress/,
