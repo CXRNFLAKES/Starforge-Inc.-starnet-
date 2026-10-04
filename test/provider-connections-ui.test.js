@@ -17,6 +17,7 @@ const tauri = ['main.rs', 'credentials.rs']
 let n = 0;
 const ok = (cond, msg) => { assert.ok(cond, msg); n++; };
 const hostedProviders = ['xai', 'groq', 'mistral', 'deepseek', 'together', 'fireworks', 'perplexity', 'cerebras'];
+const apinexRegistry = fs.readFileSync(path.join(__dirname, '..', 'sidecar', 'providers', 'registry.js'), 'utf8');
 
 ok(!/Harness\.setKey\(\s*['"]{2}\s*\)/.test(app), 'Codex wake does not clear the OpenRouter BYOK slot');
 ok(/provider\s*!==\s*'codex'[\s\S]{0,80}reqBody\.key\s*=\s*key/.test(harness), 'browser BYOK key is sent only for key-backed provider runs');
@@ -27,6 +28,10 @@ ok(/if\s*\(active\s*!==\s*'openrouter'\)\s*addProvider\('openrouter'\)/.test(sta
 ok(/const\s+addProvider\s*=\s*active\s*===\s*'codex'\s*\?\s*'openrouter'\s*:\s*active/.test(station), 'Codex-active add-key row targets OpenRouter');
 ok(/id="key-in-new"/.test(station) && /data-act="add"/.test(station) && /data-provider=/.test(station), 'add-key controls carry their target provider');
 ok(/const\s+provider\s*=\s*b\.dataset\.provider\s*\|\|\s*activeProv\(\)/.test(station), 'add-key save writes to the row provider, not necessarily the active provider');
+
+ok(index.includes("data-prov=\"apinex\""), 'APInex appears in the Providers picker');
+ok(station.includes("id: 'apinex'"), 'APInex appears in the StarNet Settings provider cards');
+ok(apinexRegistry.includes("id: 'apinex'") && apinexRegistry.includes("baseUrl: 'https://api.apinex.bond/v1'") && apinexRegistry.includes("modelsPath: '/models'"), 'APInex Settings card is backed by the StarNet provider registry');
 
 for (const id of hostedProviders) {
   ok(index.includes('data-prov="' + id + '"'), id + ' appears in the connect provider picker');
