@@ -90,7 +90,7 @@ test("D4 reviewing a report records review activity without changing the report"
   assert.deepEqual(after, before);
 
   const reviewEvents = company.snapshot().audit.filter(
-    item => item.event === "leadership.review_report" && item.details?.reportId === result.details.reportId,
+    item => item.event === "leadership.review_report" && item.details?.details?.reportId === result.details.reportId,
   );
   assert.equal(reviewEvents.length, 2);
   assert.deepEqual(reviewEvents.map(item => item.actorRole), [ROLES.CEO, ROLES.PA]);
