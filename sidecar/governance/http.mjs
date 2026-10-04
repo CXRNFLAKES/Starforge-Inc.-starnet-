@@ -113,6 +113,9 @@ export function makeStarForgeGovernanceHandler({ workspace, roster = new Map(), 
       }) : workers;
       workforceSource = "live-runtime-roster";
     }
+    const runtimeMode = ["live-runtime", "live-runtime-roster", "live-starnet-sidecar"].includes(workforceSource)
+      ? "live-starnet"
+      : "test-bridge";
     const governedSnapshot = company && typeof company.snapshot === "function" ? company.snapshot() : persisted;
     const tasks = Array.isArray(governedSnapshot?.tasks) ? governedSnapshot.tasks : [];
     const starNetTasks = tasks.filter((task) => task.assigneeSource === "starnet");
@@ -180,6 +183,7 @@ export function makeStarForgeGovernanceHandler({ workspace, roster = new Map(), 
       readOnly: true,
       connection: {
         runtimeConfigured: Boolean(runtime),
+        runtimeMode,
         workforceSource,
         financeSource: capital?.source ?? "unavailable",
         executionSource: "starforge-governed-task-ledger",
