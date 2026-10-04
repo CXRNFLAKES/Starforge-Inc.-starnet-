@@ -29,6 +29,18 @@ export function makeStarNetRuntimeBridge({ baseUrl = "", token = "", fetchImpl =
     },
   });
 
+  async function probeRuntime() {
+    const body = await request("/api/roster");
+    if (!body || !Array.isArray(body.agents)) {
+      throw new Error("StarNet runtime returned an invalid roster payload");
+    }
+    return Object.freeze({
+      connected: true,
+      source: "live-runtime",
+      workerCount: body.agents.length,
+    });
+  }
+
   async function inspectWorkforce({ activeRuns = [] } = {}) {
     // Remote StarNet rosters are asynchronous; do not route them through the synchronous
     // adapter roster accessor. The adapter remains the governed dispatch boundary.
@@ -62,6 +74,7 @@ export function makeStarNetRuntimeBridge({ baseUrl = "", token = "", fetchImpl =
 
   return Object.freeze({
     baseUrl: root,
+    probeRuntime,
     listWorkers: async () => {
       const body = await request("/api/roster");
       return Array.isArray(body?.agents) ? body.agents : [];
