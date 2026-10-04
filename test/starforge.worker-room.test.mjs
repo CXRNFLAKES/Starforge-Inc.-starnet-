@@ -1,3 +1,4 @@
+// Phase B: StarNet workforce station telemetry coverage.
 import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';
 const js=fs.readFileSync(new URL('../frontend/app/windows/starforge-worker-room.js',import.meta.url),'utf8');const index=fs.readFileSync(new URL('../frontend/index.html',import.meta.url),'utf8');const css=fs.readFileSync(new URL('../frontend/css/starforge-worker-room.css',import.meta.url),'utf8');
 test('StarForge worker room reuses StarNet UI and live governed telemetry',()=>{assert.match(js,/StationUI\.registerWindow\(\s*['"]starforge-worker-room['"]/);assert.match(js,/fetch\('\/api\/starforge\/governance'/);assert.match(js,/workforce\?\.workers/);assert.match(js,/StationUI\.openAgent/);assert.match(index,/app\/windows\/starforge-worker-room\.js/);assert.match(index,/data-term="starforge-worker-room"/);assert.match(css,/max-width:720px/)});
