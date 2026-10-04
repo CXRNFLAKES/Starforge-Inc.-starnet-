@@ -1,6 +1,11 @@
 import { makeStarNetAdapter } from "./starnet-adapter.mjs";
 
-export function makeStarNetRuntimeBridge({ baseUrl = "", token = "", fetchImpl = globalThis.fetch } = {}) {
+export function makeStarNetRuntimeBridge({
+  baseUrl = "",
+  token = "",
+  fetchImpl = globalThis.fetch,
+  router = null,
+} = {}) {
   if (!baseUrl) return null;
   if (typeof fetchImpl !== "function") throw new TypeError("StarNet runtime bridge requires fetch");
   const root = String(baseUrl).replace(/\/+$/, "");
@@ -72,6 +77,13 @@ export function makeStarNetRuntimeBridge({ baseUrl = "", token = "", fetchImpl =
     };
   }
 
+  async function routeModel(request = {}) {
+    if (!router || typeof router.resolve !== "function") {
+      throw new Error("StarNet model router is not configured");
+    }
+    return router.resolve(request);
+  }
+
   return Object.freeze({
     baseUrl: root,
     probeRuntime,
@@ -82,5 +94,6 @@ export function makeStarNetRuntimeBridge({ baseUrl = "", token = "", fetchImpl =
     listWorkersAsync: () => adapter.listWorkersAsync(),
     delegateTask: (...args) => adapter.delegateTask(...args),
     inspectWorkforce,
+    routeModel,
   });
 }

@@ -50,6 +50,45 @@ test("live StarNet runtime bridge delegates through the existing dispatch endpoi
   assert.equal(result.result.content, "remote execution complete");
 });
 
+test("live StarNet runtime bridge routes models through the governed StarForge router seam", async () => {
+  const calls = [];
+  const bridge = makeStarNetRuntimeBridge({
+    baseUrl: "http://starnet.test",
+    fetchImpl: fetchMock,
+    router: {
+      resolve: async request => {
+        calls.push(request);
+        return {
+          allowed: true,
+          provider: "apinex",
+          model: "free/gpt-5.6-luna",
+          source: "starforge-governed-model-router",
+        };
+      },
+    },
+  });
+  const route = await bridge.routeModel({
+    provider: "apinex",
+    model: "free/gpt-5.6-luna",
+    purpose: "starforge-mission",
+  });
+  assert.equal(route.allowed, true);
+  assert.equal(route.provider, "apinex");
+  assert.equal(route.model, "free/gpt-5.6-luna");
+  assert.deepEqual(calls, [{
+    provider: "apinex",
+    model: "free/gpt-5.6-luna",
+    purpose: "starforge-mission",
+  }]);
+});
+
+test("live StarNet runtime bridge fails closed when the model router is absent", async () => {
+  const bridge = makeStarNetRuntimeBridge({ baseUrl: "http://starnet.test", fetchImpl: fetchMock });
+  await assert.rejects(() => bridge.routeModel({
+    provider: "apinex",
+    model: "free/gpt-5.6-luna",
+  }), /model router is not configured/);
+});
 
 test("StarNet provider registry exposes APInex through the existing OpenAI-compatible adapter", async () => {
   const module = await import("../sidecar/providers/registry.js");
