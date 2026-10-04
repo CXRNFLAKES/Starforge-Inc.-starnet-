@@ -214,6 +214,95 @@ export function makeOperations({ company, starnet = null, modelRouter = null, fa
     }));
   }
 
+  async function executeRecoveryMission(actorRole, missionId, { context = "", provider = "", model = "" } = {}) {
+    if (actorRole !== ROLES.CEO) throw new Error("Only the CEO may execute recovery missions");
+    requireRole(actorRole, ACTIONS.CEO_OPERATE);
+    requireRole(actorRole, ACTIONS.STARNET_DELEGATE);
+    if (!starnet || typeof starnet.delegateTask !== "function") {
+      throw new Error("StarNet adapter is required for recovery execution");
+    }
+
+    const mission = company.snapshot().recoveryMissions.find((item) => item.id === missionId);
+    if (!mission) throw new Error("Unknown recovery mission");
+    if (mission.status !== "in-progress") throw new Error("Recovery mission must be in-progress before execution");
+
+    const task = company.snapshot().tasks.find((item) => item.id === mission.taskId);
+    if (!task) throw new Error("Recovery mission requires an existing task");
+    if (!["failed", "blocked"].includes(task.status)) {
+      throw new Error("Recovery execution requires failed or blocked work");
+    }
+
+    const roster = typeof starnet.listWorkersAsync === "function"
+      ? await starnet.listWorkersAsync()
+      : typeof starnet.listWorkers === "function"
+        ? await starnet.listWorkers()
+        : [];
+    const worker = roster.find((item) => item.id === String(mission.assignedAgentId).trim());
+    if (!worker) throw new Error("Recovery worker is not present in the live roster");
+
+    let modelRoute = null;
+    if (model) {
+      if (!modelRouter || typeof modelRouter.resolve !== "function") {
+        throw new Error("StarForge model router is required for governed recovery model selection");
+      }
+      modelRoute = await modelRouter.resolve({ provider: provider || "apinex", model });
+      if (!modelRoute || modelRoute.allowed !== true) {
+        throw new Error("StarForge model router did not approve the recovery model");
+      }
+    }
+
+    const recoveryTask = {
+      ...task,
+      status: "in-progress",
+      note: "StarNet recovery execution in progress",
+      updatedAt: new Date().toISOString(),
+      ...(modelRoute ? { modelRoute } : {}),
+    };
+    company.updateTask(actorRole, recoveryTask);
+
+    try {
+      const adapterResult = await starnet.delegateTask(actorRole, {
+        id: task.id,
+        projectId: task.projectId,
+        assigneeId: worker.id,
+        title: mission.mission,
+        successCriteria: task.successCriteria || "Complete and repair the failed or blocked work.",
+        context: modelRoute
+          ? { base: context, recoveryMissionId: mission.id, modelRoute }
+          : { base: context, recoveryMissionId: mission.id },
+      });
+      if (!adapterResult || !adapterResult.result || typeof adapterResult.result !== "object" ||
+          typeof adapterResult.result.content !== "string" || !adapterResult.result.content.trim()) {
+        throw new Error("StarNet recovery returned an invalid result");
+      }
+
+      const result = adapterResult.result;
+      const completedTask = {
+        ...recoveryTask,
+        status: "completed",
+        note: "StarNet recovery execution completed",
+        execution: {
+          provider: "starnet",
+          recoveryMissionId: mission.id,
+          result,
+          ...(modelRoute ? { modelRoute } : {}),
+        },
+        updatedAt: new Date().toISOString(),
+      };
+      company.updateTask(actorRole, completedTask);
+      return clone({ mission, task: completedTask, worker, result });
+    } catch (error) {
+      const failedTask = {
+        ...recoveryTask,
+        status: "failed",
+        note: error instanceof Error ? error.message : String(error),
+        updatedAt: new Date().toISOString(),
+      };
+      company.updateTask(actorRole, failedTask);
+      throw error;
+    }
+  }
+
   function verifyRecoveryMission(actorRole, missionId, { evidence = [] } = {}) {
     if (actorRole !== ROLES.PA) throw new Error("Only the PA may verify recovery missions");
     requireRole(actorRole, ACTIONS.PA_REVIEW);
