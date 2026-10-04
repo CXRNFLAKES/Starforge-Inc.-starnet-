@@ -196,12 +196,33 @@ export function makeStarForgeGovernanceHandler({ workspace, roster = new Map(), 
       const outcome = failed > 0 ? "failed" : blocked > 0 ? "blocked" : inProgress > 0 ? "in-progress" : (total > 0 && completed === total) ? "completed" : "pending";
       return { id: objective.id, title: objective.title, status: objective.status, outcome, projectCount: linkedProjects.length, taskCount: total, completed, failed, blocked, inProgress, assignedWorkerCount: assignedWorkers.length, assignedWorkers, progressPercent: total ? Math.round((completed / total) * 100) : 0, companyXp: Math.max(0, xp), companyXpRaw: xp, progressionSource: "starforge-governed-task-ledger" };
     });
-    const gameplay = {
-      mission: String(governedSnapshot?.company?.mission ?? ""),
+    const projectById = new Map(projects.map((project) => [String(project.id), project]));
+    const objectiveById = new Map(objectives.map((objective) => [String(objective.id), objective]));
+    const activity = tasks.slice(-10).reverse().map((task) => {
+      const project = projectById.get(String(task.projectId ?? ""));
+      const objective = project?.objectiveId ? objectiveById.get(String(project.objectiveId)) : null;
+      const status = String(task.status ?? "pending");
+      const outcome = status === "completed" ? "completed" : status === "failed" ? "failed" : status === "blocked" ? "blocked" : status === "in-progress" ? "in-progress" : "pending";
+      return {
+        taskId: String(task.id ?? ""),
+        title: String(task.title ?? "Untitled task"),
+        status,
+        outcome,
+        assigneeId: String(task.assigneeId ?? ""),
+        projectId: String(task.projectId ?? ""),
+        projectTitle: String(project?.title ?? ""),
+        objectiveId: String(objective?.id ?? ""),
+        objectiveTitle: String(objective?.title ?? ""),
+        timestamp: String(task.updatedAt ?? task.createdAt ?? ""),
+        source: "starforge-governed-task-ledger",
+      };
+    });
+    const gameplay = { String(governedSnapshot?.company?.mission ?? ""),
       objective: String(governedSnapshot?.company?.objective ?? ""),
       objectives: objectives.slice(-5),
       objectiveProgress: objectiveGameplay.slice(-5),
       projects: projectGameplay.slice(-10),
+      activity,
       companyXp: Math.max(0, companyXpRaw),
       companyXpRaw,
       companyXpSource: "starforge-governed-task-ledger",

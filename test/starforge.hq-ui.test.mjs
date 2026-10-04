@@ -183,3 +183,14 @@ test('StarForge HQ renders governed objective worker assignment telemetry',()=>{
 
 
 test('StarForge HQ renders governed project and objective outcomes',()=>{assert.match(hq,/current\.outcome\|\|'pending'/);assert.match(hq,/project\.outcome\|\|'pending'/);assert.match(hq,/\.toUpperCase\(\)/);});
+
+test('StarForge HQ renders governed mission activity from the task ledger',()=>{
+  const http=fs.readFileSync(new URL('../sidecar/governance/http.mjs',import.meta.url),'utf8');
+  assert.match(http,/const activity = tasks\.slice\(-10\)\.reverse\(\)/);
+  assert.match(http,/source: "starforge-governed-task-ledger"/);
+  assert.match(http,/activity,/);
+  assert.match(hq,/data-mission="activity"/);
+  assert.match(hq,/gameplay\?\.activity/);
+  assert.match(hq,/MISSION ACTIVITY/);
+  assert.match(hq,/item\.outcome/);
+});
