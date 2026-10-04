@@ -224,3 +224,12 @@ test('StarForge HQ exposes governed mission XP milestones and unlock telemetry',
   assert.match(hq,/xpProgress\.missionRank/);
   assert.match(hq,/xpProgress\?\.nextMilestone/);
 });
+
+
+test('StarForge HQ renders a distinct governed mission XP progress bar',()=>{
+  assert.match(hq,/data-sf="mission-xp-bar"/);
+  assert.match(hq,/xpProgress\.progressPercent/);
+  assert.match(hq,/missionXpBar\.style\.width/);
+  assert.match(css,/\.sf-mission-xp/);
+  assert.match(css,/Mission gameplay XP is visually distinct/);
+});
