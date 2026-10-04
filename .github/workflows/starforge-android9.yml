@@ -52,6 +52,8 @@ jobs:
         run: node --test test/starforge.d10-recovery-integrity.test.mjs
       - name: D11 recovery lifecycle integrity gate
         run: node --test test/starforge.d11-recovery-lifecycle-integrity.test.mjs
+      - name: D12 governed recovery execution gate
+        run: node --test test/starforge.d12-governed-recovery-execution.test.mjs
       - run: npm run starforge:preflight
       - run: npm run starforge:test
       - run: npm run test:starforge:integration
