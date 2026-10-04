@@ -27,6 +27,7 @@ jobs:
       - run: npm run test:starforge:integration
       - run: npm run starforge:integration-test
       - run: node --test test/starforge.android9.test.mjs
+      - run: npm run test:starforge:android9:shell
       - name: Record green StarForge state
         if: success() && github.event_name == 'push' && github.ref == 'refs/heads/starforge/governance-kernel'
         run: |
