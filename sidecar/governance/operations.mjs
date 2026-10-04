@@ -153,6 +153,9 @@ export function makeOperations({ company, starnet = null, modelRouter = null } =
         successCriteria: task.successCriteria,
         context: modelRoute ? { base: context, modelRoute } : context,
       });
+      if (!adapterResult || !adapterResult.result || typeof adapterResult.result !== "object" || typeof adapterResult.result.content !== "string" || !adapterResult.result.content.trim()) {
+        throw new Error("StarNet adapter returned an invalid result");
+      }
       const result = adapterResult.result;
       task.status = "completed";
       task.note = "StarNet execution completed";
