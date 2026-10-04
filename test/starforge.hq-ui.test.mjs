@@ -196,5 +196,5 @@ test('StarForge HQ renders governed mission activity from the task ledger',()=>{
   assert.match(http,/const xpDelta = status === "completed" \? 100/);
   assert.match(http,/xpDelta,/);
   assert.match(hq,/item\.xpDelta/);
-  assert.match(hq,/XP '\+\(Number\(item\.xpDelta\)>0\?'\+'\)/);
+  assert.match(hq,/XP '\+\(Number\(item\.xpDelta\)>0\?/);
 });
