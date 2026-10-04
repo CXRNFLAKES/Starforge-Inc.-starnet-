@@ -118,7 +118,7 @@ test("D1 live StarNet runtime bridge remains the governed execution boundary", a
   });
   assert.equal(resolved.allowed, true);
 
-  const result = await guardedBridge.delegateTask("CEO", {
+  const result = await guardedBridge.delegateTask("Vice CEO", {
     id: "d1-task",
     projectId: "d1-project",
     assigneeId: "production-worker",
