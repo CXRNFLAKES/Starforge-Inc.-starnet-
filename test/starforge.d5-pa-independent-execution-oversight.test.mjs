@@ -11,20 +11,27 @@ function setup() {
     title: "D5 oversight project",
     objective: "Independent operational oversight",
   });
-  const worker = company.snapshot().people.find(person => person.role === ROLES.WORKER);
   const tasks = [];
-  for (const [title, status] of [
+  for (const [index, [title, status]] of [
     ["Blocked mission", "blocked"],
     ["Failed mission", "failed"],
     ["Completed mission", "completed"],
-  ]) {
-    const task = operations.delegateTask(ROLES.CEO, {
+  ].entries()) {
+    const taskId = "d5-task-" + (index + 1);
+    company.recordTask(ROLES.CEO, {
+      id: taskId,
       projectId: project.id,
       title,
-      assigneeId: worker.id,
+      assigneeId: "operations-worker",
+      assigneeRole: ROLES.WORKER,
+      priority: "normal",
       successCriteria: "Complete safely",
+      status: "assigned",
+      delegatedBy: ROLES.CEO,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     });
-    tasks.push(operations.updateTask(ROLES.CEO, task.id, {
+    tasks.push(operations.updateTask(ROLES.CEO, taskId, {
       status,
       note: "D5 " + status,
     }));
