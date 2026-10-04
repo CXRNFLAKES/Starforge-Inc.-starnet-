@@ -49,3 +49,15 @@ test("live StarNet runtime bridge delegates through the existing dispatch endpoi
   assert.equal(result.worker.id, "remote-1");
   assert.equal(result.result.content, "remote execution complete");
 });
+
+
+test("StarNet provider registry exposes APInex through the existing OpenAI-compatible adapter", async () => {
+  const registry = await import("../sidecar/providers/registry.js");
+  const profile = registry.getProviderProfile("apinex");
+  assert.equal(profile.id, "apinex");
+  assert.equal(profile.adapter, "openai-compatible");
+  assert.equal(profile.baseUrl, "https://api.apinex.bond/v1");
+  assert.deepEqual(profile.keyEnv, ["APINEX_API_KEY"]);
+  assert.equal(profile.modelsPath, "/models");
+  assert.equal(profile.wireReasoningEffort, true);
+});
