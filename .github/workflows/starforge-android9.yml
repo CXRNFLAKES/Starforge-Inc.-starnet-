@@ -36,6 +36,8 @@ jobs:
         run: node --test test/starforge.d2-governed-model-execution.test.mjs
       - name: D3 verified business outcome gate
         run: node --test test/starforge.d3-verified-business-outcome.test.mjs
+      - name: D4 leadership report review gate
+        run: node --test test/starforge.d4-leadership-report-review.test.mjs
       - run: npm run starforge:preflight
       - run: npm run starforge:test
       - run: npm run test:starforge:integration
