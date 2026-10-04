@@ -23,7 +23,7 @@ function setup({ workerPresent = true, dispatchResult = { content: "RECOVERY_OK"
   });
   const roster = workerPresent ? [{ id: "worker-1", name: "Recovery Worker" }] : [];
   const starnet = makeStarNetAdapter({
-    roster,
+    roster: () => roster,
     dispatch: async (payload) => dispatchResult,
   });
   const operations = makeOperations({ company, starnet, modelRouter: router });
@@ -113,7 +113,7 @@ test("D12: approved governed model route is carried into StarNet recovery contex
     status: "failed",
   });
   const starnet = makeStarNetAdapter({
-    roster: [{ id: "worker-1", name: "Recovery Worker" }],
+    roster: () => [{ id: "worker-1", name: "Recovery Worker" }],
     dispatch: async (payload) => {
       captured = payload;
       return { content: "MODEL_RECOVERY_OK" };
