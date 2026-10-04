@@ -208,7 +208,7 @@ export function makeOperations({ company, starnet = null, modelRouter = null, fa
       verifiedBy: actorRole,
       verifiedAt: new Date().toISOString(),
     };
-    company.audit(actorRole, "business.outcome.verified", verification, true);
+    company.recordBusinessOutcome(actorRole, { taskId: task.id, outcome: verification });
     return clone(verification);
   }
 
