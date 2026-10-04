@@ -180,3 +180,6 @@ test('StarForge HQ renders governed objective progression telemetry',()=>{
 
 
 test('StarForge HQ renders governed objective worker assignment telemetry',()=>{assert.match(hq,/assignedWorkerCount/);assert.match(hq,/WORKERS/);assert.match(hq,/current\.assignedWorkerCount/);assert.match(hq,/project\.assignedWorkerCount/);});
+
+
+test('StarForge HQ renders governed project and objective outcomes',()=>{assert.match(hq,/current\.outcome\|\|'pending'/);assert.match(hq,/project\.outcome\|\|'pending'/);assert.match(hq,/\.toUpperCase\(\)/);});
