@@ -101,6 +101,14 @@ export function makeCompany({ load, save } = {}) {
     return summaryOnly ? summary : { ...summary, entries: structuredClone(entries) };
   }
 
+  function recordAudit(actorRole, event, details = {}, persistAudit = true) {
+    if (!actorRole || !event) throw new Error("Audit actor and event are required");
+    const entry = { id: randomUUID(), at: new Date().toISOString(), actorRole, event, details: structuredClone(details) };
+    state.audit.push(entry);
+    if (persistAudit) persist();
+    return structuredClone(entry);
+  }
+
   return {
     snapshot() { return structuredClone(state); },
 
@@ -108,7 +116,7 @@ export function makeCompany({ load, save } = {}) {
       assertCan(actorRole, ACTIONS.COMPANY_CONFIGURE);
       state.company.cho = { id: String(id), name: String(name), role: ROLES.CHO };
       state.company.updatedAt = new Date().toISOString();
-      this.audit(actorRole, "company.cho.profile.updated", { choId: state.company.cho.id }, false);
+      recordAudit(actorRole, "company.cho.profile.updated", { choId: state.company.cho.id }, false);
       persist();
       return this.snapshot();
     },
@@ -118,7 +126,7 @@ export function makeCompany({ load, save } = {}) {
       state.company.mission = String(mission);
       state.company.objective = String(objective);
       state.company.updatedAt = new Date().toISOString();
-      this.audit(actorRole, "company.mission.updated", { mission, objective }, false);
+      recordAudit(actorRole, "company.mission.updated", { mission, objective }, false);
       persist();
       return this.snapshot();
     },
@@ -132,7 +140,7 @@ export function makeCompany({ load, save } = {}) {
       };
       state.objectives.push(objective);
       state.company.updatedAt = objective.updatedAt;
-      this.audit(actorRole, "company.objective.created", { objectiveId: objective.id }, false);
+      recordAudit(actorRole, "company.objective.created", { objectiveId: objective.id }, false);
       persist();
       return structuredClone(objective);
     },
@@ -142,7 +150,7 @@ export function makeCompany({ load, save } = {}) {
       if (!meeting?.id || !meeting?.objective) throw new Error("Invalid board meeting");
       state.boardMeetings.push(structuredClone(meeting));
       state.company.updatedAt = meeting.updatedAt;
-      this.audit(actorRole, "board.meeting.convened", { meetingId: meeting.id, objective: meeting.objective }, false);
+      recordAudit(actorRole, "board.meeting.convened", { meetingId: meeting.id, objective: meeting.objective }, false);
       persist();
       return structuredClone(meeting);
     },
@@ -153,7 +161,7 @@ export function makeCompany({ load, save } = {}) {
       if (index < 0) throw new Error("Unknown board meeting");
       state.boardMeetings[index] = structuredClone(meeting);
       state.company.updatedAt = meeting.updatedAt;
-      this.audit(actorRole, "board.decision.recorded", {
+      recordAudit(actorRole, "board.decision.recorded", {
         meetingId: meeting.id, decisionCount: meeting.decisions?.length ?? 0, actionItemCount: meeting.actionItems?.length ?? 0,
       }, false);
       persist();
@@ -164,7 +172,7 @@ export function makeCompany({ load, save } = {}) {
       assertCan(actorRole, ACTIONS.COMPANY_CONFIGURE);
       if (!person?.id || !person?.name || !person?.role) throw new Error("Invalid person");
       state.people.push({ id: String(person.id), name: String(person.name), role: person.role });
-      this.audit(actorRole, "company.person.registered", { personId: person.id, role: person.role }, false);
+      recordAudit(actorRole, "company.person.registered", { personId: person.id, role: person.role }, false);
       persist();
       return this.snapshot();
     },
@@ -174,7 +182,7 @@ export function makeCompany({ load, save } = {}) {
       if (!project?.id || !project?.title) throw new Error("Invalid project");
       state.projects.push(structuredClone(project));
       state.company.updatedAt = project.updatedAt ?? new Date().toISOString();
-      this.audit(actorRole, "operations.project.recorded", { projectId: project.id }, false);
+      recordAudit(actorRole, "operations.project.recorded", { projectId: project.id }, false);
       persist();
       return structuredClone(project);
     },
@@ -185,7 +193,7 @@ export function makeCompany({ load, save } = {}) {
       if (index < 0) throw new Error("Unknown project");
       state.projects[index] = structuredClone(project);
       state.company.updatedAt = project.updatedAt ?? new Date().toISOString();
-      this.audit(actorRole, "operations.project.updated", { projectId: project.id, status: project.status }, false);
+      recordAudit(actorRole, "operations.project.updated", { projectId: project.id, status: project.status }, false);
       persist();
       return structuredClone(project);
     },
@@ -195,7 +203,7 @@ export function makeCompany({ load, save } = {}) {
       if (!task?.id || !task?.projectId || !task?.assigneeId) throw new Error("Invalid task");
       state.tasks.push(structuredClone(task));
       state.company.updatedAt = task.updatedAt ?? new Date().toISOString();
-      this.audit(actorRole, "operations.task.recorded", { taskId: task.id, projectId: task.projectId }, false);
+      recordAudit(actorRole, "operations.task.recorded", { taskId: task.id, projectId: task.projectId }, false);
       persist();
       return structuredClone(task);
     },
@@ -211,7 +219,7 @@ export function makeCompany({ load, save } = {}) {
       if (index < 0) throw new Error("Unknown task");
       state.tasks[index] = structuredClone(task);
       state.company.updatedAt = task.updatedAt ?? new Date().toISOString();
-      this.audit(actorRole, "operations.task.updated", { taskId: task.id, status: task.status }, false);
+      recordAudit(actorRole, "operations.task.updated", { taskId: task.id, status: task.status }, false);
       persist();
       return structuredClone(task);
     },
@@ -236,7 +244,7 @@ export function makeCompany({ load, save } = {}) {
       };
       state.recoveryMissions.push(recorded);
       state.company.updatedAt = recorded.createdAt;
-      this.audit(actorRole, "recovery.mission.assigned", {
+      recordAudit(actorRole, "recovery.mission.assigned", {
         recoveryMissionId: recorded.id,
         taskId: recorded.taskId,
         assignedAgentId: recorded.assignedAgentId,
@@ -278,7 +286,7 @@ export function makeCompany({ load, save } = {}) {
       };
       state.recoveryMissions[index] = updated;
       state.company.updatedAt = updated.updatedAt;
-      this.audit(actorRole, `recovery.mission.${updated.status}`, {
+      recordAudit(actorRole, `recovery.mission.${updated.status}`, {
         recoveryMissionId: updated.id,
         taskId: updated.taskId,
         status: updated.status,
@@ -314,7 +322,7 @@ export function makeCompany({ load, save } = {}) {
       };
       state.recoveryMissions[index] = updated;
       state.company.updatedAt = now;
-      this.audit(actorRole, "recovery.mission.verified", {
+      recordAudit(actorRole, "recovery.mission.verified", {
         recoveryMissionId: updated.id,
         taskId: updated.taskId,
         evidenceCount: evidence.length,
@@ -330,7 +338,7 @@ export function makeCompany({ load, save } = {}) {
       }
       state.leadershipReports.push(structuredClone(report));
       state.company.updatedAt = report.createdAt ?? new Date().toISOString();
-      this.audit(actorRole, "leadership.report.recorded", {
+      recordAudit(actorRole, "leadership.report.recorded", {
         reportId: report.id,
         targetCount: report.targets.length,
       }, false);
@@ -343,7 +351,7 @@ export function makeCompany({ load, save } = {}) {
       if (!packet?.request?.id) throw new Error("Decision packet requires request id");
       const entry = { id: randomUUID(), createdAt: new Date().toISOString(), ...structuredClone(packet) };
       state.decisionPackets.push(entry);
-      this.audit(actorRole, "governance.decision-packet.recorded", { packetId: entry.id, requestId: entry.request.id }, false);
+      recordAudit(actorRole, "governance.decision-packet.recorded", { packetId: entry.id, requestId: entry.request.id }, false);
       persist();
       return structuredClone(entry);
     },
@@ -363,7 +371,7 @@ export function makeCompany({ load, save } = {}) {
       const recorded = structuredClone(outcome);
       state.tasks[index] = { ...task, businessOutcome: recorded, updatedAt: recorded.verifiedAt ?? new Date().toISOString() };
       state.company.updatedAt = state.tasks[index].updatedAt;
-      this.audit(actorRole, recorded.verified === true ? "business.outcome.verified" : "business.outcome.recorded", {
+      recordAudit(actorRole, recorded.verified === true ? "business.outcome.verified" : "business.outcome.recorded", {
         taskId,
         outcomeId: recorded.outcomeId,
         verified: recorded.verified === true,
@@ -412,7 +420,7 @@ export function makeCompany({ load, save } = {}) {
       };
       state.finance.entries.push(recorded);
       state.company.updatedAt = recorded.recordedAt;
-      this.audit(actorRole, "finance.entry.recorded", { entryId: recorded.id, kind, amount }, false);
+      recordAudit(actorRole, "finance.entry.recorded", { entryId: recorded.id, kind, amount }, false);
       persist();
       return structuredClone(recorded);
     },
@@ -481,18 +489,12 @@ export function makeCompany({ load, save } = {}) {
       }
       const entry = { id: randomUUID(), createdAt: new Date().toISOString(), ...decision };
       state.decisions.push(entry);
-      this.audit(actorRole, "governance.decision.recorded", {
+      recordAudit(actorRole, "governance.decision.recorded", {
         decisionId: entry.id, requestId: entry.requestId ?? null, packetId: entry.packetId ?? null,
       }, false);
       persist();
       return entry;
     },
 
-    audit(actorRole, event, details = {}, persistAudit = true) {
-      const entry = { id: randomUUID(), at: new Date().toISOString(), actorRole, event, details };
-      state.audit.push(entry);
-      if (persistAudit) persist();
-      return entry;
-    },
   };
 }
