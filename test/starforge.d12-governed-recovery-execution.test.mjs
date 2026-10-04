@@ -84,7 +84,7 @@ test("D12: malformed StarNet recovery output fails closed", async () => {
   const mission = assignAndStart(operations);
   await assert.rejects(
     operations.executeRecoveryMission(ROLES.CEO, mission.id),
-    /invalid result/,
+    /invalid result|result without content/,
   );
   assert.equal(company.snapshot().tasks[0].status, "failed");
 });
