@@ -48,3 +48,5 @@
 .sf-room-launch{display:inline-block;margin-top:9px;padding:7px 10px;border:1px solid rgba(255,255,255,.16);background:rgba(0,0,0,.16);color:inherit;font:inherit;font-size:.68em;letter-spacing:.07em;cursor:pointer}.sf-room-launch:hover,.sf-room-launch:focus-visible{outline:1px solid currentColor;box-shadow:0 0 10px rgba(255,255,255,.08)}
 /* Mission gameplay XP is visually distinct from authoritative capital progression. */
 .sf-mission-xp{height:8px;margin:8px 0 12px;border:1px solid rgba(255,255,255,.28);background:rgba(0,0,0,.35);overflow:hidden}.sf-mission-xp i{display:block;height:100%;width:0%;background:linear-gradient(90deg,#5ee7ff,#a8ff78);transition:width .2s ease}
+
+.sf-mission-capabilities{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 10px;font-size:11px}.sf-mission-capabilities span{padding:4px 6px;border:1px solid rgba(255,255,255,.18);background:rgba(0,0,0,.2)}

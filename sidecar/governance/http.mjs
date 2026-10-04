@@ -260,6 +260,8 @@ export function makeStarForgeGovernanceHandler({ workspace, roster = new Map(), 
           milestoneXp: currentMilestone.xp,
           nextMilestone: nextMilestone ? { ...nextMilestone, remainingToNext: Math.max(0, nextMilestone.xp - xp) } : null,
           milestones: missionMilestones.map((milestone) => ({ ...milestone, unlocked: xp >= milestone.xp })),
+          unlockedCapabilities: missionMilestones.filter((milestone) => xp >= milestone.xp).map((milestone) => milestone.unlock),
+          nextCapability: nextMilestone ? { name: nextMilestone.name, unlock: nextMilestone.unlock, remainingToNext: Math.max(0, nextMilestone.xp - xp) } : null,
           source: "starforge-governed-task-ledger"
         };
       })(),

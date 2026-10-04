@@ -233,3 +233,6 @@ test('StarForge HQ renders a distinct governed mission XP progress bar',()=>{
   assert.match(css,/\.sf-mission-xp/);
   assert.match(css,/Mission gameplay XP is visually distinct/);
 });
+
+
+test('StarForge HQ exposes governed unlocked and next mission capabilities',()=>{const http=fs.readFileSync(new URL('../sidecar/governance/http.mjs',import.meta.url),'utf8');assert.match(http,/unlockedCapabilities/);assert.match(http,/nextCapability/);assert.match(http,/missionMilestones\.filter/);assert.match(hq,/data-sf="mission-capabilities"/);assert.match(hq,/data-sf="mission-next-capability"/);assert.match(hq,/xpProgress\.unlockedCapabilities/);assert.match(hq,/xpProgress\?\.nextCapability/);assert.match(css,/\.sf-mission-capabilities/);});
