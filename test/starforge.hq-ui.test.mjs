@@ -95,13 +95,14 @@ test('mobile test endpoint derives company level from governed capital',()=>{
 
 test('StarForge HQ consumes governed game-rank telemetry',()=>{assert.match(hq,/levelFeed\.rank/);assert.match(hq,/levelFeed\.level/);assert.match(hq,/levelFeed\.source/);assert.match(hq,/governed-company-ledger/);assert.match(hq,/data-tier/);});
 
-
 test('StarForge HQ exposes explicit runtime connection state',()=>{
   const http=fs.readFileSync(new URL('../sidecar/governance/http.mjs',import.meta.url),'utf8');
   assert.match(http,/connection:\s*\{/);
   assert.match(http,/runtimeConfigured:\s*Boolean\(runtime\)/);
+  assert.match(http,/runtimeMode/);
   assert.match(http,/workforceSource/);
   assert.match(hq,/data-connection-label/);
+  assert.match(hq,/runtimeMode==='live-starnet'/);
   assert.match(hq,/STARFORGE LINK · LIVE STARNET/);
   assert.match(hq,/STARFORGE LINK · TEST BRIDGE/);
 });
