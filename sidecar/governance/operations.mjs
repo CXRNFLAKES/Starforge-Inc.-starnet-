@@ -197,6 +197,42 @@ export function makeOperations({ company, starnet = null, modelRouter = null, fa
     return clone(entry);
   }
 
+  function startRecoveryMission(actorRole, missionId) {
+    if (actorRole !== ROLES.CEO) throw new Error("Only the CEO may start recovery missions");
+    requireRole(actorRole, ACTIONS.CEO_OPERATE);
+    const mission = company.snapshot().recoveryMissions.find((item) => item.id === missionId);
+    if (!mission) throw new Error("Unknown recovery mission");
+    if (mission.status !== "assigned") throw new Error("Recovery mission must be assigned before it can start");
+    const task = company.snapshot().tasks.find((item) => item.id === mission.taskId);
+    if (!task || !["failed", "blocked"].includes(task.status)) {
+      throw new Error("Recovery mission requires failed or blocked work");
+    }
+    return clone(company.updateRecoveryMission(actorRole, {
+      ...mission,
+      status: "in-progress",
+      startedAt: new Date().toISOString(),
+    }));
+  }
+
+  function verifyRecoveryMission(actorRole, missionId, { evidence = [] } = {}) {
+    if (actorRole !== ROLES.PA) throw new Error("Only the PA may verify recovery missions");
+    requireRole(actorRole, ACTIONS.PA_REVIEW);
+    return clone(company.verifyRecoveryMission(actorRole, missionId, evidence));
+  }
+
+  function closeRecoveryMission(actorRole, missionId) {
+    if (actorRole !== ROLES.CEO) throw new Error("Only the CEO may close recovery missions");
+    requireRole(actorRole, ACTIONS.CEO_OPERATE);
+    const mission = company.snapshot().recoveryMissions.find((item) => item.id === missionId);
+    if (!mission) throw new Error("Unknown recovery mission");
+    if (mission.status !== "verified") throw new Error("Recovery mission must be verified before closure");
+    return clone(company.updateRecoveryMission(actorRole, {
+      ...mission,
+      status: "closed",
+      closedAt: new Date().toISOString(),
+    }));
+  }
+
   function verifyBusinessOutcome(actorRole, { taskId, claim, evidence = [] } = {}) {
     if (actorRole !== ROLES.PA) {
       throw new Error("Only the PA may verify a business outcome");
@@ -340,6 +376,9 @@ export function makeOperations({ company, starnet = null, modelRouter = null, fa
     delegateToStarNet,
     verifyBusinessOutcome,
     assignRecoveryMission,
+    startRecoveryMission,
+    verifyRecoveryMission,
+    closeRecoveryMission,
     updateTask,
     inspect,
     reviewExecution,
