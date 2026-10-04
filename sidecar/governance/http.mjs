@@ -262,6 +262,17 @@ export function makeStarForgeGovernanceHandler({ workspace, roster = new Map(), 
           milestones: missionMilestones.map((milestone) => ({ ...milestone, unlocked: xp >= milestone.xp })),
           unlockedCapabilities: missionMilestones.filter((milestone) => xp >= milestone.xp).map((milestone) => milestone.unlock),
           nextCapability: nextMilestone ? { name: nextMilestone.name, unlock: nextMilestone.unlock, remainingToNext: Math.max(0, nextMilestone.xp - xp) } : null,
+          capabilityEffects: {
+            missionTracking: true,
+            fieldOperations: xp >= 500,
+            specialistMissions: xp >= 1000,
+            priorityOperations: xp >= 2500,
+            commandMissions: xp >= 5000,
+            strategicObjectives: xp >= 10000,
+            eliteOperations: xp >= 25000,
+            legendaryMissions: xp >= 50000,
+          },
+          capabilityEffectSource: "starforge-governed-task-ledger",
           source: "starforge-governed-task-ledger"
         };
       })(),
