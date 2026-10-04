@@ -193,4 +193,8 @@ test('StarForge HQ renders governed mission activity from the task ledger',()=>{
   assert.match(hq,/gameplay\?\.activity/);
   assert.match(hq,/MISSION ACTIVITY/);
   assert.match(hq,/item\.outcome/);
+  assert.match(http,/const xpDelta = status === "completed" \? 100/);
+  assert.match(http,/xpDelta,/);
+  assert.match(hq,/item\.xpDelta/);
+  assert.match(hq,/XP '\+\(Number\(item\.xpDelta\)>0\?'\+'\)/);
 });

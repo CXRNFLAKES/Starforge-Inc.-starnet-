@@ -203,11 +203,13 @@ export function makeStarForgeGovernanceHandler({ workspace, roster = new Map(), 
       const objective = project?.objectiveId ? objectiveById.get(String(project.objectiveId)) : null;
       const status = String(task.status ?? "pending");
       const outcome = status === "completed" ? "completed" : status === "failed" ? "failed" : status === "blocked" ? "blocked" : status === "in-progress" ? "in-progress" : "pending";
+      const xpDelta = status === "completed" ? 100 : status === "failed" ? -50 : status === "blocked" ? -25 : 0;
       return {
         taskId: String(task.id ?? ""),
         title: String(task.title ?? "Untitled task"),
         status,
         outcome,
+        xpDelta,
         assigneeId: String(task.assigneeId ?? ""),
         projectId: String(task.projectId ?? ""),
         projectTitle: String(project?.title ?? ""),
