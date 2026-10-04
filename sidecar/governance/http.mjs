@@ -180,7 +180,8 @@ export function makeStarForgeGovernanceHandler({ workspace, roster = new Map(), 
       const blocked = projectTasks.filter((task) => task.status === "blocked").length;
       const inProgress = projectTasks.filter((task) => task.status === "in-progress").length;
       const total = projectTasks.length;
-      return { id: project.id, title: project.title, status: project.status, taskCount: total, completed, failed, blocked, inProgress, assignedWorkerCount: assignedWorkers.length, assignedWorkers, progressPercent: total ? Math.round((completed / total) * 100) : 0 };
+      const outcome = failed > 0 ? "failed" : blocked > 0 ? "blocked" : inProgress > 0 ? "in-progress" : (total > 0 && completed === total) ? "completed" : "pending";
+      return { id: project.id, title: project.title, status: project.status, outcome, taskCount: total, completed, failed, blocked, inProgress, assignedWorkerCount: assignedWorkers.length, assignedWorkers, progressPercent: total ? Math.round((completed / total) * 100) : 0 };
     });
     const objectiveGameplay = objectives.map((objective) => {
       const linkedProjects = projects.filter((project) => project.objectiveId === objective.id);
@@ -192,7 +193,8 @@ export function makeStarForgeGovernanceHandler({ workspace, roster = new Map(), 
       const inProgress = objectiveTasks.filter((task) => task.status === "in-progress").length;
       const total = objectiveTasks.length;
       const xp = objectiveTasks.reduce((sum, task) => sum + (task.status === "completed" ? 100 : task.status === "failed" ? -50 : task.status === "blocked" ? -25 : 0), 0);
-      return { id: objective.id, title: objective.title, status: objective.status, projectCount: linkedProjects.length, taskCount: total, completed, failed, blocked, inProgress, assignedWorkerCount: assignedWorkers.length, assignedWorkers, progressPercent: total ? Math.round((completed / total) * 100) : 0, companyXp: Math.max(0, xp), companyXpRaw: xp, progressionSource: "starforge-governed-task-ledger" };
+      const outcome = failed > 0 ? "failed" : blocked > 0 ? "blocked" : inProgress > 0 ? "in-progress" : (total > 0 && completed === total) ? "completed" : "pending";
+      return { id: objective.id, title: objective.title, status: objective.status, outcome, projectCount: linkedProjects.length, taskCount: total, completed, failed, blocked, inProgress, assignedWorkerCount: assignedWorkers.length, assignedWorkers, progressPercent: total ? Math.round((completed / total) * 100) : 0, companyXp: Math.max(0, xp), companyXpRaw: xp, progressionSource: "starforge-governed-task-ledger" };
     });
     const gameplay = {
       mission: String(governedSnapshot?.company?.mission ?? ""),
