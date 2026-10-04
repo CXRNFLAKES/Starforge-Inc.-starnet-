@@ -212,3 +212,15 @@ test('StarForge HQ exposes separate governed mission XP progression without repl
   assert.match(hq,/xpProgress\.gameplayLevel/);
   assert.match(hq,/xpProgress\.remainingToNext/);
 });
+test('StarForge HQ exposes governed mission XP milestones and unlock telemetry',()=>{
+  const http=fs.readFileSync(new URL('../sidecar/governance/http.mjs',import.meta.url),'utf8');
+  assert.match(http,/missionMilestones/);
+  assert.match(http,/missionRank/);
+  assert.match(http,/missionUnlock/);
+  assert.match(http,/nextMilestone/);
+  assert.match(http,/milestones: missionMilestones\.map/);
+  assert.match(hq,/data-sf="mission-rank"/);
+  assert.match(hq,/data-sf="mission-unlock"/);
+  assert.match(hq,/xpProgress\.missionRank/);
+  assert.match(hq,/xpProgress\?\.nextMilestone/);
+});

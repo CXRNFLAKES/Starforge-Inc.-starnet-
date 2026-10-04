@@ -236,7 +236,32 @@ export function makeStarForgeGovernanceHandler({ workspace, roster = new Map(), 
         const currentThreshold = (gameplayLevel - 1) * xpPerLevel;
         const nextThreshold = gameplayLevel * xpPerLevel;
         const progressPercent = Math.max(0, Math.min(100, ((xp - currentThreshold) / xpPerLevel) * 100));
-        return { gameplayLevel, xpPerLevel, currentXp: xp, currentThreshold, nextThreshold, remainingToNext: Math.max(0, nextThreshold - xp), progressPercent, source: "starforge-governed-task-ledger" };
+        const missionMilestones = Object.freeze([
+          { xp: 0, name: "INITIATE", unlock: "MISSION SYSTEMS" },
+          { xp: 500, name: "OPERATOR", unlock: "FIELD OPERATIONS" },
+          { xp: 1000, name: "SPECIALIST", unlock: "SPECIALIST MISSIONS" },
+          { xp: 2500, name: "EXECUTION LEAD", unlock: "PRIORITY OPERATIONS" },
+          { xp: 5000, name: "MISSION COMMANDER", unlock: "COMMAND MISSIONS" },
+          { xp: 10000, name: "STRATEGIC COMMAND", unlock: "STRATEGIC OBJECTIVES" },
+          { xp: 25000, name: "ELITE COMMAND", unlock: "ELITE OPERATIONS" },
+          { xp: 50000, name: "LEGENDARY OPERATOR", unlock: "LEGENDARY MISSIONS" },
+        ]);
+        let currentMilestone = missionMilestones[0];
+        let nextMilestone = null;
+        for (const milestone of missionMilestones) {
+          if (xp >= milestone.xp) currentMilestone = milestone;
+          else { nextMilestone = milestone; break; }
+        }
+        return {
+          gameplayLevel, xpPerLevel, currentXp: xp, currentThreshold, nextThreshold,
+          remainingToNext: Math.max(0, nextThreshold - xp), progressPercent,
+          missionRank: currentMilestone.name,
+          missionUnlock: currentMilestone.unlock,
+          milestoneXp: currentMilestone.xp,
+          nextMilestone: nextMilestone ? { ...nextMilestone, remainingToNext: Math.max(0, nextMilestone.xp - xp) } : null,
+          milestones: missionMilestones.map((milestone) => ({ ...milestone, unlocked: xp >= milestone.xp })),
+          source: "starforge-governed-task-ledger"
+        };
       })(),
       progressionSource: "starforge-governed-task-ledger",
     };
