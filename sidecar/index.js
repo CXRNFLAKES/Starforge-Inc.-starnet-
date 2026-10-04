@@ -566,7 +566,7 @@ if (!workspaceOwnerClaim.ok) {
 // Synchronous and idempotent: covers ordinary returns and every process.exit path. SIGKILL/TerminateProcess
 // cannot run handlers, so their valid PID-stamped claim is recovered by the next boot instead.
 process.once('exit', () => { try { workspaceOwner.release(); } catch (_) {} });
-const starforgeGovernanceHandler = makeStarForgeGovernanceHandler({ workspace: WORKSPACES, roster: agentRoster, runsMeta });
+let starforgeGovernanceHandler;
 
 // Capture lineage before this process stamps schema/cache/runtime files. It is bounded metadata only: names and
 // counts, never file contents. In packaged mode we also inspect known legacy roots and verified update snapshots;
@@ -1616,6 +1616,7 @@ let lastSearchAt = 0;            // module-level web_search throttle (≥1.1s be
 // The browser replaces it on every push; a protected on-disk mirror lets headless cron fires still run as the
 // selected agent after a sidecar restart. Not an event (contract-free).
 const agentRoster = new Map();
+const starforgeGovernanceHandler = makeStarForgeGovernanceHandler({ workspace: WORKSPACES, roster: agentRoster, runsMeta });
 // P1.1 (UPDATE_STATE_SAFETY_AUDIT): the LAST-SEEN RAW per-agent record, keyed by agentId. saveAgentRoster()
 // rebuilds each row from a FIXED field list, so any field a NEWER frontend added (that older sidecar code
 // doesn't know to re-emit) would be silently dropped on the next re-save. We stash the raw incoming record here
