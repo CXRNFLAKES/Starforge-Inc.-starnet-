@@ -40,6 +40,8 @@ jobs:
         run: node --test test/starforge.d4-leadership-report-review.test.mjs
       - name: D5 PA independent execution oversight gate
         run: node --test test/starforge.d5-pa-independent-execution-oversight.test.mjs
+      - name: D6 financial governance approval gate
+        run: node --test test/starforge.d6-financial-governance-approval.test.mjs
       - run: npm run starforge:preflight
       - run: npm run starforge:test
       - run: npm run test:starforge:integration
