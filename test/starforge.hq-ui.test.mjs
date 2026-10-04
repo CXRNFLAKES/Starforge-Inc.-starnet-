@@ -177,3 +177,6 @@ test('StarForge HQ renders governed objective progression telemetry',()=>{
   assert.match(hq,/current\.progressPercent/);
   assert.match(hq,/current\.companyXp/);
 });
+
+
+test('StarForge HQ renders governed objective worker assignment telemetry',()=>{assert.match(hq,/assignedWorkerCount/);assert.match(hq,/WORKERS/);assert.match(hq,/current\.assignedWorkerCount/);assert.match(hq,/project\.assignedWorkerCount/);});
