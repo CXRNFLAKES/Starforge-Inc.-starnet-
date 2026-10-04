@@ -66,9 +66,9 @@ test("D1 live StarNet runtime bridge remains the governed execution boundary", a
       }
       if (url.endsWith("/api/team/dispatch")) {
         const payload = JSON.parse(options.body);
-        assert.equal(payload.assigneeId, "production-worker");
-        assert.equal(payload.context.modelRoute.provider, "apinex");
-        assert.equal(payload.context.modelRoute.source, "starforge-governed-model-router");
+        assert.equal(payload.workers[0].agentId, "production-worker");
+        assert.equal(payload.workers[0].context.modelRoute.provider, "apinex");
+        assert.equal(payload.workers[0].context.modelRoute.source, "starforge-governed-model-router");
         return new Response(JSON.stringify({
           worker: { id: "production-worker", name: "Production Worker" },
           result: { content: "production execution contract verified" },
@@ -94,8 +94,9 @@ test("D1 live StarNet runtime bridge remains the governed execution boundary", a
       }
       if (url.endsWith("/api/team/dispatch")) {
         const payload = JSON.parse(options.body);
-        assert.equal(payload.context.modelRoute.provider, "apinex");
-        assert.equal(payload.context.modelRoute.source, "starforge-governed-model-router");
+        assert.equal(payload.workers[0].agentId, "production-worker");
+        assert.equal(payload.workers[0].context.modelRoute.provider, "apinex");
+        assert.equal(payload.workers[0].context.modelRoute.source, "starforge-governed-model-router");
         return new Response(JSON.stringify({
           content: "production execution contract verified",
           summary: "1 worker completed",
