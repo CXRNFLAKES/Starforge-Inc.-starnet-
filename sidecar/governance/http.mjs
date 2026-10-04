@@ -217,7 +217,8 @@ export function makeStarForgeGovernanceHandler({ workspace, roster = new Map(), 
         source: "starforge-governed-task-ledger",
       };
     });
-    const gameplay = { String(governedSnapshot?.company?.mission ?? ""),
+    const gameplay = {
+      mission: String(governedSnapshot?.company?.mission ?? ""),
       objective: String(governedSnapshot?.company?.objective ?? ""),
       objectives: objectives.slice(-5),
       objectiveProgress: objectiveGameplay.slice(-5),
