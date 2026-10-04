@@ -339,6 +339,10 @@ export function makeCompany({ load, save } = {}) {
       const task = state.tasks[index];
       if (task.status !== "completed") throw new Error("Business outcome requires a completed task");
       if (task.assigneeSource !== "starnet") throw new Error("Business outcome requires StarNet execution");
+      const recoveryMission = state.recoveryMissions.find((item) => item.taskId === task.id);
+      if (recoveryMission && !["verified", "closed"].includes(recoveryMission.status)) {
+        throw new Error("Business outcome requires verified recovery work");
+      }
       const recorded = structuredClone(outcome);
       state.tasks[index] = { ...task, businessOutcome: recorded, updatedAt: recorded.verifiedAt ?? new Date().toISOString() };
       state.company.updatedAt = state.tasks[index].updatedAt;
@@ -365,6 +369,10 @@ export function makeCompany({ load, save } = {}) {
       if (kind === "revenue" && entry.taskId) {
         const task = state.tasks.find((item) => item.id === String(entry.taskId));
         if (!task) throw new Error("Revenue requires a verified business outcome");
+        const recoveryMission = state.recoveryMissions.find((item) => item.taskId === task.id);
+        if (recoveryMission && !["verified", "closed"].includes(recoveryMission.status)) {
+          throw new Error("Revenue requires verified recovery work");
+        }
         const outcome = task.businessOutcome;
         if (entry.businessOutcomeId || entry.source === "verified-business-outcome") {
           if (!outcome?.verified || entry.businessOutcomeId !== outcome.outcomeId) {
