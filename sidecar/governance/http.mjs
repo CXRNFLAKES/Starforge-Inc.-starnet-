@@ -1,3 +1,4 @@
+// Phase C: governed company gameplay telemetry feed.
 import { companyLevelTelemetry } from "./capital-level.mjs";
 import { ROLES } from "./roles.mjs";
 import { readFile } from "node:fs/promises";
