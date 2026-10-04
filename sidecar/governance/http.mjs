@@ -168,6 +168,28 @@ export function makeStarForgeGovernanceHandler({ workspace, roster = new Map(), 
         },
       };
     });
+    const objectives = Array.isArray(governedSnapshot?.objectives) ? governedSnapshot.objectives : [];
+    const projects = Array.isArray(governedSnapshot?.projects) ? governedSnapshot.projects : [];
+    const companyXpRaw = starNetTasks.reduce((xp, task) => xp + (task.status === "completed" ? 100 : task.status === "failed" ? -50 : task.status === "blocked" ? -25 : 0), 0);
+    const projectGameplay = projects.map((project) => {
+      const projectTasks = tasks.filter((task) => task.projectId === project.id);
+      const completed = projectTasks.filter((task) => task.status === "completed").length;
+      const failed = projectTasks.filter((task) => task.status === "failed").length;
+      const blocked = projectTasks.filter((task) => task.status === "blocked").length;
+      const inProgress = projectTasks.filter((task) => task.status === "in-progress").length;
+      const total = projectTasks.length;
+      return { id: project.id, title: project.title, status: project.status, taskCount: total, completed, failed, blocked, inProgress, progressPercent: total ? Math.round((completed / total) * 100) : 0 };
+    });
+    const gameplay = {
+      mission: String(governedSnapshot?.company?.mission ?? ""),
+      objective: String(governedSnapshot?.company?.objective ?? ""),
+      objectives: objectives.slice(-5),
+      projects: projectGameplay.slice(-10),
+      companyXp: Math.max(0, companyXpRaw),
+      companyXpRaw,
+      companyXpSource: "starforge-governed-task-ledger",
+      progressionSource: "starforge-governed-task-ledger",
+    };
     const capital = company && typeof company.capitalSnapshot === "function"
       ? { ...company.capitalSnapshot(ROLES.CHO), source: "starforge-governed-company-ledger" }
       : financeSummary(persisted);
@@ -190,6 +212,7 @@ export function makeStarForgeGovernanceHandler({ workspace, roster = new Map(), 
       },
       workspace,
       company: governedSnapshot,
+      gameplay,
       capital,
       level,
       finance: financeTelemetry ? {

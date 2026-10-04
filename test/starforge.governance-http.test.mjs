@@ -90,3 +90,26 @@ test("governance HTTP feed reads capital from the Company kernel when connected"
   assert.equal(payload.level.currentCapital, 5000);
   assert.equal(payload.finance.recentEntries[0].amount, 5000);
 });
+
+
+test("governance feed exposes company gameplay telemetry derived from governed tasks", async () => {
+  const { makeCompany } = await import("../sidecar/governance/company.mjs");
+  const { makeOperations } = await import("../sidecar/governance/operations.mjs");
+  const { ROLES } = await import("../sidecar/governance/roles.mjs");
+  const company = makeCompany();
+  company.setMission(ROLES.CHO, { mission: "Build the company", objective: "Ship the first governed product" });
+  const project = makeOperations({ company }).createProject(ROLES.CEO, { title: "Launch Product" });
+  company.recordTask(ROLES.CEO, { id: "game-task-1", projectId: project.id, title: "Build", assigneeId: "starforge-ceo", status: "completed", createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
+  company.recordTask(ROLES.CEO, { id: "game-task-2", projectId: project.id, title: "Fix", assigneeId: "starforge-ceo", status: "in-progress", createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
+  const handler = makeStarForgeGovernanceHandler({ workspace: ".starforge-gameplay-test", company });
+  let body = ""; const res = { writeHead() {}, end(value) { body = value; } };
+  await handler({ method: "GET", url: "/api/starforge/governance" }, res);
+  const payload = JSON.parse(body);
+  assert.equal(payload.gameplay.mission, "Build the company");
+  assert.equal(payload.gameplay.objective, "Ship the first governed product");
+  assert.equal(payload.gameplay.companyXp, 100);
+  assert.equal(payload.gameplay.companyXpSource, "starforge-governed-task-ledger");
+  assert.equal(payload.gameplay.projects[0].taskCount, 2);
+  assert.equal(payload.gameplay.projects[0].completed, 1);
+  assert.equal(payload.gameplay.projects[0].progressPercent, 50);
+});
