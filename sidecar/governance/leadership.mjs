@@ -69,7 +69,7 @@ export function makeLeadership({ company } = {}) {
     assertLeadershipCapability(role, capability);
     if (action) assertCan(role, action);
     const leader = actor(role);
-    company.audit(role, `leadership.${capability}`, { leaderId: leader.id, details });
+    company.recordLeadershipActivity(role, capability, details);
     return { ...leader, capability, action, details };
   }
 
@@ -139,9 +139,9 @@ export function makeLeadership({ company } = {}) {
     }
 
     const reviewer = actor(role);
-    company.audit(role, "leadership.review_report", {
-      leaderId: reviewer.id,
-      details: { reportId, sourceRole: ROLES.VICE_CEO },
+    company.recordLeadershipReview(role, {
+      reportId,
+      sourceRole: ROLES.VICE_CEO,
     });
 
     return structuredClone({
