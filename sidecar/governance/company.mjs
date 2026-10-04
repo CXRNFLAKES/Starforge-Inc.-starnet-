@@ -270,8 +270,7 @@ export function makeCompany({ load, save } = {}) {
       if (!["capital-injection", "revenue", "expense", "tax-reserve", "liability", "liability-payment"].includes(kind)) {
         throw new Error("Invalid finance entry kind");
       }
-      if (kind === "revenue") {
-        if (!entry.taskId) throw new Error("Revenue requires a verified business outcome");
+      if (kind === "revenue" && entry.taskId) {
         const task = state.tasks.find((item) => item.id === String(entry.taskId));
         if (!task) throw new Error("Revenue requires a verified business outcome");
         const outcome = task.businessOutcome;
