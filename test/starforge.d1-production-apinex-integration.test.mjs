@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import providerFactory from "../sidecar/providers/factory.js";
 import { makeStarForgeModelRouter } from "../sidecar/governance/model-router.mjs";
 import { makeStarNetRuntimeBridge } from "../sidecar/governance/starnet-runtime.mjs";
+import { ROLES } from "../sidecar/governance/roles.mjs";
 
 test("D1 production APInex path uses the existing StarNet adapter seam", async () => {
   const profile = providerFactory.getProviderProfile("apinex");
@@ -118,7 +119,7 @@ test("D1 live StarNet runtime bridge remains the governed execution boundary", a
   });
   assert.equal(resolved.allowed, true);
 
-  const result = await guardedBridge.delegateTask("Vice CEO", {
+  const result = await guardedBridge.delegateTask(ROLES.VICE_CEO, {
     id: "d1-task",
     projectId: "d1-project",
     assigneeId: "production-worker",
