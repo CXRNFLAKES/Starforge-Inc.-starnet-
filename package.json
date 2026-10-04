@@ -168,6 +168,7 @@
     "starforge:mobile-test": "node scripts/starforge-mobile-test.mjs",
     "test:starforge:android9": "node --test test/starforge.android9.test.mjs",
     "test:starforge:android9:shell": "node --test test/starforge.android9-shell.test.mjs",
+    "test:starforge:runtime": "node --test test/starforge.starnet-runtime-bridge.test.mjs",
     "starforge:integration-test": "node scripts/starforge-integration-test.mjs",
     "test:starforge:integration": "node --test test/starforge.integration.test.mjs",
     "test:starforge:operations": "node --test test/governance.operations.test.mjs"
