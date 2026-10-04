@@ -20,3 +20,12 @@ test('Worker RPG telemetry is derived by the governed feed',()=>{
   assert.match(js,/performance\.xpProgressPercent/);
   assert.doesNotMatch(js,/completed\*100.*failed\*50.*blocked\*25/);
 });
+
+
+test('Worker room exposes StarNet workforce station identity without inventing assignments',()=>{
+  assert.match(js,/function stationLabel\(worker,index\)/);
+  assert.match(js,/stationName\?\?worker\?\.station\?\?worker\?\.roomName\?\?worker\?\.room/);
+  assert.match(js,/WORKFORCE DESK/);
+  assert.match(js,/const station=stationLabel\(w,index\)/);
+  assert.match(js,/esc\(station\)/);
+});
