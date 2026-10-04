@@ -245,6 +245,67 @@ export function makeCompany({ load, save } = {}) {
       return structuredClone(recorded);
     },
 
+    updateRecoveryMission(actorRole, mission) {
+      assertCan(actorRole, ACTIONS.CEO_OPERATE);
+      const index = state.recoveryMissions.findIndex((item) => item.id === mission?.id);
+      if (index < 0) throw new Error("Unknown recovery mission");
+      const current = state.recoveryMissions[index];
+      if (current.status === "closed") throw new Error("Recovery mission is already closed");
+      if (!mission?.status || !["assigned", "in-progress", "verified", "closed"].includes(mission.status)) {
+        throw new Error("Invalid recovery mission status");
+      }
+      const updated = {
+        ...current,
+        ...structuredClone(mission),
+        updatedAt: mission.updatedAt ?? new Date().toISOString(),
+      };
+      state.recoveryMissions[index] = updated;
+      state.company.updatedAt = updated.updatedAt;
+      this.audit(actorRole, `recovery.mission.${updated.status}`, {
+        recoveryMissionId: updated.id,
+        taskId: updated.taskId,
+        status: updated.status,
+      }, false);
+      persist();
+      return structuredClone(updated);
+    },
+
+    verifyRecoveryMission(actorRole, missionId, evidence = []) {
+      assertCan(actorRole, ACTIONS.PA_REVIEW);
+      if (!missionId || !Array.isArray(evidence) || evidence.length === 0) {
+        throw new Error("Recovery verification requires mission id and evidence");
+      }
+      const index = state.recoveryMissions.findIndex((item) => item.id === missionId);
+      if (index < 0) throw new Error("Unknown recovery mission");
+      const mission = state.recoveryMissions[index];
+      if (mission.status !== "in-progress") {
+        throw new Error("Recovery mission must be in-progress before verification");
+      }
+      const task = state.tasks.find((item) => item.id === mission.taskId);
+      if (!task) throw new Error("Recovery verification requires an existing task");
+      if (task.status !== "completed") {
+        throw new Error("Recovery verification requires completed recovery work");
+      }
+      const now = new Date().toISOString();
+      const updated = {
+        ...mission,
+        status: "verified",
+        evidence: structuredClone(evidence),
+        verifiedBy: actorRole,
+        verifiedAt: now,
+        updatedAt: now,
+      };
+      state.recoveryMissions[index] = updated;
+      state.company.updatedAt = now;
+      this.audit(actorRole, "recovery.mission.verified", {
+        recoveryMissionId: updated.id,
+        taskId: updated.taskId,
+        evidenceCount: evidence.length,
+      }, false);
+      persist();
+      return structuredClone(updated);
+    },
+
     recordLeadershipReport(actorRole, report) {
       assertCan(actorRole, ACTIONS.STARNET_REPORT);
       if (!report?.id || !report?.report || !Array.isArray(report.targets)) {
