@@ -24,6 +24,7 @@ export function defaultState() {
     projects: [],
     tasks: [],
     leadershipReports: [],
+    recoveryMissions: [],
     people: [
       { id: "cho", name: "CHO", role: ROLES.CHO },
       { id: "main-overseer", name: "PA / Chief of Staff", role: ROLES.PA },
@@ -54,6 +55,7 @@ function normalize(state) {
     projects: Array.isArray(state?.projects) ? state.projects : [],
     tasks: Array.isArray(state?.tasks) ? state.tasks : [],
     leadershipReports: Array.isArray(state?.leadershipReports) ? state.leadershipReports : [],
+    recoveryMissions: Array.isArray(state?.recoveryMissions) ? state.recoveryMissions : [],
     decisions: Array.isArray(state?.decisions) ? state.decisions : [],
     boardMeetings: Array.isArray(state?.boardMeetings) ? state.boardMeetings : [],
     decisionPackets: Array.isArray(state?.decisionPackets) ? state.decisionPackets : [],
@@ -212,6 +214,35 @@ export function makeCompany({ load, save } = {}) {
       this.audit(actorRole, "operations.task.updated", { taskId: task.id, status: task.status }, false);
       persist();
       return structuredClone(task);
+    },
+
+    recordRecoveryMission(actorRole, mission) {
+      assertCan(actorRole, ACTIONS.CEO_OPERATE);
+      if (!mission?.id || !mission?.taskId || !mission?.reason || !mission?.assignedAgentId) {
+        throw new Error("Recovery mission requires id, task id, reason, and assigned agent");
+      }
+      const task = state.tasks.find((item) => item.id === mission.taskId);
+      if (!task) throw new Error("Recovery mission requires an existing task");
+      if (task.status !== "failed" && task.status !== "blocked") {
+        throw new Error("Recovery mission requires a failed or blocked task");
+      }
+      if (state.recoveryMissions.some((item) => item.taskId === mission.taskId && item.status === "assigned")) {
+        throw new Error("Recovery mission already assigned for this task");
+      }
+      const recorded = {
+        ...structuredClone(mission),
+        status: "assigned",
+        createdAt: mission.createdAt ?? new Date().toISOString(),
+      };
+      state.recoveryMissions.push(recorded);
+      state.company.updatedAt = recorded.createdAt;
+      this.audit(actorRole, "recovery.mission.assigned", {
+        recoveryMissionId: recorded.id,
+        taskId: recorded.taskId,
+        assignedAgentId: recorded.assignedAgentId,
+      }, false);
+      persist();
+      return structuredClone(recorded);
     },
 
     recordLeadershipReport(actorRole, report) {
