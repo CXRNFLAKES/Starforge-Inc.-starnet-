@@ -19,6 +19,15 @@ function fetchMock(url, options = {}) {
   throw new Error("unexpected URL: " + url);
 }
 
+test("live StarNet runtime bridge reports a connected runtime readiness state", async () => {
+  const bridge = makeStarNetRuntimeBridge({ baseUrl: "http://starnet.test", fetchImpl: fetchMock });
+  assert.deepEqual(await bridge.probeRuntime(), {
+    connected: true,
+    source: "live-runtime",
+    workerCount: 1,
+  });
+});
+
 test("live StarNet runtime bridge asynchronously exposes its roster", async () => {
   const bridge = makeStarNetRuntimeBridge({ baseUrl: "http://starnet.test", fetchImpl: fetchMock });
   const workers = await bridge.listWorkers();
