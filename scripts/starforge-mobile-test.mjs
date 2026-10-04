@@ -146,6 +146,16 @@ const server = http.createServer(async (req, res) => {
       res.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" });
       return res.end(html);
     }
+    if (req.url === "/manifest.webmanifest") {
+      const manifest = await readFile(join(ROOT, "../mobile-test/manifest.webmanifest"), "utf8");
+      res.writeHead(200, { "content-type": "application/manifest+json; charset=utf-8", "cache-control": "no-store" });
+      return res.end(manifest);
+    }
+    if (req.url === "/sw.js") {
+      const serviceWorker = await readFile(join(ROOT, "../mobile-test/sw.js"), "utf8");
+      res.writeHead(200, { "content-type": "application/javascript; charset=utf-8", "cache-control": "no-cache", "service-worker-allowed": "/" });
+      return res.end(serviceWorker);
+    }
     res.writeHead(404, { "content-type": "text/plain; charset=utf-8" });
     res.end("Not found");
   } catch (error) {
