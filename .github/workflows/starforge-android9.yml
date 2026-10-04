@@ -30,6 +30,11 @@ jobs:
       - run: npm run test:starforge:android9:shell
       - run: npm run test:starforge:runtime
       - run: npm run test:starforge:runtime:connection
+      - name: APInex live free-model discovery gate
+        if: ${{ secrets.APINEX_API_KEY != '' }}
+        env:
+          APINEX_API_KEY: ${{ secrets.APINEX_API_KEY }}
+        run: npm run test:starforge:apinex:live
       - name: Record green StarForge state
         if: success() && github.event_name == 'push' && github.ref == 'refs/heads/starforge/governance-kernel'
         run: |
