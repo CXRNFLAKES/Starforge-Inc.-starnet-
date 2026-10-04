@@ -171,7 +171,8 @@
     "test:starforge:runtime": "node --test test/starforge.starnet-runtime-bridge.test.mjs",
     "starforge:integration-test": "node scripts/starforge-integration-test.mjs",
     "test:starforge:integration": "node --test test/starforge.integration.test.mjs",
-    "test:starforge:operations": "node --test test/governance.operations.test.mjs"
+    "test:starforge:operations": "node --test test/governance.operations.test.mjs",
+    "test:starforge:runtime:connection": "node --test test/starforge.starnet-runtime-connection.test.mjs"
   },
   "devDependencies": {
     "@napi-rs/canvas": "0.1.100",
