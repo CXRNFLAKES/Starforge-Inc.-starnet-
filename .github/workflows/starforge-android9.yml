@@ -28,6 +28,8 @@ jobs:
         run: node --test test/starforge.c3-failure-security-gate.test.mjs
       - name: C4 financial reality gate
         run: node --test test/starforge.c4-financial-reality.test.mjs
+      - name: C5 HQ and mobile reality gate
+        run: node --test test/starforge.c5-hq-mobile-reality.test.mjs
       - run: npm run starforge:preflight
       - run: npm run starforge:test
       - run: npm run test:starforge:integration
