@@ -177,6 +177,26 @@ export function makeOperations({ company, starnet = null, modelRouter = null, fa
     }
   }
 
+  function assignRecoveryMission(actorRole, { taskId, assignedAgentId, reason, mission = "repair and verify failed work" } = {}) {
+    if (actorRole !== ROLES.CEO) throw new Error("Only the CEO may assign recovery missions");
+    requireRole(actorRole, ACTIONS.CEO_OPERATE);
+    if (!taskId || !assignedAgentId || !reason) throw new Error("Recovery mission requires task id, assigned agent, and reason");
+    const task = company.snapshot().tasks.find((item) => item.id === taskId);
+    if (!task) throw new Error("Unknown task");
+    if (!["failed", "blocked"].includes(task.status)) {
+      throw new Error("Recovery mission requires a failed or blocked task");
+    }
+    const entry = company.recordRecoveryMission(actorRole, {
+      id: randomUUID(),
+      taskId: task.id,
+      projectId: task.projectId,
+      assignedAgentId: String(assignedAgentId),
+      reason: String(reason),
+      mission: String(mission),
+    });
+    return clone(entry);
+  }
+
   function verifyBusinessOutcome(actorRole, { taskId, claim, evidence = [] } = {}) {
     if (actorRole !== ROLES.PA) {
       throw new Error("Only the PA may verify a business outcome");
@@ -319,6 +339,7 @@ export function makeOperations({ company, starnet = null, modelRouter = null, fa
     delegateTask,
     delegateToStarNet,
     verifyBusinessOutcome,
+    assignRecoveryMission,
     updateTask,
     inspect,
     reviewExecution,
