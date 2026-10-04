@@ -109,6 +109,28 @@ export function makeCompany({ load, save } = {}) {
     return structuredClone(entry);
   }
 
+  function recordLeadershipActivity(actorRole, capability, details = {}) {
+    const allowed = {
+      [ROLES.PA]: ["coordinate", "research", "review_work", "inspect_company", "communicate", "brief_cho", "investigate", "convene_board", "assess_risk", "maintain_memory"],
+      [ROLES.CEO]: ["coordinate", "research", "review_work", "inspect_company", "communicate", "spawn_agents", "delegate", "create_projects", "manage_operations", "monitor_performance", "reassign_workers", "request_approval", "execute_approved_plans", "direct_starnet"],
+      [ROLES.VICE_CEO]: ["coordinate", "research", "inspect_company", "communicate", "lead_starnet", "delegate_starnet", "monitor_performance", "reassign_starnet_workers", "report_to_leadership"],
+    };
+    if (!allowed[actorRole]?.includes(capability)) throw new Error("Unauthorized leadership audit activity");
+    return recordAudit(actorRole, `leadership.${capability}`, {
+      leaderId: state.people.find(person => person.role === actorRole)?.id ?? null,
+      details,
+    });
+  }
+
+  function recordLeadershipReview(actorRole, { reportId, sourceRole = ROLES.VICE_CEO } = {}) {
+    if (![ROLES.CEO, ROLES.PA].includes(actorRole)) throw new Error("Unauthorized leadership report review");
+    if (!reportId) throw new Error("Leadership report id is required");
+    return recordAudit(actorRole, "leadership.review_report", {
+      leaderId: state.people.find(person => person.role === actorRole)?.id ?? null,
+      details: { reportId, sourceRole },
+    });
+  }
+
   return {
     snapshot() { return structuredClone(state); },
 
