@@ -174,7 +174,8 @@
     "test:starforge:operations": "node --test test/governance.operations.test.mjs",
     "test:starforge:runtime:connection": "node --test test/starforge.starnet-runtime-connection.test.mjs",
     "test:starforge:model-router": "node --test test/starforge.model-router.test.mjs",
-    "test:starforge:apinex:live": "node scripts/starforge-apinex-live-test.mjs"
+    "test:starforge:apinex:live": "node scripts/starforge-apinex-live-test.mjs",
+    "test:starforge:governed-model-delegation": "node --test test/starforge.governed-model-delegation.test.mjs"
   },
   "devDependencies": {
     "@napi-rs/canvas": "0.1.100",
