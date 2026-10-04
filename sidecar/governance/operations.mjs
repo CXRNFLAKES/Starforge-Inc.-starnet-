@@ -22,18 +22,23 @@ export function makeOperations({ company, starnet = null } = {}) {
     assertCan(actorRole, action);
   }
 
-  function createProject(actorRole, { title, objective = "", ownerId = null } = {}) {
+  function createProject(actorRole, { title, objective = "", objectiveId = null, ownerId = null } = {}) {
     requireRole(actorRole, ACTIONS.CEO_OPERATE);
     if (actorRole !== ROLES.CEO) throw new Error("Only the CEO may create operational projects");
     if (!title) throw new Error("Project title is required");
 
     if (ownerId && !person(ownerId)) throw new Error("Unknown project owner");
+    if (objectiveId) {
+      const objectiveRecord = company.snapshot().objectives.find((item) => item.id === objectiveId);
+      if (!objectiveRecord) throw new Error("Unknown company objective");
+    }
 
     const now = new Date().toISOString();
     const project = {
       id: randomUUID(),
       title: String(title),
       objective: String(objective),
+      objectiveId: objectiveId ? String(objectiveId) : null,
       ownerId,
       status: "planned",
       createdBy: actorRole,
