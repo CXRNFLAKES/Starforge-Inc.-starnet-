@@ -92,6 +92,33 @@ test("governance HTTP feed reads capital from the Company kernel when connected"
 });
 
 
+
+test("governance feed exposes objective progression separately from capital level", async () => {
+  const { makeCompany } = await import("../sidecar/governance/company.mjs");
+  const { makeOperations } = await import("../sidecar/governance/operations.mjs");
+  const { ROLES } = await import("../sidecar/governance/roles.mjs");
+  const company = makeCompany();
+  const objective = company.createObjective(ROLES.CHO, { title: "Ship Product" });
+  const project = makeOperations({ company }).createProject(ROLES.CEO, { title: "Launch", objectiveId: objective.id });
+  company.recordTask(ROLES.CEO, { id: "objective-task-1", projectId: project.id, title: "Build", assigneeId: "starforge-ceo", status: "completed" });
+  company.recordTask(ROLES.CEO, { id: "objective-task-2", projectId: project.id, title: "Fix", assigneeId: "starforge-ceo", status: "blocked" });
+  company.recordFinanceEntry(ROLES.CHO, { id: "objective-capital-1", kind: "capital-injection", amount: 5000, currency: "EUR" });
+  const handler = makeStarForgeGovernanceHandler({ workspace: ".starforge-objective-progress-test", company });
+  let body = ""; const res = { writeHead() {}, end(value) { body = value; } };
+  await handler({ method: "GET", url: "/api/starforge/governance" }, res);
+  const payload = JSON.parse(body);
+  const progress = payload.gameplay.objectiveProgress[0];
+  assert.equal(progress.projectCount, 1);
+  assert.equal(progress.taskCount, 2);
+  assert.equal(progress.completed, 1);
+  assert.equal(progress.blocked, 1);
+  assert.equal(progress.progressPercent, 50);
+  assert.equal(progress.companyXp, 75);
+  assert.equal(progress.progressionSource, "starforge-governed-task-ledger");
+  assert.equal(payload.level.level, 10);
+  assert.equal(payload.level.currentCapital, 5000);
+});
+
 test("governance feed exposes company gameplay telemetry derived from governed tasks", async () => {
   const { makeCompany } = await import("../sidecar/governance/company.mjs");
   const { makeOperations } = await import("../sidecar/governance/operations.mjs");
