@@ -9,7 +9,7 @@ function clone(value) {
   return structuredClone(value);
 }
 
-export function makeOperations({ company, starnet = null } = {}) {
+export function makeOperations({ company, starnet = null, modelRouter = null } = {}) {
   if (!company || typeof company.snapshot !== "function") {
     throw new Error("makeOperations requires a company");
   }
@@ -76,6 +76,17 @@ export function makeOperations({ company, starnet = null } = {}) {
     if (!assignee) throw new Error("Unknown assignee");
     if (assignee.role === ROLES.CHO) throw new Error("CHO is not an operational worker target");
 
+    let modelRoute = null;
+    if (model) {
+      if (!modelRouter || typeof modelRouter.resolve !== "function") {
+        throw new Error("StarForge model router is required for governed model selection");
+      }
+      modelRoute = await modelRouter.resolve({
+        provider: provider || "apinex",
+        model,
+      });
+    }
+
     const now = new Date().toISOString();
     const task = {
       id: randomUUID(),
@@ -94,7 +105,7 @@ export function makeOperations({ company, starnet = null } = {}) {
     return clone(task);
   }
 
-  async function delegateToStarNet(actorRole, { projectId, title, assigneeId, priority = "normal", successCriteria = "", context = "" } = {}) {
+  async function delegateToStarNet(actorRole, { projectId, title, assigneeId, priority = "normal", successCriteria = "", context = "", provider = "", model = "" } = {}) {
     requireRole(actorRole, ACTIONS.CEO_DELEGATE);
     requireRole(actorRole, ACTIONS.STARNET_DELEGATE);
     if (![ROLES.CEO, ROLES.VICE_CEO].includes(actorRole)) {
@@ -140,12 +151,12 @@ export function makeOperations({ company, starnet = null } = {}) {
         assigneeId: task.assigneeId,
         title: task.title,
         successCriteria: task.successCriteria,
-        context,
+        context: modelRoute ? { base: context, modelRoute } : context,
       });
       const result = adapterResult.result;
       task.status = "completed";
       task.note = "StarNet execution completed";
-      task.execution = { provider: "starnet", result };
+      task.execution = { provider: "starnet", result, ...(modelRoute ? { modelRoute } : {}) };
       task.updatedAt = new Date().toISOString();
       company.updateTask(actorRole, task);
       return clone({ task, worker, result });
