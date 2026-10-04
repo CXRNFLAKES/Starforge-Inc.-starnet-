@@ -239,6 +239,26 @@ export function makeCompany({ load, save } = {}) {
       return structuredClone(entry);
     },
 
+    recordBusinessOutcome(actorRole, { taskId, outcome } = {}) {
+      assertCan(actorRole, ACTIONS.PA_REVIEW);
+      if (!taskId || !outcome?.outcomeId) throw new Error("Business outcome requires task id and outcome id");
+      const index = state.tasks.findIndex((item) => item.id === taskId);
+      if (index < 0) throw new Error("Unknown task");
+      const task = state.tasks[index];
+      if (task.status !== "completed") throw new Error("Business outcome requires a completed task");
+      if (task.assigneeSource !== "starnet") throw new Error("Business outcome requires StarNet execution");
+      const recorded = structuredClone(outcome);
+      state.tasks[index] = { ...task, businessOutcome: recorded, updatedAt: recorded.verifiedAt ?? new Date().toISOString() };
+      state.company.updatedAt = state.tasks[index].updatedAt;
+      this.audit(actorRole, "business.outcome.recorded", {
+        taskId,
+        outcomeId: recorded.outcomeId,
+        verified: recorded.verified === true,
+      }, false);
+      persist();
+      return structuredClone(recorded);
+    },
+
     recordFinanceEntry(actorRole, entry) {
       assertCan(actorRole, ACTIONS.FINANCE_RECORD);
       if (!entry?.id || !entry?.kind || !entry?.amount || !entry?.currency) {
@@ -249,6 +269,19 @@ export function makeCompany({ load, save } = {}) {
       const kind = String(entry.kind);
       if (!["capital-injection", "revenue", "expense", "tax-reserve", "liability", "liability-payment"].includes(kind)) {
         throw new Error("Invalid finance entry kind");
+      }
+      if (kind === "revenue") {
+        if (!entry.taskId) throw new Error("Revenue requires a verified business outcome");
+        const task = state.tasks.find((item) => item.id === String(entry.taskId));
+        if (!task) throw new Error("Revenue requires a verified business outcome");
+        const outcome = task.businessOutcome;
+        if (entry.businessOutcomeId || entry.source === "verified-business-outcome") {
+          if (!outcome?.verified || entry.businessOutcomeId !== outcome.outcomeId) {
+            throw new Error("Revenue requires a verified business outcome");
+          }
+        } else if (outcome && outcome.verified !== true) {
+          throw new Error("Revenue requires a verified business outcome");
+        }
       }
       const currency = String(entry.currency).toUpperCase();
       if (currency !== state.finance.currency) throw new Error("Finance entry currency does not match company currency");
