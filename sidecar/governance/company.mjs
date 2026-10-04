@@ -277,8 +277,40 @@ export function makeCompany({ load, save } = {}) {
       assertCan(actorRole, ACTIONS.FINANCE_TELEMETRY);
       const safeLimit = Math.max(0, Math.min(20, Number(limit) || 0));
       const summary = financeData({ summaryOnly: true });
+      const now = Date.now();
+      const thirtyDaysAgo = now - (30 * 24 * 60 * 60 * 1000);
+      let revenue = 0;
+      let expenses = 0;
+      let capitalInjections = 0;
+      let liabilityPayments = 0;
+      for (const entry of state.finance.entries) {
+        const amount = Number(entry.amount);
+        if (!Number.isFinite(amount) || amount <= 0) continue;
+        if (entry.kind === "revenue") revenue += amount;
+        else if (entry.kind === "expense") expenses += amount;
+        else if (entry.kind === "capital-injection") capitalInjections += amount;
+        else if (entry.kind === "liability-payment") liabilityPayments += amount;
+      }
+      const trailingExpenses = state.finance.entries.reduce((total, entry) => {
+        if (entry.kind !== "expense") return total;
+        const at = Date.parse(entry.recordedAt ?? "");
+        return Number.isFinite(at) && at >= thirtyDaysAgo ? total + Number(entry.amount || 0) : total;
+      }, 0);
+      const monthlyBurn = Math.max(0, trailingExpenses);
+      const runwayMonths = monthlyBurn > 0 ? Math.max(0, summary.availableCash / monthlyBurn) : null;
       return {
         ...summary,
+        capitalInjections,
+        revenue,
+        expenses,
+        liabilityPayments,
+        totalInflow: capitalInjections + revenue,
+        totalOutflow: expenses + summary.taxReserve + liabilityPayments,
+        netCashflow: capitalInjections + revenue - expenses - summary.taxReserve - liabilityPayments,
+        operatingResult: revenue - expenses - summary.taxReserve,
+        monthlyBurn,
+        runwayMonths,
+        runwaySource: monthlyBurn > 0 ? "trailing-30-day-governed-expenses" : "unavailable-no-recent-expense-history",
         recentEntries: structuredClone(state.finance.entries.slice(-safeLimit).reverse()),
       };
     },

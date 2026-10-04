@@ -34,3 +34,26 @@ test('PA can read bounded finance telemetry without gaining finance-report autho
   assert.equal(telemetry.recentEntries[0].id,'exp');
   assert.throws(()=>company.financeSnapshot(ROLES.PA),/Unauthorized action/);
 });
+
+
+test('finance telemetry exposes governed cashflow, operating result, and runway metrics',()=>{
+  const company=makeCompany();
+  const recent=new Date().toISOString();
+  company.recordFinanceEntry(ROLES.CHO,{id:'cap',kind:'capital-injection',amount:1000,currency:'EUR',recordedAt:recent});
+  company.recordFinanceEntry(ROLES.CHO,{id:'rev',kind:'revenue',amount:500,currency:'EUR',recordedAt:recent});
+  company.recordFinanceEntry(ROLES.CHO,{id:'tax',kind:'tax-reserve',amount:100,currency:'EUR',recordedAt:recent});
+  company.recordFinanceEntry(ROLES.CHO,{id:'exp',kind:'expense',amount:200,currency:'EUR',recordedAt:recent});
+  company.recordFinanceEntry(ROLES.CHO,{id:'liab-pay',kind:'liability-payment',amount:50,currency:'EUR',recordedAt:recent});
+  const telemetry=company.financeTelemetrySnapshot(ROLES.PA,{limit:5});
+  assert.equal(telemetry.capitalInjections,1000);
+  assert.equal(telemetry.revenue,500);
+  assert.equal(telemetry.expenses,200);
+  assert.equal(telemetry.liabilityPayments,50);
+  assert.equal(telemetry.totalInflow,1500);
+  assert.equal(telemetry.totalOutflow,350);
+  assert.equal(telemetry.netCashflow,1150);
+  assert.equal(telemetry.operatingResult,200);
+  assert.equal(telemetry.monthlyBurn,200);
+  assert.equal(telemetry.runwayMonths,5);
+  assert.equal(telemetry.runwaySource,'trailing-30-day-governed-expenses');
+});
