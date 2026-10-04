@@ -24,6 +24,31 @@
   //     legitimately exceed the hosted-provider default (local model loading in Ollama).
   const PROFILES = [
     {
+      id: 'apinex',
+      aliases: ['apx'],
+      name: 'APInex',
+      label: 'APINEX',
+      endpoint: 'api.apinex.bond/v1',
+      blurb: 'OpenAI-compatible multi-model gateway',
+      live: true,
+      adapter: 'openai-compatible',
+      apiMode: 'chat_completions',
+      authType: 'api_key',
+      keyRequired: true,
+      keyEnv: ['APINEX_API_KEY'],
+      modelsRequireAuth: true,
+      baseUrl: 'https://api.apinex.bond/v1',
+      baseUrlEnv: ['APINEX_BASE_URL'],
+      modelsPath: '/models',
+      defaultReasoningEffort: 'medium',
+      unmetered: false,
+      credentialPool: false,
+      supportsTools: true,
+      supportsReasoning: true,
+      wireReasoningEffort: true,
+      order: 16
+    },
+    {
       id: 'openrouter',
       aliases: ['or'],
       name: 'OpenRouter',
