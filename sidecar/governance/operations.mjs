@@ -76,17 +76,6 @@ export function makeOperations({ company, starnet = null, modelRouter = null } =
     if (!assignee) throw new Error("Unknown assignee");
     if (assignee.role === ROLES.CHO) throw new Error("CHO is not an operational worker target");
 
-    let modelRoute = null;
-    if (model) {
-      if (!modelRouter || typeof modelRouter.resolve !== "function") {
-        throw new Error("StarForge model router is required for governed model selection");
-      }
-      modelRoute = await modelRouter.resolve({
-        provider: provider || "apinex",
-        model,
-      });
-    }
-
     const now = new Date().toISOString();
     const task = {
       id: randomUUID(),
@@ -126,6 +115,17 @@ export function makeOperations({ company, starnet = null, modelRouter = null } =
       : await starnet.listWorkers();
     const worker = roster.find((item) => item.id === String(assigneeId).trim());
     if (!worker) throw new Error("StarNet worker is not present in the live roster");
+
+    let modelRoute = null;
+    if (model) {
+      if (!modelRouter || typeof modelRouter.resolve !== "function") {
+        throw new Error("StarForge model router is required for governed model selection");
+      }
+      modelRoute = await modelRouter.resolve({
+        provider: provider || "apinex",
+        model,
+      });
+    }
 
     const now = new Date().toISOString();
     const task = {
