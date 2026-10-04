@@ -97,8 +97,8 @@ test("D1 live StarNet runtime bridge remains the governed execution boundary", a
         assert.equal(payload.context.modelRoute.provider, "apinex");
         assert.equal(payload.context.modelRoute.source, "starforge-governed-model-router");
         return new Response(JSON.stringify({
-          worker: { id: "production-worker", name: "Production Worker" },
-          result: { content: "production execution contract verified" },
+          content: "production execution contract verified",
+          summary: "1 worker completed",
         }), { status: 200 });
       }
       return new Response("not found", { status: 404 });
