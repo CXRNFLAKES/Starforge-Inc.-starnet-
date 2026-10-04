@@ -171,7 +171,7 @@ export function makeStarForgeGovernanceHandler({ workspace, roster = new Map(), 
     });
     const objectives = Array.isArray(governedSnapshot?.objectives) ? governedSnapshot.objectives : [];
     const projects = Array.isArray(governedSnapshot?.projects) ? governedSnapshot.projects : [];
-    const companyXpRaw = starNetTasks.reduce((xp, task) => xp + (task.status === "completed" ? 100 : task.status === "failed" ? -50 : task.status === "blocked" ? -25 : 0), 0);
+    const companyXpRaw = tasks.reduce((xp, task) => xp + (task.status === "completed" ? 100 : task.status === "failed" ? -50 : task.status === "blocked" ? -25 : 0), 0);
     const projectGameplay = projects.map((project) => {
       const projectTasks = tasks.filter((task) => task.projectId === project.id);
       const completed = projectTasks.filter((task) => task.status === "completed").length;
