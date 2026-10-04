@@ -44,3 +44,5 @@ console.log(JSON.stringify({
   finishReason,
   source: "starforge-governed-starnet-provider",
 }, null, 2));
+
+// Keep the live execution gate observable as a normal branch push workflow check.
