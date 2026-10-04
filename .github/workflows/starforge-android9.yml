@@ -34,6 +34,8 @@ jobs:
         run: node --test test/starforge.d1-production-apinex-integration.test.mjs
       - name: D2 governed model execution gate
         run: node --test test/starforge.d2-governed-model-execution.test.mjs
+      - name: D3 verified business outcome gate
+        run: node --test test/starforge.d3-verified-business-outcome.test.mjs
       - run: npm run starforge:preflight
       - run: npm run starforge:test
       - run: npm run test:starforge:integration
