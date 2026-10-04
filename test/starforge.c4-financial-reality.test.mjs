@@ -88,7 +88,7 @@ test("C4 turns a completed governed mission into explicit ledger-backed financia
 
   const handler = makeStarForgeGovernanceHandler({
     workspace: ".starforge-c4-test", company,
-    roster: new Map([["worker-c4", { name: "C4 Revenue Worker", model: "free/gpt-5.6-luna" }]),
+    roster: new Map([["worker-c4", { name: "C4 Revenue Worker", model: "free/gpt-5.6-luna" }]]),
     runsMeta: new Map(),
   });
   const { status, payload } = await readGovernance(handler);
