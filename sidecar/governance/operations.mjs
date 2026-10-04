@@ -466,6 +466,7 @@ export function makeOperations({ company, starnet = null, modelRouter = null, fa
     verifyBusinessOutcome,
     assignRecoveryMission,
     startRecoveryMission,
+    executeRecoveryMission,
     verifyRecoveryMission,
     closeRecoveryMission,
     updateTask,
