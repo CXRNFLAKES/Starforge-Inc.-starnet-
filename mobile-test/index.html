@@ -18,11 +18,16 @@ button:active{opacity:.75}.card{margin-top:12px;border:1px solid #263149;border-
 <div class="wrap">
 <section class="top">
 <h1>🧪 StarForge Test Lab</h1>
-<div class="sub">Android 9.0 compatibility / governance simulation</div>
+<div class="sub">Android 9.0 compatibility / governed HQ simulation</div>
 <div class="badge">SAFE MODE • NO REAL MONEY • NO PROVIDER CALLS</div>
 </section>
 <section class="card">
-<h2>🎮 StarForge HQ</h2><div class="row"><span>Company level</span><strong id="sfLevel">LVL —</strong></div><div class="row"><span>Net operating capital</span><strong id="sfCapital">€—</strong></div><div class="row"><span>Level 100 ceiling</span><strong>€10,000,000</strong></div><div class="muted">Level is derived from the governed capital snapshot; the test lab never invents a balance.</div>
+<h2>🎮 StarForge HQ</h2>
+<div class="row"><span>Company level</span><strong id="sfLevel">LVL —</strong></div>
+<div class="row"><span>Net operating capital</span><strong id="sfCapital">€—</strong></div>
+<div class="row"><span>Finance entries</span><strong id="sfEntries">—</strong></div>
+<div class="row"><span>Execution source</span><strong id="sfSource" class="muted">NOT CONNECTED</strong></div>
+<div class="muted">HQ values are read directly from the governed company ledger; the mobile surface never invents a balance.</div>
 </section>
 <section class="card">
 <h2>⚙️ StarNet Workforce</h2>
@@ -30,27 +35,66 @@ button:active{opacity:.75}.card{margin-top:12px;border:1px solid #263149;border-
 <div class="row"><span>Total workers</span><strong id="wfTotal">—</strong></div>
 <div class="row"><span>Working</span><strong id="wfWorking">—</strong></div>
 <div class="row"><span>Idle</span><strong id="wfIdle">—</strong></div>
-<div class="muted" id="wfNote">Live StarNet workforce data is not exposed by this Android 9 test server yet. No worker count is invented.</div>
+<div class="muted" id="wfNote">No worker count is invented. Live runtime data appears only when StarNet exposes it.</div>
 </section>
+<section class="card">
+<h2>📡 Governed Execution</h2>
+<div class="row"><span>Tasks</span><strong id="execTasks">—</strong></div>
+<div class="row"><span>Completed</span><strong id="execCompleted">—</strong></div>
+<div class="row"><span>Failed</span><strong id="execFailed">—</strong></div>
+<div class="row"><span>Blocked</span><strong id="execBlocked">—</strong></div>
+</section>
+<button id="refresh">REFRESH HQ TELEMETRY</button>
 <button id="run">RUN GOVERNANCE TEST</button>
-<div id="status" class="card"><div class="muted">Ready. Tap the button to run the server-side test suite.</div></div>
+<div id="status" class="card"><div class="muted">Ready. Refresh HQ telemetry or run the server-side governance suite.</div></div>
 <div id="results"></div>
-<div class="footer">StarForge mobile test surface • vanilla HTML/CSS/JS for Android 9-era browsers</div>
+<div class="footer">StarForge mobile test surface • vanilla HTML/CSS/JS for Android 9-era browsers • read-only governance feed</div>
 </div>
 <script>
 if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("/sw.js").catch(() => {}));
 const statusEl=document.getElementById("status"), resultsEl=document.getElementById("results");
 const sfLevel=document.getElementById("sfLevel"), sfCapital=document.getElementById("sfCapital");
+const sfEntries=document.getElementById("sfEntries"), sfSource=document.getElementById("sfSource");
+const wfMode=document.getElementById("wfMode"), wfTotal=document.getElementById("wfTotal"), wfWorking=document.getElementById("wfWorking"), wfIdle=document.getElementById("wfIdle");
+const execTasks=document.getElementById("execTasks"), execCompleted=document.getElementById("execCompleted"), execFailed=document.getElementById("execFailed"), execBlocked=document.getElementById("execBlocked");
+
+function money(value){
+ return new Intl.NumberFormat("en-IE",{style:"currency",currency:"EUR",maximumFractionDigits:0}).format(Number(value)||0);
+}
+async function refreshHQ(){
+ try{
+  const r=await fetch("/api/starforge/governance",{cache:"no-store"}); const data=await r.json();
+  if(!r.ok || !data.ok) throw new Error(data.error||"Governance feed unavailable");
+  sfLevel.textContent="LVL "+(data.level?.level ?? "—");
+  sfCapital.textContent=money(data.capital?.netOperatingCapital);
+  sfEntries.textContent=String(data.finance?.entryCount ?? 0);
+  sfSource.textContent=data.connection?.executionSource || "UNKNOWN";
+  const workers=Array.isArray(data.workforce?.workers)?data.workforce.workers:[];
+  wfMode.textContent=data.connection?.runtimeMode || "test-bridge";
+  wfTotal.textContent=String(workers.length);
+  wfWorking.textContent=String(workers.filter(x=>x.status==="working").length);
+  wfIdle.textContent=String(workers.filter(x=>x.status==="idle").length);
+  wfNote.textContent=data.workforce?.source || "No workforce source";
+  execTasks.textContent=String(data.execution?.taskCount ?? 0);
+  execCompleted.textContent=String(data.execution?.completed ?? 0);
+  execFailed.textContent=String(data.execution?.failed ?? 0);
+  execBlocked.textContent=String(data.execution?.blocked ?? 0);
+  statusEl.innerHTML="<div><strong>🟢 HQ TELEMETRY CONNECTED</strong></div><div class='muted'>Read-only • "+(data.finance?.source||"ledger")+"</div>";
+ }catch(e){
+  statusEl.innerHTML="<div class='fail'>🔴 HQ telemetry unavailable</div><div class='muted'>"+e.message+"</div>";
+ }
+}
+document.getElementById("refresh").onclick=refreshHQ;
 document.getElementById("run").onclick=async()=>{
  statusEl.innerHTML="<div>⏳ Running...</div>"; resultsEl.innerHTML="";
  try{
   const r=await fetch("/api/test",{cache:"no-store"}); const data=await r.json();
-  sfLevel.textContent="LVL "+(data.companyLevel ?? "—");
-  sfCapital.textContent=new Intl.NumberFormat("en-IE",{style:"currency",currency:"EUR",maximumFractionDigits:0}).format(Number(data.capital?.netOperatingCapital ?? 0));
+  await refreshHQ();
   statusEl.innerHTML="<div><strong>"+(data.failed===0?"🟢 ALL TESTS PASSED":"🔴 FAILURES DETECTED")+"</strong></div><div class='muted'>"+data.passed+"/"+data.total+" passed • "+data.mode+"</div>";
   resultsEl.innerHTML="<div class='card'>"+data.results.map(x=>"<div class='row'><span>"+x.name+"<br><span class='muted'>"+x.detail+"</span></span><strong class='"+(x.status==="PASS"?"pass":"fail")+"'>"+x.status+"</strong></div>").join("")+"</div>";
  }catch(e){statusEl.innerHTML="<div class='fail'>🔴 Connection failed</div><div class='muted'>"+e.message+"</div>"}
 };
+window.addEventListener("load",()=>refreshHQ());
 </script>
 </body>
 </html>
