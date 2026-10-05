@@ -1539,7 +1539,10 @@ body.no-curve #stage-wrap::before { background: none; box-shadow: none; }
 .model-dock-head {
   display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px; align-items: center;
   border-bottom: 1px solid var(--ph-dim); padding-bottom: 6px; min-width: 0;
+  position: relative; z-index: 3; background: var(--panel);
 }
+.model-dock-head > * { min-width: 0; }
+
 .model-dock-provider {
   color: var(--gold); font-size: 11px; white-space: nowrap;
 }
@@ -1584,12 +1587,15 @@ body.no-curve #stage-wrap::before { background: none; box-shadow: none; }
 .model-dock-effort:hover { color: var(--ph-bright); border-color: var(--ph); background: var(--ph-faint); }
 .model-dock-effort.sel { color: var(--ink); background: var(--ph); border-color: var(--ph); }
 .model-dock-list {
-  min-height: 126px; max-height: 236px; overflow: auto; padding-right: 2px;
+  min-height: 126px; max-height: 236px; overflow-x: hidden; overflow-y: auto; padding-right: 2px;
   border-top: 1px solid var(--ph-faint); border-bottom: 1px solid var(--ph-faint);
+  position: relative; isolation: isolate; contain: paint;
 }
 .model-dock-group {
   color: var(--gold); font-size: 11px; padding: 8px 3px 3px;
   border-bottom: 1px solid var(--ph-faint);
+  background: var(--panel); position: relative; z-index: 1;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .model-dock-row {
   width: 100%; min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr) auto;
