@@ -1,6 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { makeOpenAICompatibleProvider } from "../sidecar/providers/openai-compatible.js";
+import openAICompatible from "../sidecar/providers/openai-compatible.js";
+
+const { makeOpenAICompatibleProvider } = openAICompatible;
 
 function response(models) {
   return new Response(JSON.stringify({ data: models }), {
