@@ -41,11 +41,11 @@ for (const id of hostedProviders) {
 ok(/PROVIDERS\.forEach\(p\s*=>\s*addProvider\(p\.id\)\)/.test(station), 'Settings lists any configured provider, not only the active provider');
 
 const appCss = fs.readFileSync(path.join(__dirname, '..', 'frontend', 'css', 'app.css'), 'utf8');
-ok(/\.model-dock-head[\\s\\S]*position:\s*relative;\s*z-index:\s*3;\s*background:\s*var\(--panel\)/.test(appCss),
+ok(/\.model-dock-head[\s\S]*position:\s*relative;\s*z-index:\s*3;\s*background:\s*var\(--panel\)/.test(appCss),
   'model picker header is isolated above the scrolling model list');
-ok(/\.model-dock-list[\\s\\S]*overflow-x:\s*hidden;\s*overflow-y:\s*auto[\\s\\S]*contain:\s*paint/.test(appCss),
+ok(/\.model-dock-list[\s\S]*overflow-x:\s*hidden;\s*overflow-y:\s*auto[\s\S]*contain:\s*paint/.test(appCss),
   'model picker scrollport clips horizontal and paint overflow');
-ok(/\.model-dock-group[\\s\\S]*background:\s*var\(--panel\)[\\s\\S]*overflow:\s*hidden/.test(appCss),
+ok(/\.model-dock-group[\s\S]*background:\s*var\(--panel\)[\s\S]*overflow:\s*hidden/.test(appCss),
   'provider group labels have an opaque clipped surface and cannot bleed into adjacent groups');
 
 // Provider cards contain their own ADD KEY / SIGN IN / SAVE controls. The selectable card surface must therefore
