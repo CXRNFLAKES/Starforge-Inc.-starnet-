@@ -46,6 +46,7 @@
       supportsTools: true,
       supportsReasoning: true,
       wireReasoningEffort: true,
+      freeModelsOnly: true,
       order: 16
     },
     {
