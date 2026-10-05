@@ -21124,7 +21124,8 @@ async function handleProviderModels(req, res) {
   const id = normalizeProvider(providerId);
   if (!getProviderProfile(id)) return json(404, { models: [], error: 'unknown provider' });
   try {
-    const models = await listModelsForProvider(id, { baseUrl });
+    const headerKey = String(req.headers['x-starnet-provider-key'] || '').trim();
+    const models = await listModelsForProvider(id, { key: headerKey, baseUrl });
     json(200, { provider: id, models: models.map(publicModel) });
   } catch (e) {
     json(200, { provider: id, models: [], error: (e && e.message) || 'model catalog unavailable', code: (e && e.code) || '' });
