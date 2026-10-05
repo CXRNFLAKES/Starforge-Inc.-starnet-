@@ -313,6 +313,17 @@
     // keyed-provider "＋ Add a key" door for a keyless subscription sign-in.
     const errLabel = String(opts.label || 'openai-compatible');
     const profileSupportsTools = (typeof opts.supportsTools === 'boolean') ? opts.supportsTools : null;
+    // Some OpenAI-compatible gateways expose paid and free models from the same /models endpoint.
+    // When a provider explicitly opts into freeModelsOnly, only models whose catalog pricing proves
+    // BOTH prompt and completion are zero are exposed. Unknown pricing is excluded rather than guessed free.
+    const freeModelsOnly = opts.freeModelsOnly === true;
+    function isFreePricedModel(model) {
+      const pricing = model && model.pricing;
+      if (!pricing || typeof pricing !== 'object') return false;
+      const prompt = Number(pricing.prompt);
+      const completion = Number(pricing.completion);
+      return Number.isFinite(prompt) && Number.isFinite(completion) && prompt === 0 && completion === 0;
+    }
     /* PRICE FAMILY (2026-08-21). OpenAI's /v1/models — and every vendor that clones it — carries NO pricing
        block, so priceOf() returned null on openai/xai/groq/mistral/deepseek/together/fireworks and cost.js
        priced every turn at $0: the per-run spend cap could never fire on any of them. The registry profile
@@ -681,7 +692,7 @@
             if (!res.ok) return [];
             const j = await res.json();
             const raw = Array.isArray(j.data) ? j.data : (Array.isArray(j.models) ? j.models : []);
-            const list = raw.map(normalizeModel).filter(Boolean).map(declare);
+            const list = raw.map(normalizeModel).filter(Boolean).filter(m => !freeModelsOnly || isFreePricedModel(m)).map(declare);
             rememberDeclared(baseUrl, list);   // live catalog only; the static fallback roster never feeds the memo
             return list;
           } catch (_) { return []; }
