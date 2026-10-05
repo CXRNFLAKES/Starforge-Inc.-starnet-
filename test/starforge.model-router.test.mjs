@@ -7,9 +7,9 @@ function apinexFetch(url, options = {}) {
   if (url === "https://api.apinex.bond/v1/models") {
     return Promise.resolve(new Response(JSON.stringify({
       data: [
-        { id: "free/gpt-5.6-luna", name: "Free GPT 5.6 Luna" },
-        { id: "free/claude-sonnet-4.6", name: "Free Claude Sonnet 4.6" },
-        { id: "gpt-5.6-luna", name: "Paid GPT 5.6 Luna" },
+        { id: "free/gpt-5.6-luna", name: "Free GPT 5.6 Luna", pricing: { prompt: 0, completion: 0 } },
+        { id: "free/claude-sonnet-4.6", name: "Free Claude Sonnet 4.6", pricing: { prompt: 0, completion: 0 } },
+        { id: "gpt-5.6-luna", name: "Paid GPT 5.6 Luna", pricing: { prompt: 0.01, completion: 0.02 } },
       ],
     }), { status: 200, headers: { "content-type": "application/json" } }));
   }
