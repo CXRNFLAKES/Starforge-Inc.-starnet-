@@ -155,6 +155,7 @@
         reasoningModels: profile.reasoningModels,
         reasoningOffEffort: profile.reasoningOffEffort,
         replayReasoningContent: profile.replayReasoningContent === true,
+        freeModelsOnly: profile.freeModelsOnly === true,
         supportsTools: typeof profile.supportsTools === 'boolean' ? profile.supportsTools : null,
         // wireStreamOptions:false = endpoint rejects/lacks stream_options (usage streams by default there)
         includeUsage: profile.wireStreamOptions === false ? false : opts.includeUsage,
