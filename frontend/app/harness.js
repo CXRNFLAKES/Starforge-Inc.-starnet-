@@ -594,11 +594,14 @@ const Harness = (() => {
   // never hang a caller. Bound every catalog fetch with an AbortController timeout so listModels() always
   // settles — a timeout reads as "catalog unavailable" (empty list), exactly like an offline sidecar.
   const MODEL_CATALOG_TIMEOUT_MS = 6000;
-  async function fetchModelCatalog(url, field) {
+  async function fetchModelCatalog(url, field, opts) {
+    opts = opts || {};
     let ctl = null, t = null;
     try { ctl = new AbortController(); t = setTimeout(() => { try { ctl.abort(); } catch (_) {} }, MODEL_CATALOG_TIMEOUT_MS); } catch (_) {}
     try {
-      const r = await fetch(url, { cache: 'no-store', signal: ctl ? ctl.signal : undefined });
+      const headers = {};
+      if (opts.providerKey) headers['x-starnet-provider-key'] = String(opts.providerKey);
+      const r = await (typeof apiFetch === 'function' ? apiFetch(url, { cache: 'no-store', signal: ctl ? ctl.signal : undefined, headers }) : fetch(url, { cache: 'no-store', signal: ctl ? ctl.signal : undefined, headers }));
       if (!r.ok) throw new Error('HTTP ' + r.status);
       const j = await r.json();
       if (j && j.error) throw new Error(j.error);
