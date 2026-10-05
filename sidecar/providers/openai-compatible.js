@@ -314,15 +314,20 @@
     const errLabel = String(opts.label || 'openai-compatible');
     const profileSupportsTools = (typeof opts.supportsTools === 'boolean') ? opts.supportsTools : null;
     // Some OpenAI-compatible gateways expose paid and free models from the same /models endpoint.
-    // When a provider explicitly opts into freeModelsOnly, only models whose catalog pricing proves
-    // BOTH prompt and completion are zero are exposed. Unknown pricing is excluded rather than guessed free.
+    // When a provider explicitly opts into freeModelsOnly, pricing proves free status when present.
+    // Some gateways (including APInex) explicitly namespace free models as "free/" but omit pricing.
+    // Missing/ambiguous pricing is still excluded unless that explicit provider model-id signal exists.
     const freeModelsOnly = opts.freeModelsOnly === true;
     function isFreePricedModel(model) {
       const pricing = model && model.pricing;
-      if (!pricing || typeof pricing !== 'object') return false;
-      const prompt = Number(pricing.prompt);
-      const completion = Number(pricing.completion);
-      return Number.isFinite(prompt) && Number.isFinite(completion) && prompt === 0 && completion === 0;
+      if (pricing && typeof pricing === 'object') {
+        const prompt = Number(pricing.prompt);
+        const completion = Number(pricing.completion);
+        if (Number.isFinite(prompt) && Number.isFinite(completion)) {
+          return prompt === 0 && completion === 0;
+        }
+      }
+      return typeof model?.id === 'string' && model.id.startsWith('free/');
     }
     /* PRICE FAMILY (2026-08-21). OpenAI's /v1/models — and every vendor that clones it — carries NO pricing
        block, so priceOf() returned null on openai/xai/groq/mistral/deepseek/together/fireworks and cost.js
