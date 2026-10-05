@@ -618,7 +618,7 @@ const Harness = (() => {
       const p = normalizeProviderId(provider || getProv());
       try {
         const q = (p === 'custom' && getBaseUrl(p)) ? ('?baseUrl=' + encodeURIComponent(getBaseUrl(p))) : '';
-        list = await fetchModelCatalog('/api/models/' + encodeURIComponent(p) + q, 'models');
+        list = await fetchModelCatalog('/api/models/' + encodeURIComponent(p) + q, 'models', { providerKey: getKey(p) });
       } catch (_) {
         if (p === 'openrouter') list = await fetchModelCatalog(OR + '/models', 'data');
         else list = [];
