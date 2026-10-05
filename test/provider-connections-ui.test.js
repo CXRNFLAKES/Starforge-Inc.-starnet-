@@ -32,6 +32,9 @@ ok(/const\s+provider\s*=\s*b\.dataset\.provider\s*\|\|\s*activeProv\(\)/.test(st
 ok(index.includes("data-prov=\"apinex\""), 'APInex appears in the Providers picker');
 ok(station.includes("id: 'apinex'"), 'APInex appears in the StarNet Settings provider cards');
 ok(apinexRegistry.includes("id: 'apinex'") && apinexRegistry.includes("baseUrl: 'https://api.apinex.bond/v1'") && apinexRegistry.includes("modelsPath: '/models'"), 'APInex Settings card is backed by the StarNet provider registry');
+ok(/fetchModelCatalog\('\/api\/models\/'[\s\S]*providerKey:\s*getKey\(p\)/.test(harness), 'browser model catalogs pass the provider key to the local catalog seam');
+ok(/x-starnet-provider-key/.test(harness), 'provider keys use a dedicated local request header, never a catalog URL parameter');
+ok(/x-starnet-provider-key/.test(fs.readFileSync(path.join(__dirname, '..', 'sidecar', 'index.js'), 'utf8')), 'sidecar model catalog accepts the browser provider-key header');
 
 for (const id of hostedProviders) {
   ok(index.includes('data-prov="' + id + '"'), id + ' appears in the connect provider picker');
