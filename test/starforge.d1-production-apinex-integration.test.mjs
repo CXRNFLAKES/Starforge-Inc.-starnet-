@@ -59,9 +59,9 @@ test("D1 live StarNet runtime bridge remains the governed execution boundary", a
     baseUrl: "http://starnet-production-contract.test",
     fetchImpl: async (url, options = {}) => {
       calls.push({ url, method: options.method || "GET", body: options.body || null });
-      if (url.endsWith("/api/roster")) {
+      if (url.endsWith("/api/runtime/agent")) {
         return new Response(JSON.stringify({
-          agents: [{ id: "production-worker", name: "Production Worker", model: "free/gpt-5.6-luna" }],
+          agents: [{ agentId: "production-worker", name: "Production Worker", model: "free/gpt-5.6-luna" }],
         }), { status: 200, headers: { "content-type": "application/json" } });
       }
       if (url.endsWith("/api/team/dispatch")) {
@@ -78,6 +78,8 @@ test("D1 live StarNet runtime bridge remains the governed execution boundary", a
     },
   });
 
+  assert.equal(calls.some((call) => call.url.endsWith("/api/runtime/agent")), true);
+
   const route = await bridge.routeModel({
     provider: "apinex",
     model: "free/gpt-5.6-luna",
@@ -87,9 +89,9 @@ test("D1 live StarNet runtime bridge remains the governed execution boundary", a
   const guardedBridge = makeStarNetRuntimeBridge({
     baseUrl: "http://starnet-production-contract.test",
     fetchImpl: async (url, options = {}) => {
-      if (url.endsWith("/api/roster")) {
+      if (url.endsWith("/api/runtime/agent")) {
         return new Response(JSON.stringify({
-          agents: [{ id: "production-worker", name: "Production Worker", model: "free/gpt-5.6-luna" }],
+          agents: [{ agentId: "production-worker", name: "Production Worker", model: "free/gpt-5.6-luna" }],
         }), { status: 200 });
       }
       if (url.endsWith("/api/team/dispatch")) {
