@@ -20,8 +20,13 @@ export function makeStarNetRuntimeBridge({
 
   const adapter = makeStarNetAdapter({
     roster: async () => {
-      const body = await request("/api/roster");
-      return Array.isArray(body?.agents) ? body.agents : [];
+      const body = await request("/api/runtime/agent");
+      return Array.isArray(body?.agents)
+        ? body.agents.map((agent) => ({
+            ...agent,
+            id: String(agent?.id ?? agent?.agentId ?? "").trim(),
+          })).filter((agent) => agent.id)
+        : [];
     },
     dispatch: async (payload) => {
       const response = await fetchImpl(root + "/api/team/dispatch", {
@@ -35,7 +40,7 @@ export function makeStarNetRuntimeBridge({
   });
 
   async function probeRuntime() {
-    const body = await request("/api/roster");
+    const body = await request("/api/runtime/agent");
     if (!body || !Array.isArray(body.agents)) {
       throw new Error("StarNet runtime returned an invalid roster payload");
     }
@@ -49,8 +54,13 @@ export function makeStarNetRuntimeBridge({
   async function inspectWorkforce({ activeRuns = [] } = {}) {
     // Remote StarNet rosters are asynchronous; do not route them through the synchronous
     // adapter roster accessor. The adapter remains the governed dispatch boundary.
-    const body = await request("/api/roster");
-    const workers = Array.isArray(body?.agents) ? body.agents : [];
+    const body = await request("/api/runtime/agent");
+    const workers = Array.isArray(body?.agents)
+      ? body.agents.map((worker) => ({
+          ...worker,
+          id: String(worker?.id ?? worker?.agentId ?? "").trim(),
+        })).filter((worker) => worker.id)
+      : [];
     const working = new Map(
       (Array.isArray(activeRuns) ? activeRuns : [])
         .filter((run) => run && run.agentId != null)
@@ -88,8 +98,13 @@ export function makeStarNetRuntimeBridge({
     baseUrl: root,
     probeRuntime,
     listWorkers: async () => {
-      const body = await request("/api/roster");
-      return Array.isArray(body?.agents) ? body.agents : [];
+      const body = await request("/api/runtime/agent");
+      return Array.isArray(body?.agents)
+        ? body.agents.map((agent) => ({
+            ...agent,
+            id: String(agent?.id ?? agent?.agentId ?? "").trim(),
+          })).filter((agent) => agent.id)
+        : [];
     },
     listWorkersAsync: () => adapter.listWorkersAsync(),
     delegateTask: (...args) => adapter.delegateTask(...args),
