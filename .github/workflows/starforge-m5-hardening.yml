@@ -51,6 +51,7 @@ jobs:
         env:
           STARFORGE_MOBILE_CI: "1"
         run: npm run starforge:mobile-test
+
   m5-input-isolation:
     runs-on: windows-latest
     timeout-minutes: 15
@@ -93,7 +94,19 @@ jobs:
           "STARNET_CHROME=$browser" | Out-File -FilePath $env:GITHUB_ENV -Append
           Write-Host "Using CI Chromium runtime: $browser"
       - name: Input isolation security proof
-        run: node scripts/qa/input-isolation-smoke.mjs --url http://127.0.0.1:8087/?smoke --monitor-ms 5000
+        shell: pwsh
+        env:
+          HTTP_PROXY: ""
+          HTTPS_PROXY: ""
+          ALL_PROXY: ""
+          http_proxy: ""
+          https_proxy: ""
+          all_proxy: ""
+          NO_PROXY: "localhost,127.0.0.1"
+          no_proxy: "localhost,127.0.0.1"
+        run: |
+          Write-Host "Running local input-isolation proof with all environment proxies disabled."
+          node scripts/qa/input-isolation-smoke.mjs --url http://127.0.0.1:8087/?smoke --monitor-ms 5000
       - name: Stop StarNet UI
         if: always()
         shell: pwsh
