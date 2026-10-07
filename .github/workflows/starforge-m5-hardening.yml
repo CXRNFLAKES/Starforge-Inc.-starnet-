@@ -185,3 +185,33 @@ jobs:
           echo "Core regression, Android 9 compatibility, runtime connection, governed delegation,"
           echo "Compute Economy, secret scanning, integration, mobile HQ, and input isolation all passed."
           echo "SAFE TO PROCEED WITH FINAL RELEASE-CANDIDATE VALIDATION."
+
+  release-candidate-validation:
+    needs: [m5-final-gate]
+    if: ${{ needs.m5-final-gate.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: RC StarForge preflight
+        run: npm run starforge:preflight
+      - name: RC full regression
+        run: npm run starforge:test
+      - name: RC HQ reality
+        run: npm run test:starforge:integration
+      - name: RC mobile shell and HQ contract
+        run: |
+          npm run test:starforge:android9:shell
+          npm run starforge:mobile-test
+      - name: RC Compute Economy
+        run: npm run test:starforge:compute-economy
+      - name: RC governed delegation
+        run: npm run test:starforge:governed-model-delegation
+      - name: RC runtime connection
+        run: npm run test:starforge:runtime:connection
