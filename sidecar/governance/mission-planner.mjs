@@ -33,7 +33,7 @@ function inferCapabilities(text) {
   return [...caps];
 }
 
-export function makeMissionPlanner({ computeEconomy = null, workforceAllocator = null } = {}) {
+export function makeMissionPlanner({ computeEconomy = null, workforceAllocator = null, outcomeIntelligence = null } = {}) {
   function intake({ objective, constraints = [], budget = null, deadline = null, actor = "cho" } = {}) {
     const text = clean(objective);
     if (!text) throw new Error("Mission objective is required");
@@ -50,15 +50,24 @@ export function makeMissionPlanner({ computeEconomy = null, workforceAllocator =
     });
   }
 
-  function plan(mission, { availableWorkers = [], maxWorkers = 20 } = {}) {
+  function plan(mission, { availableWorkers = [], maxWorkers = 20, outcomeEvidence = null } = {}) {
     if (!mission?.id || !mission.objective) throw new Error("Valid mission intake is required");
     const workers = Array.isArray(availableWorkers) ? availableWorkers : [];
+    const evidenceByWorker = new Map(
+      Array.isArray(outcomeEvidence?.workerRankings)
+        ? outcomeEvidence.workerRankings.map((item) => [String(item.id), item])
+        : [],
+    );
+    const evidenceUsable = Number(outcomeEvidence?.confidence) >= 0.4 && mission.risk !== "high";
     const ranked = workers.map(worker => {
       const capabilities = Array.isArray(worker.capabilities) ? worker.capabilities.map(clean) : [];
       const matched = mission.requiredCapabilities.filter(cap => capabilities.includes(cap)).length;
       const load = Number(worker.activeTaskCount ?? worker.taskCount ?? 0) || 0;
-      return { worker, matched, load };
-    }).sort((a,b) => b.matched-a.matched || a.load-b.load || String(a.worker.id).localeCompare(String(b.worker.id)));
+      const evidence = evidenceByWorker.get(String(worker.id ?? worker.agentId ?? ""));
+      const evidenceBonus = evidenceUsable && evidence ? Math.min(10, Number(evidence.score) || 0) : 0;
+      return { worker, matched, load, evidenceBonus };
+    }).sort((a,b) => b.matched-a.matched || b.evidenceBonus-a.evidenceBonus || a.load-b.load || String(a.worker.id).localeCompare(String(b.worker.id)));
+    })
     const selected = ranked.filter(x => x.matched > 0).slice(0, Math.max(1, Number(maxWorkers) || 1));
     const missing = mission.requiredCapabilities.filter(cap => !selected.some(x => Array.isArray(x.worker.capabilities) && x.worker.capabilities.includes(cap)));
     const phases = [
@@ -69,9 +78,9 @@ export function makeMissionPlanner({ computeEconomy = null, workforceAllocator =
     ].filter(phase => mission.requiredCapabilities.includes(phase.capability) || ["research","strategy","verification"].includes(phase.id));
     return clone({
       missionId: mission.id, status: "planned", risk: mission.risk, complexity: mission.complexity,
-      workerCandidates: selected.map(x => ({ id:x.worker.id, matchedCapabilities:x.worker.capabilities?.filter(c=>mission.requiredCapabilities.includes(c)) ?? [], load:x.load })),
+      workerCandidates: selected.map(x => ({ id:x.worker.id, matchedCapabilities:x.worker.capabilities?.filter(c=>mission.requiredCapabilities.includes(c)) ?? [], load:x.load, historicalEvidenceScore:x.evidenceBonus })),
       missingCapabilities: missing, phases, requiresEscalation: mission.risk === "high" || missing.length > 0,
-      computePolicy: computeEconomy ? "governed-compute-economy" : "router-only", plannedAt: new Date().toISOString(),
+      computePolicy: computeEconomy ? "governed-compute-economy" : "router-only", outcomeEvidence: clone(outcomeEvidence), plannedAt: new Date().toISOString(),
     });
   }
 
