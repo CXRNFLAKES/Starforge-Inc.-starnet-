@@ -171,7 +171,7 @@ test("C1 proves the full CHO mission-to-business-outcome loop with Compute Econo
     roster: () => [worker],
     dispatch: async () => {
       dispatches += 1;
-      if (dispatches <= 4) {
+      if (dispatches <= 3) {
         return { content: JSON.stringify({ success: false, verified: false, revenueUsd: 0, evidence: "initial strategy failed" }), summary: "recovery required" };
       }
       return { content: JSON.stringify({ success: true, verified: true, revenueUsd: 25, evidence: "verified customer revenue" }), summary: "verified revenue", usage: { inputTokens: 120, outputTokens: 60 } };
@@ -202,17 +202,17 @@ test("C1 proves the full CHO mission-to-business-outcome loop with Compute Econo
   assert.equal(result.status, "completed");
   assert.equal(result.iteration, 2);
   assert.equal(result.history[0].decision.status, "replan");
-  assert.equal(result.history[0].execution.compute.length, 4);
-  assert.equal(result.history[1].execution.compute.length, 4);
-  assert.equal(result.execution.revenue, 100);
+  assert.equal(result.history[0].execution.compute.length, 3);
+  assert.equal(result.history[1].execution.compute.length, 3);
+  assert.equal(result.execution.revenue, 75);
   assert.equal(result.decision.verified, true);
-  assert.equal(computeEconomy.report({ missionId: result.mission.id }).requestCount, 8);
-  assert.equal(computeEconomy.report({ missionId: result.mission.id }).revenueUsd, 100);
+  assert.equal(computeEconomy.report({ missionId: result.mission.id }).requestCount, 6);
+  assert.equal(computeEconomy.report({ missionId: result.mission.id }).revenueUsd, 75);
   assert.equal(memory.snapshot()[0].verified, true);
-  assert.equal(memory.snapshot()[0].revenue, 100);
+  assert.equal(memory.snapshot()[0].revenue, 75);
   const restored = makeMissionMemory({ storagePath });
   assert.equal(restored.snapshot()[0].id, result.mission.id);
-  assert.equal(restored.snapshot()[0].revenue, 100);
-  assert.equal(dispatches, 8);
+  assert.equal(restored.snapshot()[0].revenue, 75);
+  assert.equal(dispatches, 6);
   fs.rmSync(path.dirname(storagePath), { recursive: true, force: true });
 });
