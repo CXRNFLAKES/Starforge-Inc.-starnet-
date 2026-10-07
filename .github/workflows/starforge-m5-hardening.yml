@@ -1,0 +1,56 @@
+name: StarForge M5 Production Hardening Gate
+
+on:
+  push:
+    branches: ["starforge/governance-kernel"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: starforge-m5-hardening-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  m5-production-hardening:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: StarForge preflight
+        run: npm run starforge:preflight
+      - name: Full StarForge regression
+        run: npm run starforge:test
+      - name: Android 9 shell compatibility
+        run: npm run test:starforge:android9:shell
+      - name: Android 9 packaging contract
+        run: npm run test:starforge:android9:packaging
+      - name: Runtime connection hardening
+        run: npm run test:starforge:runtime:connection
+      - name: Governed model delegation hardening
+        run: npm run test:starforge:governed-model-delegation
+      - name: Compute Economy integrity
+        run: npm run test:starforge:compute-economy
+      - name: Input isolation security smoke
+        run: npm run qa:input-isolation
+      - name: Secret exposure scan
+        run: npm run security:secrets
+      - name: StarForge integration gate
+        run: npm run starforge:integration-test
+      - name: Mobile HQ contract
+        env:
+          STARFORGE_MOBILE_CI: "1"
+        run: npm run starforge:mobile-test
+      - name: M5 production hardening gate
+        run: |
+          echo "M5 PRODUCTION HARDENING GATE"
+          echo "Core regression, Android 9 compatibility, runtime connection, governed delegation,"
+          echo "Compute Economy, input isolation, secret scanning, integration, and mobile HQ all passed."
+          echo "SAFE TO PROCEED WITH FINAL RELEASE-CANDIDATE VALIDATION."
