@@ -154,20 +154,18 @@ try {
   ownedCdpPort = browser.session.attachedPort();
   await ensureFpsHarness();
   await until(() => evaluate(`!!document.querySelector('#deploy') && !!document.querySelector('canvas')`), 'FPS runtime readiness', 100);
-  const initial = await evaluate(`(() => {
-    const b=document.querySelector('#deploy'); const r=b&&b.getBoundingClientRect();
-    window.__STARNET_PROOF_MOVES__=[];
-    document.addEventListener('mousemove',e=>window.__STARNET_PROOF_MOVES__.push([e.movementX,e.movementY]),{capture:true});
-    const s=window.__STARNET_SYNTHETIC_INPUT__;
-    try{s.ready=false;Element.prototype.requestPointerLock=function(){throw new Error('forged')};}catch(_){}
-    const d=Object.getOwnPropertyDescriptor(Element.prototype,'requestPointerLock');
-    const fd=Object.getOwnPropertyDescriptor(Element.prototype,'requestFullscreen');
-    const fe=Object.getOwnPropertyDescriptor(Document.prototype,'exitFullscreen');
-    const tamperResistant=!!(s&&s.ready&&d&&d.value===s.requestPointerLock&&d.writable===false&&d.configurable===false);
-    const fullscreenResistant=!!(s&&fd&&fe&&fd.value===s.requestFullscreen&&fe.value===s.exitFullscreen&&fd.writable===false&&fe.configurable===false);
-    const wakeNeutralized=!navigator.wakeLock||navigator.wakeLock.request===s.wakeRequest;
-    return {synthetic:!!(s&&s.ready),tamperResistant,fullscreenResistant,wakeNeutralized,deploy:!!b,rect:r&&{x:r.x+r.width/2,y:r.y+r.height/2}};
-  })()`);
+  const initialState = await browser.session.testState('#deploy');
+  const initialElement = initialState && initialState.element;
+  const initial = {
+    synthetic: !!(initialState && initialState.syntheticReady),
+    tamperResistant: !!(initialState && initialState.isolation && initialState.isolation.tamperResistant),
+    fullscreenResistant: !!(initialState && initialState.isolation && initialState.isolation.fullscreenResistant),
+    wakeNeutralized: !!(initialState && initialState.isolation && initialState.isolation.wakeNeutralized),
+    deploy: !!(initialElement && initialElement.exists),
+    rect: initialElement && initialElement.visible ? await evaluate(`(() => { const b=document.querySelector('#deploy'); const r=b&&b.getBoundingClientRect(); return r&&{x:r.x+r.width/2,y:r.y+r.height/2}; })()`) : null
+  };
+  window.__STARNET_PROOF_MOVES__=[];
+  document.addEventListener('mousemove',e=>window.__STARNET_PROOF_MOVES__.push([e.movementX,e.movementY]),{capture:true});
   if (!initial.synthetic || !initial.tamperResistant || !initial.fullscreenResistant || !initial.wakeNeutralized || !initial.deploy || !initial.rect) throw new Error('FPS deploy/isolation state unavailable: ' + JSON.stringify(initial));
   await evaluate(`document.documentElement.requestFullscreen()`);
   await until(() => evaluate(`document.fullscreenElement===document.documentElement`), 'logical fullscreen');
@@ -179,7 +177,7 @@ try {
   await input({ action: 'mouse_move', dx: 220, dy: -35 }); await input({ action: 'mouse_down', x: 720, y: 450, button: 'right' }); await sleep(150);
   await input({ action: 'mouse_up', x: 720, y: 450, button: 'right' }); await input({ action: 'click', x: 720, y: 450, button: 'left' }); await input({ action: 'key_press', key: 'KeyR' });
   await input({ action: 'key_up', key: 'ShiftLeft' }); await input({ action: 'key_up', key: 'KeyW' });
-  const active = await evaluate(`({locked:document.pointerLockElement?.tagName==='CANVAS',synthetic:!!window.__STARNET_SYNTHETIC_INPUT__?.ready,stance:document.querySelector('#stance')?.textContent||'',hud:!document.querySelector('#hud')?.classList.contains('hidden'),moves:window.__STARNET_PROOF_MOVES__||[]})`);
+  const active = await evaluate(`({locked:document.pointerLockElement?.tagName==='CANVAS',synthetic:!!(await browser.session.testState(null)).syntheticReady,stance:document.querySelector('#stance')?.textContent||'',hud:!document.querySelector('#hud')?.classList.contains('hidden'),moves:window.__STARNET_PROOF_MOVES__||[]})`);
   if (!active.locked || !active.synthetic || !active.hud) throw new Error('FPS active state was not proven: ' + JSON.stringify(active));
   if (!active.moves.some(m => m[0] === 220 && m[1] === -35)) throw new Error('relative synthetic mouse event was not observed: ' + JSON.stringify(active.moves));
   await input({ action: 'key_press', key: 'Escape' }); await until(() => evaluate(`document.pointerLockElement === null`), 'synthetic unlock');
