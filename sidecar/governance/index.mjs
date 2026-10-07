@@ -11,6 +11,7 @@ export * from "./mission-planner.mjs";
 export * from "./mission-memory.mjs";
 export * from "./outcome-intelligence.mjs";
 export * from "./outcome-evaluator.mjs";
+export * from "./failure-intelligence.mjs";
 export * from "./workforce-allocator.mjs";
 export * from "./mission-executor.mjs";
 export * from "./starnet-adapter.mjs";
