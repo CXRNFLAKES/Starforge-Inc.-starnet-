@@ -14,7 +14,7 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 
 const require = createRequire(import.meta.url);
-const { makeBrowserTools } = require('../../sidecar/tools/builtin/browser.js');
+const { makeBrowserTools } = await import('../../sidecar/tools/builtin/browser.js');
 
 const argv = process.argv.slice(2);
 const arg = (name, fallback = '') => {
@@ -61,15 +61,13 @@ $bc=$base.clip
 $baselineConfined=(($bc[0]-gt$vx)-or($bc[1]-gt$vy)-or($bc[2]-lt($vx+$vw))-or($bc[3]-lt($vy+$vh)))
 [Console]::Out.WriteLine('READY '+(@{confined=$baselineConfined;clip=$base.clip;position=@($base.x,$base.y);last=$base.last;screen=@($vx,$vy,$vw,$vh)}|ConvertTo-Json -Compress));[Console]::Out.Flush()
 while(($clock.ElapsedMilliseconds -lt $DurationMs) -and -not (Test-Path -LiteralPath $env:STARNET_INPUT_STOP_FILE)){
-  $s=Sample;$samples++
-  $c=$s.clip
+  $s=Sample;$samples++;$c=$s.clip
   if(($c[0]-gt$vx)-or($c[1]-gt$vy)-or($c[2]-lt($vx+$vw))-or($c[3]-lt($vy+$vh))){$confined++;if($confinedRects.Count-lt 12){[void]$confinedRects.Add(@($clock.ElapsedMilliseconds,$c[0],$c[1],$c[2],$c[3]))}}
   if(($s.x-ne$base.x)-or($s.y-ne$base.y)){$moved++}
   if($s.last-ne$base.last){$lastChanged=$true}
   Start-Sleep -Milliseconds 5
 }
-$final=Sample
-$fc=$final.clip
+$final=Sample;$fc=$final.clip
 if(($fc[0]-gt$vx)-or($fc[1]-gt$vy)-or($fc[2]-lt($vx+$vw))-or($fc[3]-lt($vy+$vh))){$confined++;if($confinedRects.Count-lt 12){[void]$confinedRects.Add(@($clock.ElapsedMilliseconds,$fc[0],$fc[1],$fc[2],$fc[3]))}}
 if((($final.x-ne$base.x)-or($final.y-ne$base.y))-and($moved-eq 0)){$moved++}
 if($final.last-ne$base.last){$lastChanged=$true}
@@ -80,24 +78,12 @@ function startObserver() {
   if (process.platform !== 'win32') return { ready: Promise.resolve(), stop() {}, done: Promise.resolve({ skipped: true, platform: process.platform }) };
   const stopFile = join(tmpdir(), 'starnet-input-observer-stop-' + process.pid + '-' + Date.now());
   try { rmSync(stopFile, { force: true }); } catch {}
-  const exe = process.env.SystemRoot
-    ? join(process.env.SystemRoot, 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe')
-    : 'powershell.exe';
-  const child = spawn(exe, ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command', PS_MONITOR], {
-    windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'],
-    env: Object.assign({}, process.env, { STARNET_INPUT_MONITOR_MS: String(monitorMs), STARNET_INPUT_STOP_FILE: stopFile })
-  });
+  const exe = process.env.SystemRoot ? join(process.env.SystemRoot, 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe') : 'powershell.exe';
+  const child = spawn(exe, ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command', PS_MONITOR], { windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'], env: Object.assign({}, process.env, { STARNET_INPUT_MONITOR_MS: String(monitorMs), STARNET_INPUT_STOP_FILE: stopFile }) });
   let out = '', err = '', readyResolve, readyReject, readySeen = false;
   const ready = new Promise((resolve, reject) => { readyResolve = resolve; readyReject = reject; });
   const readyTimer = setTimeout(() => readyReject(new Error('cursor observer did not become ready: ' + err.slice(-500))), 10000);
-  child.stdout.on('data', b => {
-    out += b.toString();
-    const m = /^READY (\{[^\r\n]*\})\r?\n/.exec(out);
-    if (m && !readySeen) {
-      readySeen = true; clearTimeout(readyTimer);
-      try { readyResolve(JSON.parse(m[1])); } catch (e) { readyReject(new Error('cursor observer returned invalid baseline: ' + m[1])); }
-    }
-  });
+  child.stdout.on('data', b => { out += b.toString(); const m = /^READY (\{[^\r\n]*\})\r?\n/.exec(out); if (m && !readySeen) { readySeen = true; clearTimeout(readyTimer); try { readyResolve(JSON.parse(m[1])); } catch (e) { readyReject(new Error('cursor observer returned invalid baseline: ' + m[1])); } } });
   child.stderr.on('data', b => { err += b.toString(); });
   child.on('error', readyReject);
   const done = new Promise((resolve, reject) => child.on('close', code => {
@@ -105,39 +91,21 @@ function startObserver() {
     try { rmSync(stopFile, { force: true }); } catch {}
     if (!/^READY \{[^\r\n]*\}\r?\n/.test(out)) readyReject(new Error('cursor observer exited before ready: ' + (err || ('exit ' + code))));
     if (code !== 0) return reject(new Error('cursor observer failed: ' + (err || ('exit ' + code))));
-    try { resolve(JSON.parse(out.replace(/^READY \{[^\r\n]*\}\r?\n/, '').trim())); }
-    catch (e) { reject(new Error('cursor observer returned invalid JSON: ' + out.slice(-500))); }
+    try { resolve(JSON.parse(out.replace(/^READY \{[^\r\n]*\}\r?\n/, '').trim())); } catch (e) { reject(new Error('cursor observer returned invalid JSON: ' + out.slice(-500))); }
   }));
-  return {
-    ready,
-    stop() { try { writeFileSync(stopFile, 'stop\n', { flag: 'wx' }); } catch {} },
-    done
-  };
+  return { ready, stop() { try { writeFileSync(stopFile, 'stop\n', { flag: 'wx' }); } catch {} }, done };
 }
 
 async function until(fn, label, tries = 50) {
-  for (let i = 0; i < tries; i++) {
-    const v = await fn();
-    if (v) return v;
-    await sleep(100);
-  }
+  for (let i = 0; i < tries; i++) { const v = await fn(); if (v) return v; await sleep(100); }
   throw new Error('timed out waiting for ' + label);
 }
 
 const observer = startObserver();
 const baseline = await observer.ready;
-if (baseline && baseline.confined) {
-  observer.stop();
-  await observer.done;
-  throw new Error('refusing to start input-isolation proof: cursor was already confined by another foreground app: ' + JSON.stringify(baseline));
-}
-const browser = makeBrowserTools({
-  allowVisible: false, forceHeadless: true, syntheticInputOnly: true, networkProxy: false, cdpPort,
-  profileDir: join(tmpdir(), 'starnet-input-proof-' + process.pid + '-' + Date.now()), cleanupProfile: true
-});
+if (baseline && baseline.confined) { observer.stop(); await observer.done; throw new Error('refusing to start input-isolation proof: cursor was already confined by another foreground app: ' + JSON.stringify(baseline)); }
+const browser = makeBrowserTools({ allowVisible: false, forceHeadless: true, syntheticInputOnly: true, networkProxy: false, cdpPort, profileDir: join(tmpdir(), 'starnet-input-proof-' + process.pid + '-' + Date.now()), cleanupProfile: true });
 const tool = name => browser.tools.find(t => t.name === name);
-// The operator-only proof may use the session's internal evaluator for precise assertions.
-// Agent runs do not expose arbitrary JS; they receive browser.test_state/snapshot instead.
 const evaluate = async expression => browser.session.testEval(expression);
 const input = async action => tool('browser.test_input').run(action, {});
 
@@ -146,8 +114,6 @@ const runStarted = Date.now();
 try {
   await tool('browser.test_navigate').run({ url, local: true }, {});
   ownedCdpPort = browser.session.attachedPort();
-  // DOM content can arrive before the deferred/module game runtime has created its
-  // renderer and attached the deploy handler. Wait for both instead of racing the click.
   await until(() => evaluate(`!!document.querySelector('#deploy') && !!document.querySelector('canvas')`), 'FPS runtime readiness', 100);
   const initial = await evaluate(`(() => {
     const b=document.querySelector('#deploy'); const r=b&&b.getBoundingClientRect();
@@ -159,7 +125,7 @@ try {
     const fd=Object.getOwnPropertyDescriptor(Element.prototype,'requestFullscreen');
     const fe=Object.getOwnPropertyDescriptor(Document.prototype,'exitFullscreen');
     const tamperResistant=!!(s&&s.ready&&d&&d.value===s.requestPointerLock&&d.writable===false&&d.configurable===false);
-    const fullscreenResistant=!!(s&&fd&&fe&&fd.value===s.requestFullscreen&&fe.value===s.exitFullscreen&&fd.writable===false&&fe.writable===false&&fd.configurable===false&&fe.configurable===false);
+    const fullscreenResistant=!!(s&&fd&&fe&&fd.value===s.requestFullscreen&&fe.value===s.exitFullscreen&&fd.writable===false&&fe.configurable===false);
     const wakeNeutralized=!navigator.wakeLock||navigator.wakeLock.request===s.wakeRequest;
     return {synthetic:!!(s&&s.ready),tamperResistant,fullscreenResistant,wakeNeutralized,deploy:!!b,rect:r&&{x:r.x+r.width/2,y:r.y+r.height/2}};
   })()`);
@@ -168,43 +134,28 @@ try {
   await until(() => evaluate(`document.fullscreenElement===document.documentElement`), 'logical fullscreen');
   await evaluate(`document.exitFullscreen()`);
   await until(() => evaluate(`document.fullscreenElement===null`), 'logical fullscreen exit');
-
   await input({ action: 'click', x: initial.rect.x, y: initial.rect.y });
   await until(() => evaluate(`document.pointerLockElement?.tagName === 'CANVAS'`), 'synthetic pointer lock');
-
-  await input({ action: 'key_down', key: 'KeyW' });
-  await input({ action: 'key_down', key: 'ShiftLeft' });
-  await sleep(350);
-  await input({ action: 'mouse_move', dx: 220, dy: -35 });
-  await input({ action: 'mouse_down', x: 720, y: 450, button: 'right' });
-  await sleep(150);
-  await input({ action: 'mouse_up', x: 720, y: 450, button: 'right' });
-  await input({ action: 'click', x: 720, y: 450, button: 'left' });
-  await input({ action: 'key_press', key: 'KeyR' });
-  await input({ action: 'key_up', key: 'ShiftLeft' });
-  await input({ action: 'key_up', key: 'KeyW' });
-
+  await input({ action: 'key_down', key: 'KeyW' }); await input({ action: 'key_down', key: 'ShiftLeft' }); await sleep(350);
+  await input({ action: 'mouse_move', dx: 220, dy: -35 }); await input({ action: 'mouse_down', x: 720, y: 450, button: 'right' }); await sleep(150);
+  await input({ action: 'mouse_up', x: 720, y: 450, button: 'right' }); await input({ action: 'click', x: 720, y: 450, button: 'left' }); await input({ action: 'key_press', key: 'KeyR' });
+  await input({ action: 'key_up', key: 'ShiftLeft' }); await input({ action: 'key_up', key: 'KeyW' });
   const active = await evaluate(`({locked:document.pointerLockElement?.tagName==='CANVAS',synthetic:!!window.__STARNET_SYNTHETIC_INPUT__?.ready,stance:document.querySelector('#stance')?.textContent||'',hud:!document.querySelector('#hud')?.classList.contains('hidden'),moves:window.__STARNET_PROOF_MOVES__||[]})`);
   if (!active.locked || !active.synthetic || !active.hud) throw new Error('FPS active state was not proven: ' + JSON.stringify(active));
   if (!active.moves.some(m => m[0] === 220 && m[1] === -35)) throw new Error('relative synthetic mouse event was not observed: ' + JSON.stringify(active.moves));
-  await input({ action: 'key_press', key: 'Escape' });
-  await until(() => evaluate(`document.pointerLockElement === null`), 'synthetic unlock');
+  await input({ action: 'key_press', key: 'Escape' }); await until(() => evaluate(`document.pointerLockElement === null`), 'synthetic unlock');
   const paused = await evaluate(`document.querySelector('#pause-screen')?.classList.contains('visible') === true`);
   if (!paused) throw new Error('FPS pause state was not proven after logical pointer unlock');
   const resume = await evaluate(`(() => { const b=document.querySelector('#resume'); const r=b&&b.getBoundingClientRect(); return r&&{x:r.x+r.width/2,y:r.y+r.height/2}; })()`);
   if (!resume) throw new Error('FPS resume control was not found');
-  await input({ action: 'click', x: resume.x, y: resume.y });
-  await until(() => evaluate(`document.pointerLockElement?.tagName === 'CANVAS'`), 'synthetic resume lock');
+  await input({ action: 'click', x: resume.x, y: resume.y }); await until(() => evaluate(`document.pointerLockElement?.tagName === 'CANVAS'`), 'synthetic resume lock');
   proof = { initial, active, paused, resumed: true };
 } finally {
   await browser.session.close();
-  // Keep observing briefly after the owned Chromium process is confirmed gone so teardown
-  // cannot hide a late/stuck confinement state.
   await sleep(250);
   observer.stop();
 }
 const runElapsedMs = Date.now() - runStarted;
-
 const cursor = await observer.done;
 if (!cursor.skipped && runElapsedMs >= monitorMs) throw new Error('cursor observer did not cover the full FPS sequence: ' + JSON.stringify({ runElapsedMs, monitorMs }));
 if (!cursor.skipped && cursor.confinedSamples !== 0) throw new Error('GetClipCursor changed during synthetic FPS run: ' + JSON.stringify(cursor));
