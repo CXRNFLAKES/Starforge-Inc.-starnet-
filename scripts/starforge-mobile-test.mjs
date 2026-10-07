@@ -164,7 +164,26 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
-server.listen(PORT, HOST, () => {
+server.listen(PORT, HOST, async () => {
   console.log(`StarForge Android 9 test mode: http://${HOST === "0.0.0.0" ? "localhost" : HOST}:${PORT}`);
   console.log(`LAN: http://<computer-ip>:${PORT}`);
+
+  // GitHub Actions cannot keep a long-lived preview server open: CI must
+  // exercise the same mobile contract and then terminate cleanly.
+  if (process.env.CI === "true" || process.env.STARFORGE_MOBILE_CI === "1") {
+    try {
+      const response = await fetch(`http://127.0.0.1:${PORT}/api/test`);
+      if (!response.ok) throw new Error(`Mobile test endpoint returned HTTP ${response.status}`);
+      const report = await response.json();
+      console.log(`Mobile contract: ${report.passed}/${report.total} passed, ${report.failed} failed`);
+      if (report.failed !== 0 || report.safe !== true || report.starforgeHq !== true) {
+        throw new Error("StarForge mobile contract failed");
+      }
+      console.log("STARFORGE MOBILE CONTRACT: PASS");
+      server.close(() => process.exit(0));
+    } catch (error) {
+      console.error(`STARFORGE MOBILE CONTRACT: FAIL - ${error.message}`);
+      server.close(() => process.exit(1));
+    }
+  }
 });
