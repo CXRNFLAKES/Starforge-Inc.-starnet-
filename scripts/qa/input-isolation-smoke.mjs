@@ -152,7 +152,7 @@ const runStarted = Date.now();
 try {
   await tool('browser.test_navigate').run({ url, local: true }, {});
   ownedCdpPort = browser.session.attachedPort();
-  const harness = await ensureFpsHarness();
+  await ensureFpsHarness();
   await until(() => evaluate(`!!document.querySelector('#deploy') && !!document.querySelector('canvas')`), 'FPS runtime readiness', 100);
   const initial = await evaluate(`(() => {
     const b=document.querySelector('#deploy'); const r=b&&b.getBoundingClientRect();
