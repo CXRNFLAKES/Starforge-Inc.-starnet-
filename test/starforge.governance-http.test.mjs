@@ -140,3 +140,25 @@ test("governance feed exposes company gameplay telemetry derived from governed t
   assert.equal(payload.gameplay.projects[0].completed, 1);
   assert.equal(payload.gameplay.projects[0].progressPercent, 50);
 });
+
+
+test("governance feed exposes bounded per-worker StarNet task queues", async () => {
+  const { makeCompany } = await import("../sidecar/governance/company.mjs");
+  const { ROLES } = await import("../sidecar/governance/roles.mjs");
+  const company = makeCompany();
+  company.recordTask(ROLES.CEO, { id: "queue-1", projectId: "p1", title: "Research", assigneeId: "agent-1", assigneeSource: "starnet", status: "in-progress" });
+  company.recordTask(ROLES.CEO, { id: "queue-2", projectId: "p1", title: "Verify", assigneeId: "agent-1", assigneeSource: "starnet", status: "completed" });
+  const handler = makeStarForgeGovernanceHandler({
+    workspace: ".starforge-worker-queue-test",
+    company,
+    roster: new Map([["agent-1", { name: "Nova" }]]),
+    runsMeta: new Map(),
+  });
+  let body = "";
+  const res = { writeHead() {}, end(value) { body = value; } };
+  await handler({ method: "GET", url: "/api/starforge/governance" }, res);
+  const worker = JSON.parse(body).workforce.workers[0];
+  assert.equal(worker.performance.tasks.length, 2);
+  assert.equal(worker.performance.tasks[0].id, "queue-2");
+  assert.equal(worker.performance.tasks[1].title, "Research");
+});
