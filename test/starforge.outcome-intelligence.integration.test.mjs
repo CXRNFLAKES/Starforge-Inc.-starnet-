@@ -92,4 +92,5 @@ test("autonomous mission loop carries outcome intelligence into planning and exe
   assert.equal(result.status, "completed");
   assert.equal(plannedEvidence.confidence, 0.2);
   assert.equal(executedEvidence.confidence, 0.2);
+  assert.equal(result.mission.outcomeIntelligence.confidence, 0.2);
 });
