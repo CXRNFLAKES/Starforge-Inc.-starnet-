@@ -81,6 +81,17 @@ jobs:
             Get-Content $err -ErrorAction SilentlyContinue
             throw "StarNet UI did not become ready"
           }
+      - name: Select CI Chromium runtime
+        shell: pwsh
+        run: |
+          $candidates = @(
+            "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
+            "C:\Program Files\Microsoft\Edge\Application\msedge.exe"
+          )
+          $browser = $candidates | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
+          if (-not $browser) { throw "No CI Chromium runtime found (Edge)" }
+          "STARNET_CHROME=$browser" | Out-File -FilePath $env:GITHUB_ENV -Append
+          Write-Host "Using CI Chromium runtime: $browser"
       - name: Input isolation security proof
         run: node scripts/qa/input-isolation-smoke.mjs --url http://127.0.0.1:8087/?smoke --monitor-ms 5000
       - name: Stop StarNet UI
