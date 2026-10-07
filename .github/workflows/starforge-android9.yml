@@ -30,6 +30,8 @@ jobs:
         run: node --test test/starforge.c4-financial-reality.test.mjs
       - name: C5 HQ and mobile reality gate
         run: node --test test/starforge.c5-hq-mobile-reality.test.mjs
+      - name: C1 end-to-end company gameplay gate
+        run: node --test test/starforge.c1-company-gameplay-e2e.test.mjs
       - name: D1 production APInex integration gate
         run: node --test test/starforge.d1-production-apinex-integration.test.mjs
       - name: D2 governed model execution gate
