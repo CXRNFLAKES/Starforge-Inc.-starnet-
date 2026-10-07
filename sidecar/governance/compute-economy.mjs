@@ -1,180 +1,27 @@
-/* StarForge Compute Economy.
-   Policy sits above the existing model router. It never bypasses provider limits or silently
-   upgrades a task into paid compute. Legacy authorize()/recordUsage() remain compatible while
-   allocate() adds router-governed candidate selection and fail-closed fallback.
-*/
-const DEFAULT_BUDGETS = Object.freeze({ missionCents: 100, workerCents: 50, taskCents: 10 });
-const STATUS = Object.freeze(["available", "rate-limited", "unavailable", "paid-only"]);
-
-function money(value) {
-  const n = Number(value);
-  if (!Number.isFinite(n) || n < 0) throw new Error("Compute Economy requires a non-negative amount");
-  return Math.round(n * 100) / 100;
+// StarForge Compute Economy: budgeted, fail-closed compute admission above the existing model router.
+const COMPLEXITY_RANK = Object.freeze({ simple: 1, normal: 2, complex: 3, critical: 4 });
+const money = (v) => { const n = Number(v); return Number.isFinite(n) && n >= 0 ? n : 0; };
+const clone = (v) => structuredClone(v);
+function normalizeCandidate(c) { const provider=String(c?.provider??"").trim().toLowerCase(), model=String(c?.model??"").trim(); if(!provider||!model) throw new Error("compute candidate requires provider and model"); const estimatedCost=money(c?.estimatedCost); return {...c,provider,model,estimatedCost,free:c?.free===true||estimatedCost===0,capability:Math.max(1,Math.min(4,Number(c?.capability??2)||2))}; }
+export function makeComputeEconomy({router=null,policy={}}={}) {
+ const state={budgets:new Map(),reservations:new Map(),ledger:[],sequence:0}; const currency=String(policy.currency??"EUR").toUpperCase();
+ function setBudget(scope,id,amount,{hard=true}={}) { if(!id||!["mission","worker","task"].includes(scope)) throw new Error("invalid compute budget"); const e={scope,id:String(id),budget:money(amount),hard:hard!==false}; state.budgets.set(scope+":"+id,e); return clone(e); }
+ function budgetFor(scope,id){return state.budgets.get(scope+":"+id)??null;}
+ function spentFor(scope,id){return state.ledger.filter(e=>e.status==="settled"&&e[scope+"Id"]===String(id)).reduce((s,e)=>s+money(e.actualCost),0);}
+ function reservedFor(scope,id){return [...state.reservations.values()].filter(e=>e.status==="reserved"&&e[scope+"Id"]===String(id)).reduce((s,e)=>s+money(e.reservedCost),0);}
+ function check(scope,id,cost){const b=budgetFor(scope,id);if(!b)return{allowed:true,remaining:Infinity,configured:false};const used=spentFor(scope,id)+reservedFor(scope,id),remaining=Math.max(0,b.budget-used);return{allowed:cost<=remaining+1e-12,remaining,configured:true,budget:b.budget,used};}
+ async function requestCompute({missionId,workerId,taskId,complexity="normal",candidates=[],provider="",model="",estimatedCost=null,reason=""}={}) {
+  const rank=COMPLEXITY_RANK[String(complexity).toLowerCase()]??2; let pool=Array.isArray(candidates)?candidates.map(normalizeCandidate):[];
+  if(!pool.length&&provider&&model)pool=[normalizeCandidate({provider,model,estimatedCost:estimatedCost??0,capability:rank})]; if(!pool.length)throw new Error("compute economy has no approved compute candidates");
+  pool=pool.filter(c=>c.capability>=rank).sort((a,b)=>a.estimatedCost-b.estimatedCost||a.capability-b.capability||a.provider.localeCompare(b.provider)||a.model.localeCompare(b.model)); if(!pool.length)throw new Error("compute economy has no candidate capable of the requested complexity");
+  let selected=null,lastError=null; for(const c of pool){try{const route=router?.resolve?await router.resolve({provider:c.provider,model:c.model}):{allowed:true,provider:c.provider,model:c.model,free:c.free,source:"compute-economy-policy"};if(!route?.allowed)throw new Error("model router did not approve compute candidate");selected={...c,route};break;}catch(e){lastError=e;}}
+  if(!selected)throw new Error("compute economy failed closed: no approved provider/model can satisfy the request"+(lastError?": "+lastError.message:""));
+  for(const [scope,id] of [["mission",missionId],["worker",workerId],["task",taskId]])if(id&&!check(scope,id,selected.estimatedCost).allowed)throw new Error("compute budget exceeded for "+scope+": "+id);
+  const reservationId="compute-"+(++state.sequence),reservation={reservationId,missionId:missionId?String(missionId):null,workerId:workerId?String(workerId):null,taskId:taskId?String(taskId):null,complexity:String(complexity),reason:String(reason),provider:selected.provider,model:selected.model,reservedCost:selected.estimatedCost,currency,status:"reserved",route:clone(selected.route),createdAt:new Date().toISOString()}; state.reservations.set(reservationId,reservation);state.ledger.push(clone(reservation));return clone(reservation);
+ }
+ function settleCompute(id,{actualCost=null,usage={},status="settled",outcome=""}={}){const r=state.reservations.get(String(id));if(!r)throw new Error("unknown compute reservation");if(r.status!=="reserved")throw new Error("compute reservation is already closed");const actual=actualCost==null?r.reservedCost:money(actualCost);if(actual>r.reservedCost+1e-12)throw new Error("compute settlement exceeds the reserved hard ceiling");r.status=status;r.actualCost=actual;r.usage=clone(usage||{});r.outcome=String(outcome);r.settledAt=new Date().toISOString();state.reservations.set(r.reservationId,r);const i=state.ledger.findIndex(e=>e.reservationId===r.reservationId&&e.status==="reserved");if(i>=0)state.ledger[i]=clone(r);return clone(r);}
+ function releaseCompute(id,reason="released"){const r=state.reservations.get(String(id));if(!r)throw new Error("unknown compute reservation");if(r.status!=="reserved")return clone(r);r.status="released";r.actualCost=0;r.outcome=String(reason);r.releasedAt=new Date().toISOString();state.reservations.set(r.reservationId,r);const i=state.ledger.findIndex(e=>e.reservationId===r.reservationId&&e.status==="reserved");if(i>=0)state.ledger[i]=clone(r);return clone(r);}
+ function snapshot(){return clone({currency,budgets:[...state.budgets.values()],reservations:[...state.reservations.values()],ledger:state.ledger});}
+ return Object.freeze({setBudget,budgetFor,requestCompute,settleCompute,releaseCompute,snapshot,spentFor,reservedFor});
 }
-function cents(value) { return Math.round(money(value) * 100); }
-function id(value, label) {
-  const v = String(value || "").trim();
-  if (!v) throw new Error("Compute Economy requires " + label);
-  return v;
-}
-
-export function makeComputeEconomy({
-  budgets = {},
-  providerStatuses = {},
-  router = null,
-  costEngine = null,
-} = {}) {
-  const limits = Object.freeze({
-    missionCents: Number.isFinite(Number(budgets.missionCents)) ? Math.max(0, Math.round(Number(budgets.missionCents))) : DEFAULT_BUDGETS.missionCents,
-    workerCents: Number.isFinite(Number(budgets.workerCents)) ? Math.max(0, Math.round(Number(budgets.workerCents))) : DEFAULT_BUDGETS.workerCents,
-    taskCents: Number.isFinite(Number(budgets.taskCents)) ? Math.max(0, Math.round(Number(budgets.taskCents))) : DEFAULT_BUDGETS.taskCents,
-  });
-  const providers = new Map(Object.entries(providerStatuses).map(([k, v]) => [String(k).trim().toLowerCase(), v]));
-  const ledger = [];
-
-  function providerStatus(provider) {
-    return providers.get(id(provider, "provider").toLowerCase()) || "available";
-  }
-  function assertProvider(provider) {
-    const status = providerStatus(provider);
-    if (!STATUS.includes(status)) throw new Error("Compute Economy has invalid provider status: " + status);
-    if (status !== "available") throw new Error("Compute Economy rejected provider " + provider + ": " + status);
-  }
-  function rowsFor({ missionId, workerId = null, taskId = null } = {}) {
-    return ledger.filter(e =>
-      (!missionId || e.missionId === missionId) &&
-      (!workerId || e.workerId === workerId) &&
-      (!taskId || e.taskId === taskId)
-    );
-  }
-  function remaining({ missionId, workerId = null, taskId = null } = {}) {
-    const rows = rowsFor({ missionId });
-    const spent = rows.reduce((s, e) => s + e.costCents, 0);
-    const ws = workerId ? rowsFor({ missionId, workerId }).reduce((s, e) => s + e.costCents, 0) : 0;
-    const ts = taskId ? rowsFor({ missionId, workerId, taskId }).reduce((s, e) => s + e.costCents, 0) : 0;
-    return {
-      missionCents: limits.missionCents - spent,
-      workerCents: limits.workerCents - ws,
-      taskCents: limits.taskCents - ts,
-    };
-  }
-
-  function authorize({ missionId, workerId, taskId, provider, model, estimatedCost = 0, complexity = "normal" } = {}) {
-    const mission = id(missionId, "mission id");
-    const worker = id(workerId, "worker id");
-    const task = id(taskId, "task id");
-    const providerId = id(provider, "provider").toLowerCase();
-    const modelId = id(model, "model");
-    const costCents = cents(estimatedCost);
-    assertProvider(providerId);
-    const left = remaining({ missionId: mission, workerId: worker, taskId: task });
-    if (costCents > left.missionCents || costCents > left.workerCents || costCents > left.taskCents) {
-      throw new Error("Compute Economy budget exceeded");
-    }
-    return Object.freeze({
-      approved: true, missionId: mission, workerId: worker, taskId: task,
-      provider: providerId, model: modelId, complexity: String(complexity),
-      estimatedCost: money(estimatedCost),
-      budgetRemaining: Object.freeze({
-        mission: money(Math.max(0, left.missionCents - costCents) / 100),
-        worker: money(Math.max(0, left.workerCents - costCents) / 100),
-        task: money(Math.max(0, left.taskCents - costCents) / 100),
-      }),
-    });
-  }
-
-  async function allocate({
-    missionId, workerId, taskId, candidates = [], complexity = "normal", estimatedCost = 0,
-  } = {}) {
-    if (!router || typeof router.resolve !== "function") {
-      throw new Error("Compute Economy allocation requires the existing StarForge model router");
-    }
-    if (!Array.isArray(candidates) || candidates.length === 0) {
-      throw new Error("Compute Economy allocation requires model candidates");
-    }
-
-    const approved = [];
-    for (const candidate of candidates) {
-      const provider = String(candidate?.provider || "").trim();
-      const model = String(candidate?.model || "").trim();
-      if (!provider || !model) continue;
-      try {
-        assertProvider(provider);
-        const route = await router.resolve({
-          provider,
-          model,
-          key: candidate.key || "",
-          token: candidate.token || "",
-          fetchImpl: candidate.fetchImpl,
-          baseUrl: candidate.baseUrl || "",
-          headers: candidate.headers,
-        });
-        const cost = candidate.estimatedCost != null
-          ? money(candidate.estimatedCost)
-          : (costEngine && typeof costEngine.estimate === "function"
-            ? money(costEngine.estimate(candidate.usage || { prompt_tokens: 0, completion_tokens: 0 }, model).usd)
-            : 0);
-        approved.push({ route, cost, quality: Number(candidate.quality) || 0 });
-      } catch (_) {
-        // Rejected provider/model is not a fallback signal to spend more. It is simply ineligible.
-      }
-    }
-
-    if (!approved.length) throw new Error("Compute Economy found no approved provider/model");
-    approved.sort((a, b) => a.cost - b.cost || b.quality - a.quality);
-
-    return authorize({
-      missionId, workerId, taskId,
-      provider: approved[0].route.provider,
-      model: approved[0].route.model,
-      estimatedCost: approved[0].cost || estimatedCost,
-      complexity,
-    });
-  }
-
-  function recordUsage({ authorization, inputTokens = null, outputTokens = null, estimatedCost = null, actualCost = null, revenueUsd = 0 } = {}) {
-    if (!authorization?.approved) throw new Error("Compute Economy usage requires approved compute");
-    const usageCost = actualCost == null ? (estimatedCost == null ? authorization.estimatedCost : estimatedCost) : actualCost;
-    const entry = Object.freeze({
-      id: "compute-" + (ledger.length + 1),
-      missionId: authorization.missionId,
-      workerId: authorization.workerId,
-      taskId: authorization.taskId,
-      provider: authorization.provider,
-      model: authorization.model,
-      complexity: authorization.complexity,
-      inputTokens: inputTokens == null ? null : Number(inputTokens),
-      outputTokens: outputTokens == null ? null : Number(outputTokens),
-      estimatedCost: authorization.estimatedCost,
-      actualCost: money(usageCost),
-      costCents: cents(usageCost),
-      revenueUsd: money(revenueUsd),
-      recordedAt: new Date().toISOString(),
-    });
-    const left = remaining({ missionId: entry.missionId, workerId: entry.workerId, taskId: entry.taskId });
-    if (entry.costCents > left.missionCents || entry.costCents > left.workerCents || entry.costCents > left.taskCents) {
-      throw new Error("Compute Economy usage exceeds a hard budget ceiling");
-    }
-    ledger.push(entry);
-    return entry;
-  }
-
-  function report({ missionId = null, workerId = null } = {}) {
-    const entries = ledger.filter(e =>
-      (!missionId || e.missionId === missionId) &&
-      (!workerId || e.workerId === workerId)
-    );
-    const totalCost = entries.reduce((s, e) => s + e.costCents, 0) / 100;
-    const revenue = entries.reduce((s, e) => s + e.revenueUsd, 0);
-    return Object.freeze({
-      missionId, workerId, requestCount: entries.length,
-      totalCost: money(totalCost), revenueUsd: money(revenue),
-      computeRoiUsd: money(revenue - totalCost),
-      entries: entries.map(e => ({ ...e })),
-    });
-  }
-
-  return Object.freeze({ limits: Object.freeze({ ...limits }), providerStatus, authorize, allocate, recordUsage, remaining, report });
-}
-
-export { DEFAULT_BUDGETS, STATUS };
+export {COMPLEXITY_RANK};
