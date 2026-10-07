@@ -102,7 +102,7 @@ jobs:
           NO_PROXY: "localhost,127.0.0.1"
         run: |
           Write-Host "Running local input-isolation proof with all environment proxies disabled."
-          node scripts/qa/input-isolation-smoke.mjs --url http://localhost:8087/?smoke --monitor-ms 5000
+          node scripts/qa/input-isolation-smoke.mjs --url http://127.0.0.1:8087/?smoke --monitor-ms 5000
       - name: Stop StarNet UI
         if: always()
         shell: pwsh
