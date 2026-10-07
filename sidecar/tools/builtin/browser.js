@@ -660,7 +660,7 @@
 
   function makeCdpDriver(deps) {
     deps = deps || {};
-    const fetchImpl = deps.fetchImpl || (typeof fetch !== 'undefined' ? fetch : undiciFetch);
+    // CDP discovery is loopback-only. Prefer the module-local Undici client over Node's global fetch so CI proxy settings cannot intercept /json/version or /json/list. Injected test drivers may still supply fetchImpl.\n    const fetchImpl = deps.fetchImpl || undiciFetch;
     const WebSocketImpl = deps.WebSocketImpl || (typeof WebSocket !== 'undefined' ? WebSocket : UndiciWebSocket);
     const spawn = deps.spawn || CP.spawn;
     const startPinnedProxy = require('./browser-proxy.js').startPinnedProxy;
