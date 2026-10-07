@@ -1,0 +1,6 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { makeComputeEconomy } from "../sidecar/governance/compute-economy.mjs";
+test("Compute Economy approves bounded compute and records usage",()=>{const e=makeComputeEconomy({budgets:{missionCents:20,workerCents:15,taskCents:10},providerStatuses:{apinex:"available"}});const a=e.authorize({missionId:"m",workerId:"w",taskId:"t",provider:"apinex",model:"free/gpt-5.6-luna"});assert.equal(a.approved,true);const u=e.recordUsage({authorization:a,inputTokens:100,outputTokens:50,actualCost:0});assert.equal(u.actualCost,0);assert.equal(e.report({missionId:"m"}).requestCount,1);});
+test("Compute Economy rejects unavailable or rate-limited providers",()=>{const e=makeComputeEconomy({providerStatuses:{apinex:"rate-limited"}});assert.throws(()=>e.authorize({missionId:"m",workerId:"w",taskId:"t",provider:"apinex",model:"free/gpt-5.6-luna"}),/rate-limited/);});
+test("Compute Economy fails closed when a task budget would be exceeded",()=>{const e=makeComputeEconomy({budgets:{missionCents:100,workerCents:100,taskCents:1}});assert.throws(()=>e.authorize({missionId:"m",workerId:"w",taskId:"t",provider:"apinex",model:"paid-model",estimatedCost:.02}),/budget exceeded/);});
