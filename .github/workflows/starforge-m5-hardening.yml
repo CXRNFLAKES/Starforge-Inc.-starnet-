@@ -22,7 +22,7 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version: 20
           cache: npm
       - name: Install dependencies
         run: npm ci
@@ -59,7 +59,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version: 20
           cache: npm
       - name: Install dependencies
         run: npm ci
@@ -101,42 +101,6 @@ jobs:
             if ($LASTEXITCODE -ne 0) { throw "curl.exe could not reach the IPv4 loopback UI server" }
             Write-Host "=== Listening socket ==="
             netstat -ano | findstr ":8087"
-            Write-Host "=== Edge CDP launch probe ==="
-            $cdpPort = 9229
-            $edgeProfile = Join-Path $env:RUNNER_TEMP "starforge-edge-cdp-probe"
-            Remove-Item -Recurse -Force -ErrorAction SilentlyContinue $edgeProfile
-            $edge = Start-Process -FilePath $browser -ArgumentList @(
-              "--headless=new",
-              "--disable-gpu",
-              "--no-first-run",
-              "--no-default-browser-check",
-              "--disable-extensions",
-              "--remote-debugging-address=127.0.0.1",
-              "--remote-debugging-port=$cdpPort",
-              "--user-data-dir=$edgeProfile",
-              "about:blank"
-            ) -RedirectStandardOutput "$env:RUNNER_TEMP\edge-cdp-probe.log" -RedirectStandardError "$env:RUNNER_TEMP\edge-cdp-probe.err" -PassThru
-            try {
-              $cdpReady = $false
-              for ($j = 0; $j -lt 50; $j++) {
-                try {
-                  $v = Invoke-RestMethod -UseBasicParsing "http://127.0.0.1:$cdpPort/json/version" -TimeoutSec 1
-                  if ($v.webSocketDebuggerUrl) { $cdpReady = $true; break }
-                } catch {}
-                Start-Sleep -Milliseconds 200
-              }
-              if (-not $cdpReady) {
-                Write-Host "=== Edge CDP probe stdout ==="
-                Get-Content "$env:RUNNER_TEMP\edge-cdp-probe.log" -ErrorAction SilentlyContinue
-                Write-Host "=== Edge CDP probe stderr ==="
-                Get-Content "$env:RUNNER_TEMP\edge-cdp-probe.err" -ErrorAction SilentlyContinue
-                throw "Edge could not expose a CDP /json/version endpoint on 127.0.0.1:$cdpPort"
-              }
-              Write-Host "Edge CDP endpoint: $($v.webSocketDebuggerUrl)"
-            } finally {
-              if ($edge -and -not $edge.HasExited) { Stop-Process -Id $edge.Id -Force -ErrorAction SilentlyContinue }
-              Remove-Item -Recurse -Force -ErrorAction SilentlyContinue $edgeProfile
-            }
             Write-Host "=== CDP browser proof ==="
             node scripts/qa/input-isolation-smoke.mjs --url http://127.0.0.1:8087/?smoke --monitor-ms 5000
           } finally {
