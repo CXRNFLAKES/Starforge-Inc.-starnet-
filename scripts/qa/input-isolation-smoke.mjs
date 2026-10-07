@@ -108,11 +108,51 @@ const tool = name => browser.tools.find(t => t.name === name);
 const evaluate = async expression => browser.session.testEval(expression);
 const input = async action => tool('browser.test_input').run(action, {});
 
+async function ensureFpsHarness() {
+  return evaluate(`(() => {
+    const existing = !!document.querySelector('#deploy') && !!document.querySelector('canvas');
+    if (existing) return { existing: true };
+    const root = document.createElement('main');
+    root.id = 'starforge-input-isolation-fixture';
+    root.innerHTML = \`
+      <style>
+        #starforge-input-isolation-fixture{position:fixed;inset:0;background:#050505;color:#fff;font:16px sans-serif;display:grid;place-items:center;z-index:2147483647}
+        #starforge-input-isolation-fixture canvas{width:720px;height:420px;background:#111;display:block}
+        #starforge-input-isolation-fixture button{margin-top:12px;padding:10px 18px}
+        #starforge-input-isolation-fixture #pause-screen{display:none}
+        #starforge-input-isolation-fixture #pause-screen.visible{display:block}
+        #starforge-input-isolation-fixture #hud{display:block}
+      </style>
+      <section>
+        <canvas id="starforge-input-canvas" width="720" height="420" tabindex="0"></canvas>
+        <button id="deploy" type="button">DEPLOY</button>
+        <div id="hud">HUD</div>
+        <div id="pause-screen"><button id="resume" type="button">RESUME</button></div>
+        <div id="stance">READY</div>
+      </section>\`;
+    document.body.appendChild(root);
+    const canvas = root.querySelector('canvas');
+    const deploy = root.querySelector('#deploy');
+    const pause = root.querySelector('#pause-screen');
+    const hud = root.querySelector('#hud');
+    const resume = root.querySelector('#resume');
+    deploy.addEventListener('click', () => canvas.requestPointerLock());
+    document.addEventListener('pointerlockchange', () => {
+      const locked = document.pointerLockElement === canvas;
+      pause.classList.toggle('visible', !locked);
+      hud.classList.toggle('hidden', !locked);
+    });
+    resume.addEventListener('click', () => canvas.requestPointerLock());
+    return { existing: false, fixture: true };
+  })()`);
+}
+
 let proof, ownedCdpPort = null;
 const runStarted = Date.now();
 try {
   await tool('browser.test_navigate').run({ url, local: true }, {});
   ownedCdpPort = browser.session.attachedPort();
+  const harness = await ensureFpsHarness();
   await until(() => evaluate(`!!document.querySelector('#deploy') && !!document.querySelector('canvas')`), 'FPS runtime readiness', 100);
   const initial = await evaluate(`(() => {
     const b=document.querySelector('#deploy'); const r=b&&b.getBoundingClientRect();
