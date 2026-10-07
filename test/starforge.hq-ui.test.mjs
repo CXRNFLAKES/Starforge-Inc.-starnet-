@@ -244,3 +244,5 @@ test('StarForge HQ capital history is derived only from governed ledger telemetr
   assert.match(hq,/capitalHistoryEl/);
   assert.match(css,/sf-capital-bars/);
 });
+
+test('StarForge worker room renders a truthful retro command floor from governed workers',()=>{const room=fs.readFileSync(new URL('../frontend/app/windows/starforge-worker-room.js',import.meta.url),'utf8');const css=fs.readFileSync(new URL('../frontend/css/starforge-worker-room.css',import.meta.url),'utf8');assert.match(room,/sf-room-floor/);assert.match(room,/sf-floor-grid/);assert.match(room,/AgentPortraits/);assert.match(room,/w\.status==='working'/);assert.match(room,/activeRun/);assert.match(css,/RETRO COMMAND FLOOR/);assert.match(css,/@media\(max-width:720px\)/);});
