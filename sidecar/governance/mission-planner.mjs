@@ -33,7 +33,7 @@ function inferCapabilities(text) {
   return [...caps];
 }
 
-export function makeMissionPlanner({ computeEconomy = null } = {}) {
+export function makeMissionPlanner({ computeEconomy = null, workforceAllocator = null } = {}) {
   function intake({ objective, constraints = [], budget = null, deadline = null, actor = "cho" } = {}) {
     const text = clean(objective);
     if (!text) throw new Error("Mission objective is required");
@@ -41,14 +41,13 @@ export function makeMissionPlanner({ computeEconomy = null } = {}) {
     const inferred = inferCapabilities([text, ...normalizedConstraints].join(" "));
     const complexity = inferComplexity([text, ...normalizedConstraints].join(" "));
     const risk = inferRisk([text, ...normalizedConstraints].join(" "));
-    const mission = {
+    return clone({
       id: randomUUID(), type: "mission", objective: text, constraints: normalizedConstraints,
       budget: budget == null ? null : Number(budget), deadline: deadline ? clean(deadline) : null,
       complexity: COMPLEXITY.includes(complexity) ? complexity : "normal",
       risk: RISK.includes(risk) ? risk : "medium", requiredCapabilities: inferred,
       status: "intake", actor: clean(actor) || "cho", createdAt: new Date().toISOString(),
-    };
-    return clone(mission);
+    });
   }
 
   function plan(mission, { availableWorkers = [], maxWorkers = 20 } = {}) {
@@ -68,10 +67,28 @@ export function makeMissionPlanner({ computeEconomy = null } = {}) {
       { id: "execution", title: "Execution", capability: "execution" },
       { id: "verification", title: "Verification and outcome check", capability: "verification" },
     ].filter(phase => mission.requiredCapabilities.includes(phase.capability) || ["research","strategy","verification"].includes(phase.id));
-    return clone({ missionId: mission.id, status: "planned", risk: mission.risk, complexity: mission.complexity, workerCandidates: selected.map(x => ({ id:x.worker.id, matchedCapabilities:x.worker.capabilities?.filter(c=>mission.requiredCapabilities.includes(c)) ?? [], load:x.load })), missingCapabilities: missing, phases, requiresEscalation: mission.risk === "high" || missing.length > 0, computePolicy: computeEconomy ? "governed-compute-economy" : "router-only", plannedAt: new Date().toISOString() });
+    return clone({
+      missionId: mission.id, status: "planned", risk: mission.risk, complexity: mission.complexity,
+      workerCandidates: selected.map(x => ({ id:x.worker.id, matchedCapabilities:x.worker.capabilities?.filter(c=>mission.requiredCapabilities.includes(c)) ?? [], load:x.load })),
+      missingCapabilities: missing, phases, requiresEscalation: mission.risk === "high" || missing.length > 0,
+      computePolicy: computeEconomy ? "governed-compute-economy" : "router-only", plannedAt: new Date().toISOString(),
+    });
   }
 
-  return Object.freeze({ intake, plan });
+  async function allocate(mission, { maxWorkers = 20, createMissing = true } = {}) {
+    if (!mission?.id || !mission.objective) throw new Error("Valid mission intake is required");
+    if (!workforceAllocator || typeof workforceAllocator.allocate !== "function") {
+      throw new Error("Governed workforce allocator is required for dynamic allocation");
+    }
+    return clone(await workforceAllocator.allocate({
+      requiredCapabilities: mission.requiredCapabilities,
+      maxWorkers,
+      objective: mission.objective,
+      createMissing,
+    }));
+  }
+
+  return Object.freeze({ intake, plan, allocate });
 }
 
 export { RISK, COMPLEXITY, WORKER_CAPABILITIES };
