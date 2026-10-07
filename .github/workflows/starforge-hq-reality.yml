@@ -1,0 +1,41 @@
+name: StarForge HQ Reality Test
+
+on:
+  push:
+    branches: ["starforge/governance-kernel"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: starforge-hq-reality-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  hq-reality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - run: npm ci
+      - name: HQ UI contract
+        run: node --test test/starforge.hq-ui.test.mjs
+      - name: Mission Control UI
+        run: node --test test/starforge.mission-control-ui.test.mjs
+      - name: Worker Room UI
+        run: node --test test/starforge.worker-room-ui.test.mjs
+      - name: Mobile shell contract
+        run: npm run test:starforge:android9:shell
+      - name: Governed HQ HTTP feed
+        run: node --test test/starforge.governance-http.test.mjs
+      - name: Mission execution
+        run: node --test test/starforge.mission-executor.test.mjs
+      - name: Mission loop and memory
+        run: node --test test/starforge.mission-loop.test.mjs test/starforge.mission-loop-memory.test.mjs
+      - name: Compute Economy
+        run: node --test test/starforge.compute-economy.test.mjs
+      - name: Integration reality
+        run: npm run test:starforge:integration
