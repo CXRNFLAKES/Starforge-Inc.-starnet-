@@ -31,7 +31,7 @@ export function makeComputeEconomy({budgets={},providerStatuses={}}={}) {
   if(!authorization?.approved) throw new Error("Compute Economy usage requires approved compute");
   const usageCost=actualCost==null?(estimatedCost==null?authorization.estimatedCost:estimatedCost):actualCost;
   const entry=Object.freeze({id:crypto.randomUUID(),missionId:authorization.missionId,workerId:authorization.workerId,taskId:authorization.taskId,provider:authorization.provider,model:authorization.model,complexity:authorization.complexity,inputTokens:inputTokens==null?null:Number(inputTokens),outputTokens:outputTokens==null?null:Number(outputTokens),estimatedCost:authorization.estimatedCost,actualCost:money(usageCost),costCents:cents(usageCost),recordedAt:new Date().toISOString()});
-  const left=remaining(entry); if(entry.costCents>limits.missionCents||entry.costCents>limits.workerCents||entry.costCents>limits.taskCents) throw new Error("Compute Economy usage exceeds a hard budget ceiling");
+  const left=remaining({missionId:entry.missionId,workerId:entry.workerId,taskId:entry.taskId}); if(entry.costCents>left.missionCents||entry.costCents>left.workerCents||entry.costCents>left.taskCents) throw new Error("Compute Economy usage exceeds a hard budget ceiling");
   ledger.push(entry); return entry;
  }
  function report({missionId=null}={}) {const entries=ledger.filter(e=>!missionId||e.missionId===missionId); return Object.freeze({missionId,requestCount:entries.length,totalCost:money(entries.reduce((s,e)=>s+e.costCents,0)/100),entries:entries.map(e=>({...e}))});}
