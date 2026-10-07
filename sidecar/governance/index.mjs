@@ -16,3 +16,4 @@ export * from "./workforce-allocator.mjs";
 export * from "./mission-executor.mjs";
 export * from "./starnet-adapter.mjs";
 export * from "./starnet-runtime.mjs";
+export * from "./mission-loop.mjs";
