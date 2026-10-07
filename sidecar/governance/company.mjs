@@ -2,6 +2,8 @@ import { randomUUID } from "node:crypto";
 import { ROLES } from "./roles.mjs";
 import { ACTIONS, assertCan } from "./authority.mjs";
 import { isValidDecision } from "./decision-packet.mjs";
+import fs from "node:fs";
+import path from "node:path";
 
 export const SCHEMA_VERSION = 1;
 
@@ -68,10 +70,33 @@ function normalize(state) {
   };
 }
 
-export function makeCompany({ load, save } = {}) {
-  let state = normalize(load?.());
+export function makeCompany({ load, save, storagePath = null } = {}) {
+  const persistentPath = storagePath ? path.resolve(String(storagePath)) : null;
+  let persistedState = load?.();
+  if (persistentPath && fs.existsSync(persistentPath)) {
+    try {
+      persistedState = JSON.parse(fs.readFileSync(persistentPath, "utf8"));
+    } catch (error) {
+      throw new Error(`Company persistence could not be read: ${error.message}`);
+    }
+  }
+  let state = normalize(persistedState);
 
-  const persist = () => save?.(structuredClone(state));
+  const persist = () => {
+    const next = structuredClone(state);
+    if (save) save(next);
+    if (!persistentPath) return;
+    const directory = path.dirname(persistentPath);
+    fs.mkdirSync(directory, { recursive: true });
+    const temporaryPath = `${persistentPath}.${process.pid}.tmp`;
+    try {
+      fs.writeFileSync(temporaryPath, JSON.stringify(next, null, 2) + "\n", "utf8");
+      fs.renameSync(temporaryPath, persistentPath);
+    } catch (error) {
+      try { if (fs.existsSync(temporaryPath)) fs.unlinkSync(temporaryPath); } catch {}
+      throw new Error(`Company persistence could not be saved: ${error.message}`);
+    }
+  };
 
   function financeData({ summaryOnly = false } = {}) {
     const entries = state.finance.entries;
@@ -133,6 +158,7 @@ export function makeCompany({ load, save } = {}) {
 
   return {
     snapshot() { return structuredClone(state); },
+    persistence() { return { enabled: Boolean(persistentPath), path: persistentPath }; },
 
     setChoProfile(actorRole, { id = "cho", name = "Human Owner" } = {}) {
       assertCan(actorRole, ACTIONS.COMPANY_CONFIGURE);
