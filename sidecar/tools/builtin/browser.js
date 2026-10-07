@@ -958,6 +958,7 @@
         }
       } catch (_) {}
       }
+      let lastConnectError = null;
       for (let i = 0; i < 40; i++) {
         if (attachPort === null && procExited) throw new Error('spawned Chromium exited before CDP ownership was established' + (procError ? ': ' + procError : ''));
         try {
@@ -973,7 +974,11 @@
             try {
               const v = await (await fetchImpl('http://127.0.0.1:' + port + '/json/version')).json();
               if (v && v.webSocketDebuggerUrl) { wsUrl = v.webSocketDebuggerUrl; viaBrowser = true; }
-            } catch (_) { wsUrl = null; browserProbeTransient = true; }
+            } catch (e) {
+              wsUrl = null;
+              browserProbeTransient = true;
+              lastConnectError = new Error('CDP /json/version probe failed: ' + ((e && e.message) || e));
+            }
           }
           // Chrome can expose /json/list a scheduler beat before /json/version while starting under load. Falling
           // back to the page websocket on that first transient miss permanently disables popup adoption for the
@@ -985,7 +990,14 @@
             continue;
           }
           if (!wsUrl) {
-            const r = await fetchImpl('http://127.0.0.1:' + port + '/json/list');
+            let r;
+            try {
+              r = await fetchImpl('http://127.0.0.1:' + port + '/json/list');
+              if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText);
+            } catch (e) {
+              lastConnectError = new Error('CDP /json/list probe failed: ' + ((e && e.message) || e));
+              throw e;
+            }
             const targets = await r.json();
             const pg = targets.find(t => t && t.type === 'page');
             wsUrl = pg && pg.webSocketDebuggerUrl;
@@ -994,7 +1006,7 @@
             const ws = new WebSocketImpl(wsUrl);
             await new Promise((resolve, reject) => {
               ws.addEventListener('open', resolve, { once: true });
-              ws.addEventListener('error', reject, { once: true });
+              ws.addEventListener('error', () => reject(new Error('CDP WebSocket error for ' + wsUrl)), { once: true });
             });
             cdp = new CdpClient(ws, timeoutMs);
             attachedPort = port;
@@ -1223,10 +1235,12 @@
             cdp.on('Page.javascriptDialogOpening', p => { dialog = { type: p.type || 'alert', message: p.message || '' }; });
             return cdp;
           }
-        } catch (_) {}
+        } catch (e) {
+          lastConnectError = e instanceof Error ? e : new Error(String(e));
+        }
         await sleep(250);
       }
-      throw new Error('browser unavailable: could not attach to Chromium');
+      throw new Error('browser unavailable: could not attach to Chromium' + (lastConnectError ? ': ' + lastConnectError.message : '') + (procError ? ' [process: ' + procError + ']' : ''));
     }
     /* Page-scoped command channel. Every page command (Runtime/Input/DOM/Emulation/Page) goes through
        here so it lands on the ACTIVE tab; browser-scoped commands (Target and Browser) keep using cdp
