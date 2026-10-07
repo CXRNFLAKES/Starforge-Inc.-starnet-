@@ -100,9 +100,57 @@ async function until(fn, label, tries = 50) {
   throw new Error('timed out waiting for ' + label);
 }
 
+async function launchDedicatedCdpBrowser(port) {
+  const configured = process.env.STARNET_CHROME;
+  const candidates = [
+    configured,
+    process.platform === 'win32' ? 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe' : null,
+    process.platform === 'win32' ? 'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe' : null,
+    'chromium',
+    'google-chrome'
+  ].filter(Boolean);
+  const profileDir = join(tmpdir(), 'starnet-input-cdp-' + process.pid + '-' + Date.now());
+  const browserPath = candidates.find(p => {
+    if (p.includes('\\') || p.includes('/')) {
+      try { return require('node:fs').existsSync(p); } catch (_) { return false; }
+    }
+    return true;
+  });
+  if (!browserPath) throw new Error('No Chromium runtime found for the dedicated input-isolation CDP harness');
+  const args = [
+    '--headless=new',
+    '--disable-gpu',
+    '--no-first-run',
+    '--no-default-browser-check',
+    '--disable-extensions',
+    '--disable-blink-features=AutomationControlled',
+    '--remote-debugging-address=127.0.0.1',
+    '--remote-debugging-port=' + port,
+    '--remote-allow-origins=*',
+    '--user-data-dir=' + profileDir,
+    'about:blank'
+  ];
+  const proc = spawn(browserPath, args, { windowsHide: true, stdio: 'ignore' });
+  try {
+    await until(async () => {
+      try {
+        const r = await fetch('http://127.0.0.1:' + port + '/json/version');
+        return r.ok;
+      } catch (_) { return false; }
+    }, 'dedicated CDP endpoint on port ' + port, 80);
+    return { proc, profileDir, browserPath };
+  } catch (e) {
+    try { if (proc && !proc.killed) proc.kill('SIGKILL'); } catch (_) {}
+    try { require('node:fs').rmSync(profileDir, { recursive: true, force: true }); } catch (_) {}
+    throw e;
+  }
+}
+
 const observer = startObserver();
 const baseline = await observer.ready;
 if (baseline && baseline.confined) { observer.stop(); await observer.done; throw new Error('refusing to start input-isolation proof: cursor was already confined by another foreground app: ' + JSON.stringify(baseline)); }
+let dedicatedBrowser = null;
+if (cdpPort > 0) dedicatedBrowser = await launchDedicatedCdpBrowser(cdpPort);
 const browser = makeBrowserTools({ allowVisible: false, forceHeadless: true, syntheticInputOnly: true, networkProxy: false, cdpPort, profileDir: join(tmpdir(), 'starnet-input-proof-' + process.pid + '-' + Date.now()), cleanupProfile: true });
 const tool = name => browser.tools.find(t => t.name === name);
 const evaluate = async expression => browser.session.testEval(expression);
@@ -150,6 +198,7 @@ async function ensureFpsHarness() {
 let proof, ownedCdpPort = null;
 const runStarted = Date.now();
 try {
+  if (dedicatedBrowser) await browser.session.attach(cdpPort);
   await tool('browser.test_navigate').run({ url, local: true }, {});
   ownedCdpPort = browser.session.attachedPort();
   await ensureFpsHarness();
@@ -194,6 +243,10 @@ try {
   proof = { initial, active, paused, resumed: true };
 } finally {
   await browser.session.close();
+  if (dedicatedBrowser) {
+    try { if (dedicatedBrowser.proc && !dedicatedBrowser.proc.killed) dedicatedBrowser.proc.kill('SIGKILL'); } catch (_) {}
+    try { require('node:fs').rmSync(dedicatedBrowser.profileDir, { recursive: true, force: true }); } catch (_) {}
+  }
   await sleep(250);
   observer.stop();
 }
