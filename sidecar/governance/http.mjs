@@ -171,11 +171,26 @@ export function makeStarForgeGovernanceHandler({ workspace, roster = new Map(), 
     });
     workers = workers.map((worker) => {
       const performance = performanceByAgent.get(String(worker.id ?? worker.agentId ?? "").trim());
-      if (!performance) return { ...worker, performance: { taskCount: 0, completed: 0, failed: 0, blocked: 0, inProgress: 0, reliabilityPercent: null } };
+      const existingPerformance = worker.performance ?? {};
+      if (!performance) {
+        return {
+          ...worker,
+          performance: {
+            taskCount: 0,
+            completed: 0,
+            failed: 0,
+            blocked: 0,
+            inProgress: 0,
+            reliabilityPercent: null,
+            ...existingPerformance,
+          },
+        };
+      }
       const resolved = performance.completed + performance.failed;
       return {
         ...worker,
         performance: {
+          ...existingPerformance,
           ...performance,
           reliabilityPercent: resolved > 0 ? Math.round((performance.completed / resolved) * 100) : null,
         },
