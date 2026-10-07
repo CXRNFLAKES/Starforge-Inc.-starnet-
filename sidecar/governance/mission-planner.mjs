@@ -67,7 +67,6 @@ export function makeMissionPlanner({ computeEconomy = null, workforceAllocator =
       const evidenceBonus = evidenceUsable && evidence ? Math.min(10, Number(evidence.score) || 0) : 0;
       return { worker, matched, load, evidenceBonus };
     }).sort((a,b) => b.matched-a.matched || b.evidenceBonus-a.evidenceBonus || a.load-b.load || String(a.worker.id).localeCompare(String(b.worker.id)));
-    })
     const selected = ranked.filter(x => x.matched > 0).slice(0, Math.max(1, Number(maxWorkers) || 1));
     const missing = mission.requiredCapabilities.filter(cap => !selected.some(x => Array.isArray(x.worker.capabilities) && x.worker.capabilities.includes(cap)));
     const phases = [
