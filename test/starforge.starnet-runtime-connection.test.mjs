@@ -13,7 +13,7 @@ async function withServer(handler, fn) {
 
 test("StarForge connects to a real local StarNet HTTP runtime and discovers workers", async () => {
   await withServer((req, res) => {
-    if (req.url === "/api/roster") {
+    if (req.url === "/api/runtime/agent") {
       res.writeHead(200, { "content-type": "application/json" });
       res.end(JSON.stringify({ agents: [
         { id: "live-1", name: "Live Worker One", model: "runtime-model" },
