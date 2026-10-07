@@ -142,3 +142,77 @@ test("C1 keeps the Vice CEO StarNet authority boundary intact", async () => {
   assert.equal(result.task.delegatedBy, ROLES.VICE_CEO);
   assert.equal(result.task.assigneeSource, "starnet");
 });
+
+import { makeComputeEconomy } from "../sidecar/governance/compute-economy.mjs";
+import { makeMissionPlanner } from "../sidecar/governance/mission-planner.mjs";
+import { makeMissionExecutor } from "../sidecar/governance/mission-executor.mjs";
+import { makeMissionLoop } from "../sidecar/governance/mission-loop.mjs";
+import { makeMissionMemory } from "../sidecar/governance/mission-memory.mjs";
+import { makeOutcomeEvaluator } from "../sidecar/governance/outcome-evaluator.mjs";
+import { makeFailureIntelligence } from "../sidecar/governance/failure-intelligence.mjs";
+import { makeWorkforceAllocator } from "../sidecar/governance/workforce-allocator.mjs";
+import { makeStarNetAdapter } from "../sidecar/governance/starnet-adapter.mjs";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+
+test("C1 proves the full CHO mission-to-business-outcome loop with Compute Economy, recovery, and persistence", async () => {
+  const storagePath = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "starforge-c1-")), "missions.json");
+  const memory = makeMissionMemory({ storagePath });
+  const worker = {
+    id: "sales-worker",
+    name: "Revenue Worker",
+    provider: "apinex",
+    model: "free/gpt-5.6-luna",
+    capabilities: ["research", "strategy", "execution", "sales", "finance", "verification"],
+  };
+  let dispatches = 0;
+  const starnet = makeStarNetAdapter({
+    roster: () => [worker],
+    dispatch: async () => {
+      dispatches += 1;
+      if (dispatches <= 4) {
+        return { content: JSON.stringify({ success: false, verified: false, revenueUsd: 0, evidence: "initial strategy failed" }), summary: "recovery required" };
+      }
+      return { content: JSON.stringify({ success: true, verified: true, revenueUsd: 25, evidence: "verified customer revenue" }), summary: "verified revenue", usage: { inputTokens: 120, outputTokens: 60 } };
+    },
+  });
+  const planner = makeMissionPlanner();
+  const allocator = makeWorkforceAllocator({ starnet });
+  const computeEconomy = makeComputeEconomy({
+    budgets: { missionCents: 100, workerCents: 50, taskCents: 10 },
+    providerStatuses: { apinex: "available" },
+    router: { resolve: async request => ({ allowed: true, ...request, source: "c1-test-router" }) },
+  });
+  const executor = makeMissionExecutor({
+    planner, allocator, starnet, computeEconomy,
+    computeCandidates: [{ provider: "apinex", model: "free/gpt-5.6-luna", estimatedCost: 0.01, quality: 10 }],
+  });
+  const loop = makeMissionLoop({
+    planner, executor,
+    evaluator: makeOutcomeEvaluator({ minimumEvidence: 1 }),
+    memory, failureIntelligence: makeFailureIntelligence(), maxIterations: 2,
+  });
+
+  const result = await loop.run({
+    objective: "generate 20 USD revenue from qualified customer sales",
+    actor: "cho", availableWorkers: [worker], maxWorkers: 1, createMissing: false,
+  });
+
+  assert.equal(result.status, "completed");
+  assert.equal(result.iteration, 2);
+  assert.equal(result.history[0].decision.status, "replan");
+  assert.equal(result.history[0].execution.compute.length, 4);
+  assert.equal(result.history[1].execution.compute.length, 4);
+  assert.equal(result.execution.revenue, 100);
+  assert.equal(result.decision.verified, true);
+  assert.equal(computeEconomy.report({ missionId: result.mission.id }).requestCount, 8);
+  assert.equal(computeEconomy.report({ missionId: result.mission.id }).revenueUsd, 100);
+  assert.equal(memory.snapshot()[0].verified, true);
+  assert.equal(memory.snapshot()[0].revenue, 100);
+  const restored = makeMissionMemory({ storagePath });
+  assert.equal(restored.snapshot()[0].id, result.mission.id);
+  assert.equal(restored.snapshot()[0].revenue, 100);
+  assert.equal(dispatches, 8);
+  fs.rmSync(path.dirname(storagePath), { recursive: true, force: true });
+});
