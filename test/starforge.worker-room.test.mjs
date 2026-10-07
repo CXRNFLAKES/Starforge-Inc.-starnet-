@@ -6,6 +6,13 @@ test('Worker room remains read-only',()=>{assert.doesNotMatch(js,/fetch\([^)]*,\
 
 test('Worker room derives RPG progression only from governed task history',()=>{assert.match(js,/performance=w\.performance\|\|\{\}/);assert.doesNotMatch(js,/const tasks=Array\.isArray\(data\?\.execution\?\.recentTasks\)/);assert.match(js,/performance\.completed/);assert.match(js,/LVL '\+level/);assert.match(js,/XP '\+xp/);assert.match(js,/failed/);assert.match(js,/blocked/);assert.match(js,/successRate/);assert.match(js,/levelProgress/);assert.match(js,/RECOVERY/);assert.match(css,/sf-xp-track/);});
 
+test('Worker room reuses StarNet native agent portraits when available',()=>{
+  assert.match(js,/typeof AgentPortraits !== 'undefined'/);
+  assert.match(js,/AgentPortraits\.thumbHTML/);
+  assert.match(js,/sf-room-portrait/);
+  assert.match(index,/app\/agentportraits\.js/);
+});
+
 test('Worker room exposes only reported StarNet run identity and capabilities',()=>{assert.match(js,/runId=run\?\.id\|\|run\?\.runId/);assert.match(js,/startedAt=run\?\.startedAt\|\|run\?\.createdAt/);assert.match(js,/capabilities=Array\.isArray\(w\.capabilities\)/);assert.match(js,/CAPABILITIES NOT REPORTED/);assert.match(js,/NO ACTIVE RUN/);});
 
 
