@@ -18,6 +18,16 @@ export function makeStarNetRuntimeBridge({
     return response.json();
   }
 
+  async function mutate(path, body) {
+    const response = await fetchImpl(root + path, {
+      method: "POST",
+      headers: { "content-type": "application/json", accept: "application/json", ...(token ? { "X-StarNet-Token": String(token) } : {}) },
+      body: JSON.stringify(body ?? {}),
+    });
+    if (!response.ok) throw new Error(`StarNet runtime mutation failed: ${response.status}`);
+    return response.json();
+  }
+
   const adapter = makeStarNetAdapter({
     roster: async () => {
       const body = await request("/api/runtime/agent");
@@ -94,6 +104,14 @@ export function makeStarNetRuntimeBridge({
     return router.resolve(request);
   }
 
+  async function removeWorker(agentId) {
+    const result = await mutate("/api/agent/delete", { agentId: String(agentId) });
+    if (!result || result.error || result.ok === false) {
+      throw new Error(String(result?.error || "StarNet worker removal was refused"));
+    }
+    return { id: String(agentId), removed: true, result };
+  }
+
   return Object.freeze({
     baseUrl: root,
     probeRuntime,
@@ -108,6 +126,8 @@ export function makeStarNetRuntimeBridge({
     },
     listWorkersAsync: () => adapter.listWorkersAsync(),
     delegateTask: (...args) => adapter.delegateTask(...args),
+    summonWorker: (...args) => adapter.summonWorker(...args),
+    removeWorker,
     inspectWorkforce,
     routeModel,
   });
