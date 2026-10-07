@@ -1302,8 +1302,12 @@
          pair on a listing page, which reads as "the browser is broken" rather than "that page did not load".
          Now: navigation gets its own larger budget, and on timeout we ALWAYS Page.stopLoading (best-effort,
          on a short budget of its own) so the session is usable for the very next call. */
+      let navigationResult = null;
       try {
-        await c.send('Page.navigate', { url }, undefined, navTimeoutMs);
+        navigationResult = await c.send('Page.navigate', { url }, undefined, navTimeoutMs);
+        // CDP returns errorText when the navigation itself fails. Preserve that diagnostic instead of
+        // letting the later chrome-error:// document URL hide the real Chromium network failure.
+        if (navigationResult && navigationResult.errorText) throw new Error('Page.navigate failed: ' + navigationResult.errorText);
       } catch (e) {
         if (!/CDP timeout/.test(String(e && e.message))) throw e;
         try { await c.send('Page.stopLoading', {}, undefined, Math.min(timeoutMs, 5000)); } catch (_) {}
@@ -2235,7 +2239,8 @@
           if (!local) await assertResolvedSafe(new URL(finalUrl), doLookup);
         } catch (e) {
           try { await d.navigate('about:blank'); } catch (_) {}
-          throw new Error('blocked unsafe redirect: ' + e.message);
+          const failure = lastResponse && lastResponse.failure ? ' (Chromium network failure: ' + lastResponse.failure + ')' : '';
+          throw new Error('blocked unsafe redirect: ' + e.message + failure);
         }
       }
       if (local && new URL(finalUrl || u.href).origin !== u.origin) {
