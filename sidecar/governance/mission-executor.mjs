@@ -11,9 +11,10 @@ function id(value, label) {
 }
 
 function phaseCapabilities(phase) {
-  return Array.isArray(phase?.requiredCapabilities)
-    ? phase.requiredCapabilities.map((value) => String(value).trim().toLowerCase()).filter(Boolean)
-    : [];
+  const values = Array.isArray(phase?.requiredCapabilities)
+    ? phase.requiredCapabilities
+    : phase?.capability ? [phase.capability] : [];
+  return values.map((value) => String(value).trim().toLowerCase()).filter(Boolean);
 }
 
 function workerCapabilities(worker) {
@@ -68,13 +69,7 @@ export function makeMissionExecutor({ planner, allocator, starnet } = {}) {
     });
 
     if (allocation.status === "blocked") {
-      return clone({
-        status: "blocked",
-        mission,
-        plan,
-        allocation,
-        tasks: [],
-      });
+      return clone({ status: "blocked", mission, plan, allocation, tasks: [] });
     }
 
     const workers = [...(allocation.selected || []), ...(allocation.created || [])];
@@ -101,10 +96,10 @@ export function makeMissionExecutor({ planner, allocator, starnet } = {}) {
         projectId: projectId ?? mission.id,
         missionId: mission.id,
         assigneeId,
-        title: String(phase.name ?? "Mission phase"),
+        title: String(phase.title ?? phase.name ?? "Mission phase"),
         prompt: [
           `Mission objective: ${mission.objective}`,
-          phase.description ? `Phase: ${phase.description}` : "",
+          phase.title ? `Phase: ${phase.title}` : "",
           mission.constraints.length ? `Constraints: ${mission.constraints.join("; ")}` : "",
           mission.deadline ? `Deadline: ${mission.deadline}` : "",
           "Report concrete findings, actions taken, blockers, and next recommendation.",
@@ -141,10 +136,7 @@ export function makeMissionExecutor({ planner, allocator, starnet } = {}) {
     if (!mission?.id || !mission.objective) throw new Error("Valid mission is required for replanning");
     const completed = Array.isArray(results) ? results : [];
     const unresolved = completed.filter((result) => !result?.success && !result?.verified);
-    const nextPlan = planner.plan(mission, {
-      availableWorkers,
-      maxWorkers,
-    });
+    const nextPlan = planner.plan(mission, { availableWorkers, maxWorkers });
     return clone({
       mission,
       previousPlan: plan ?? null,
