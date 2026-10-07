@@ -4,7 +4,7 @@ import { makeStarNetRuntimeBridge } from "../sidecar/governance/starnet-runtime.
 import { ROLES } from "../sidecar/governance/roles.mjs";
 
 function fetchMock(url, options = {}) {
-  if (url.endsWith("/api/roster")) {
+  if (url.endsWith("/api/runtime/agent")) {
     return Promise.resolve(new Response(JSON.stringify({
       agents: [{ id: "remote-1", name: "Remote One", model: "live-model" }],
     }), { status: 200, headers: { "content-type": "application/json" } }));
