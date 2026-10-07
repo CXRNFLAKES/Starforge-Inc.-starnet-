@@ -114,9 +114,9 @@ export function makeStarForgeGovernanceHandler({ workspace, roster = new Map(), 
       }) : workers;
       workforceSource = "live-runtime-roster";
     }
-    const runtimeMode = ["live-runtime", "live-runtime-roster", "live-starnet-sidecar"].includes(workforceSource)
-      ? "live-starnet"
-      : "test-bridge";
+    // An injected runtime is the authority boundary; its reported source may be descriptive
+    // (for example a contract-test source) and must not downgrade the connection mode.
+    const runtimeMode = runtime ? "live-starnet" : "test-bridge";
     const governedSnapshot = company && typeof company.snapshot === "function" ? company.snapshot() : persisted;
     const tasks = Array.isArray(governedSnapshot?.tasks) ? governedSnapshot.tasks : [];
     const starNetTasks = tasks.filter((task) => task.assigneeSource === "starnet");
