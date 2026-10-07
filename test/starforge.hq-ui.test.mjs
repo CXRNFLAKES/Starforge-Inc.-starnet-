@@ -236,3 +236,11 @@ test('StarForge HQ renders a distinct governed mission XP progress bar',()=>{
 
 
 test('StarForge HQ exposes governed unlocked and next mission capabilities',()=>{const http=fs.readFileSync(new URL('../sidecar/governance/http.mjs',import.meta.url),'utf8');assert.match(http,/unlockedCapabilities/);assert.match(http,/nextCapability/);assert.match(http,/missionMilestones\.filter/);assert.match(hq,/data-sf="mission-capabilities"/);assert.match(hq,/data-sf="mission-next-capability"/);assert.match(hq,/xpProgress\.unlockedCapabilities/);assert.match(hq,/xpProgress\?\.nextCapability/);assert.match(css,/\.sf-mission-capabilities/);});
+
+test('StarForge HQ capital history is derived only from governed ledger telemetry',()=>{
+  assert.match(hq,/data-capital-history/);
+  assert.match(hq,/finance\?\.recentEntries/);
+  assert.match(hq,/governed ledger only/);
+  assert.match(hq,/capitalHistoryEl/);
+  assert.match(css,/sf-capital-bars/);
+});
