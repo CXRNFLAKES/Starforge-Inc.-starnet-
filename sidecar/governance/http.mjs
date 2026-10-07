@@ -133,7 +133,12 @@ export function makeStarForgeGovernanceHandler({ workspace, roster = new Map(), 
       performanceByAgent.set(id, current);
     }
     workers = workers.map((worker) => {
-      const performance = performanceByAgent.get(String(worker.id ?? worker.agentId ?? "").trim());
+      const workerId = String(worker.id ?? worker.agentId ?? "").trim();
+      const workerTasks = starNetTasks
+        .filter((task) => String(task.assigneeId ?? "").trim() === workerId)
+        .slice(-5)
+        .reverse();
+      const performance = performanceByAgent.get(workerId);
       const completed = Math.max(0, Number(performance?.completed) || 0);
       const failed = Math.max(0, Number(performance?.failed) || 0);
       const blocked = Math.max(0, Number(performance?.blocked) || 0);
@@ -149,6 +154,13 @@ export function makeStarForgeGovernanceHandler({ workspace, roster = new Map(), 
         ...worker,
         performance: {
           ...(performance ?? { taskCount: 0, completed: 0, failed: 0, blocked: 0, inProgress: 0, reliabilityPercent: null }),
+          tasks: workerTasks.map((task) => ({
+            id: String(task.id ?? ""),
+            title: String(task.title ?? "Untitled task"),
+            status: String(task.status ?? "pending"),
+            projectId: String(task.projectId ?? ""),
+            updatedAt: String(task.updatedAt ?? task.createdAt ?? ""),
+          })),
           xp,
           level: workerLevel,
           xpProgressPercent,
