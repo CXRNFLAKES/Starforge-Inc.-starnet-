@@ -102,6 +102,49 @@ jobs:
             if (-not $browser) { throw "No CI Chromium runtime found (Edge)" }
             "STARNET_CHROME=$browser" | Out-File -FilePath $env:GITHUB_ENV -Append
             Write-Host "Using CI Chromium runtime: $browser"
+            Write-Host "=== Direct Edge CDP launch probe ==="
+            $probePort = 9229
+            $probeProfile = Join-Path $env:RUNNER_TEMP "starnet-edge-cdp-probe"
+            $probeLog = Join-Path $env:RUNNER_TEMP "starnet-edge-cdp-probe.log"
+            $probeErr = Join-Path $env:RUNNER_TEMP "starnet-edge-cdp-probe.err"
+            Remove-Item -LiteralPath $probeProfile -Recurse -Force -ErrorAction SilentlyContinue
+            $edgeProbeArgs = @(
+              "--headless=new",
+              "--disable-gpu",
+              "--no-first-run",
+              "--no-default-browser-check",
+              "--disable-extensions",
+              "--remote-debugging-address=127.0.0.1",
+              "--remote-debugging-port=$probePort",
+              "--remote-allow-origins=*",
+              "--user-data-dir=$probeProfile",
+              "about:blank"
+            )
+            $edgeProbe = Start-Process -FilePath $browser -ArgumentList $edgeProbeArgs -RedirectStandardOutput $probeLog -RedirectStandardError $probeErr -PassThru
+            try {
+              $probeReady = $false
+              for ($j = 0; $j -lt 80; $j++) {
+                try {
+                  $v = Invoke-WebRequest -UseBasicParsing "http://127.0.0.1:$probePort/json/version" -TimeoutSec 1
+                  if ($v.StatusCode -eq 200) { $probeReady = $true; break }
+                } catch {}
+                if ($edgeProbe.HasExited) { break }
+                Start-Sleep -Milliseconds 250
+              }
+              if (-not $probeReady) {
+                Write-Host "Edge CDP probe did not expose /json/version."
+                Write-Host "=== Edge probe stdout ==="
+                Get-Content $probeLog -ErrorAction SilentlyContinue
+                Write-Host "=== Edge probe stderr ==="
+                Get-Content $probeErr -ErrorAction SilentlyContinue
+                throw "CI Edge could not expose a loopback CDP endpoint on port $probePort"
+              }
+              Write-Host "Edge CDP /json/version is reachable on 127.0.0.1:$probePort"
+              Write-Host $v.Content
+            } finally {
+              if ($edgeProbe -and -not $edgeProbe.HasExited) { Stop-Process -Id $edgeProbe.Id -Force -ErrorAction SilentlyContinue }
+              Remove-Item -LiteralPath $probeProfile -Recurse -Force -ErrorAction SilentlyContinue
+            }
             Write-Host "Running local input-isolation proof with all environment proxies disabled."
             Write-Host "=== Direct HTTP loopback diagnostics ==="
             curl.exe --noproxy "*" -sS -D - http://127.0.0.1:8087/ -o "$env:RUNNER_TEMP\starnet-ui-body.html"
