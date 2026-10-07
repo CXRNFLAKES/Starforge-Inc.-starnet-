@@ -81,7 +81,7 @@ function startObserver() {
   const child = spawn(exe, ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command', PS_MONITOR], { windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'], env: Object.assign({}, process.env, { STARNET_INPUT_MONITOR_MS: String(monitorMs), STARNET_INPUT_STOP_FILE: stopFile }) });
   let out = '', err = '', readyResolve, readyReject, readySeen = false;
   const ready = new Promise((resolve, reject) => { readyResolve = resolve; readyReject = reject; });
-  const readyTimer = setTimeout(() => readyReject(new Error('cursor observer did not become ready: ' + err.slice(-500))), 10000);
+  const readyTimer = setTimeout(() => readyReject(new Error('cursor observer did not become ready: ' + err.slice(-500))), 30000);
   child.stdout.on('data', b => { out += b.toString(); const m = /^READY (\{[^\r\n]*\})\r?\n/.exec(out); if (m && !readySeen) { readySeen = true; clearTimeout(readyTimer); try { readyResolve(JSON.parse(m[1])); } catch (e) { readyReject(new Error('cursor observer returned invalid baseline: ' + m[1])); } } });
   child.stderr.on('data', b => { err += b.toString(); });
   child.on('error', readyReject);
