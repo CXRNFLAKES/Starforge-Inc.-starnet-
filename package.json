@@ -177,7 +177,8 @@
     "test:starforge:apinex:live": "node scripts/starforge-apinex-live-test.mjs",
     "test:starforge:governed-model-delegation": "node --test test/starforge.governed-model-delegation.test.mjs",
     "test:starforge:apinex-ui": "node --test test/provider-connections-ui.test.js",
-    "test:starforge:compute-economy": "node --test test/starforge.compute-economy.test.mjs"
+    "test:starforge:compute-economy": "node --test test/starforge.compute-economy.test.mjs",
+    "test:starforge:c1": "node --test test/starforge.c1-company-gameplay-e2e.test.mjs"
   },
   "devDependencies": {
     "@napi-rs/canvas": "0.1.100",
