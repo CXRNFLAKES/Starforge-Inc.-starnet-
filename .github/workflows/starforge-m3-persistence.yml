@@ -1,0 +1,31 @@
+name: StarForge M3 Persistence Reality Test
+
+on:
+  push:
+    branches: ["starforge/governance-kernel"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: starforge-m3-persistence-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  m3-persistence:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - run: npm ci
+      - name: M3 runtime restart persistence
+        run: node --test test/starforge.m3-persistence.test.mjs
+      - name: Mission memory regression
+        run: node --test test/starforge.mission-memory.test.mjs test/starforge.mission-loop-memory.test.mjs
+      - name: Compute Economy regression
+        run: node --test test/starforge.compute-economy.test.mjs
+      - name: Governed mobile feed regression
+        run: node --test test/starforge.governance-http.test.mjs
