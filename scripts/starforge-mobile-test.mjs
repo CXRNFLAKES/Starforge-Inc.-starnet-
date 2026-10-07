@@ -170,7 +170,7 @@ server.listen(PORT, HOST, async () => {
 
   // GitHub Actions cannot keep a long-lived preview server open: CI must
   // exercise the same mobile contract and then terminate cleanly.
-  if (process.env.CI === "true" || process.env.STARFORGE_MOBILE_CI === "1") {
+  if (process.env.STARFORGE_MOBILE_CI === "1") {
     try {
       const response = await fetch(`http://127.0.0.1:${PORT}/api/test`);
       if (!response.ok) throw new Error(`Mobile test endpoint returned HTTP ${response.status}`);
