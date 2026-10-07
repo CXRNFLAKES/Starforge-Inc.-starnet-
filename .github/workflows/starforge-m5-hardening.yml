@@ -149,7 +149,7 @@ jobs:
             Write-Host "=== Listening socket ==="
             netstat -ano | findstr ":8087"
             Write-Host "=== CDP browser proof ==="
-            node scripts/qa/input-isolation-smoke.mjs --url http://127.0.0.1:8087/?smoke --monitor-ms 5000 --cdp-port 9229
+            node scripts/qa/input-isolation-smoke.mjs --url http://127.0.0.1:8087/?smoke --monitor-ms 5000 --cdp-port 0
           } finally {
             if ($p -and -not $p.HasExited) { Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue }
             Get-Content $log -ErrorAction SilentlyContinue
