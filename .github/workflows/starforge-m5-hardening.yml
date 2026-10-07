@@ -87,16 +87,13 @@ jobs:
               Get-Content $err -ErrorAction SilentlyContinue
               throw "StarNet UI did not become ready"
             }
-            # Current Edge builds can be policy-gated from exposing the DevTools Protocol.
-            # This runner is disposable CI, so explicitly allow remote debugging for the isolated
-            # test browser. The browser still uses its own temporary --user-data-dir and loopback only.
             $edgePolicy = "HKCU:\\Software\\Policies\\Microsoft\\Edge"
             New-Item -Path $edgePolicy -Force | Out-Null
             New-ItemProperty -Path $edgePolicy -Name "RemoteDebuggingAllowed" -PropertyType DWord -Value 1 -Force | Out-Null
             Write-Host "RemoteDebuggingAllowed=$(Get-ItemPropertyValue -Path $edgePolicy -Name RemoteDebuggingAllowed)"
             $candidates = @(
-              "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
-              "C:\Program Files\Microsoft\Edge\Application\msedge.exe"
+              "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
+              "C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe"
             )
             $browser = $candidates | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
             if (-not $browser) { throw "No CI Chromium runtime found (Edge)" }
@@ -205,10 +202,14 @@ jobs:
         run: npm run starforge:test
       - name: RC HQ reality
         run: npm run test:starforge:integration
-      - name: RC mobile shell and HQ contract
-        run: |
-          npm run test:starforge:android9:shell
-          npm run starforge:mobile-test
+      - name: RC Android 9 shell compatibility
+        timeout-minutes: 5
+        run: npm run test:starforge:android9:shell
+      - name: RC Mobile HQ contract
+        timeout-minutes: 10
+        env:
+          STARFORGE_MOBILE_CI: "1"
+        run: npm run starforge:mobile-test
       - name: RC Compute Economy
         run: npm run test:starforge:compute-economy
       - name: RC governed delegation
