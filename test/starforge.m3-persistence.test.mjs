@@ -23,7 +23,7 @@ function liveStarNetRoster() {
 
 function makeLiveStarNet() {
   return makeStarNetAdapter({
-    roster: async () => liveStarNetRoster(),
+    roster: () => liveStarNetRoster(),
     dispatch: async () => ({ content: "completed", usage: { prompt_tokens: 1, completion_tokens: 1 } }),
   });
 }
