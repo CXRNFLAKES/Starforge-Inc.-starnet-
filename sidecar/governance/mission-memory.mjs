@@ -1,3 +1,6 @@
+import fs from "node:fs";
+import path from "node:path";
+
 function clone(value) {
   return value == null ? value : structuredClone(value);
 }
@@ -15,9 +18,38 @@ function capabilitiesOf(worker) {
     .map(key).filter(Boolean);
 }
 
-export function makeMissionMemory({ maxEntries = 100 } = {}) {
-  const entries = [];
+function readPersisted(storagePath, limit) {
+  if (!storagePath || !fs.existsSync(storagePath)) return [];
+  let parsed;
+  try {
+    parsed = JSON.parse(fs.readFileSync(storagePath, "utf8"));
+  } catch (error) {
+    throw new Error(`Mission memory persistence could not be read: ${error.message}`);
+  }
+  const records = Array.isArray(parsed) ? parsed : parsed?.version === 1 && Array.isArray(parsed.entries) ? parsed.entries : null;
+  if (!records) throw new Error("Mission memory persistence is invalid");
+  return records.filter((entry) => entry && typeof entry === "object" && text(entry.id)).slice(0, limit).map(clone);
+}
+
+function persist(storagePath, entries) {
+  if (!storagePath) return;
+  const directory = path.dirname(storagePath);
+  fs.mkdirSync(directory, { recursive: true });
+  const temporaryPath = `${storagePath}.${process.pid}.tmp`;
+  const payload = JSON.stringify({ version: 1, entries }, null, 2) + "\n";
+  try {
+    fs.writeFileSync(temporaryPath, payload, "utf8");
+    fs.renameSync(temporaryPath, storagePath);
+  } catch (error) {
+    try { if (fs.existsSync(temporaryPath)) fs.unlinkSync(temporaryPath); } catch {}
+    throw new Error(`Mission memory persistence could not be saved: ${error.message}`);
+  }
+}
+
+export function makeMissionMemory({ maxEntries = 100, storagePath = null } = {}) {
   const limit = Math.max(1, Math.min(1000, Number(maxEntries) || 100));
+  const persistentPath = storagePath ? path.resolve(String(storagePath)) : null;
+  const entries = readPersisted(persistentPath, limit);
 
   function record({
     mission,
@@ -53,6 +85,7 @@ export function makeMissionMemory({ maxEntries = 100 } = {}) {
     if (existing >= 0) entries.splice(existing, 1);
     entries.unshift(entry);
     entries.splice(limit);
+    persist(persistentPath, entries);
     return clone(entry);
   }
 
@@ -87,5 +120,13 @@ export function makeMissionMemory({ maxEntries = 100 } = {}) {
     return clone(entries);
   }
 
-  return Object.freeze({ record, recall, stats, snapshot });
+  function persistence() {
+    return clone({
+      enabled: Boolean(persistentPath),
+      path: persistentPath,
+      entries: entries.length,
+    });
+  }
+
+  return Object.freeze({ record, recall, stats, snapshot, persistence });
 }
