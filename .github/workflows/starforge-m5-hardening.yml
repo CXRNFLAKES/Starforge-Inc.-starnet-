@@ -102,6 +102,13 @@ jobs:
           NO_PROXY: "localhost,127.0.0.1"
         run: |
           Write-Host "Running local input-isolation proof with all environment proxies disabled."
+          Write-Host "=== Direct HTTP loopback diagnostics ==="
+          curl.exe --noproxy "*" -sS -D - http://127.0.0.1:8087/ -o "$env:RUNNER_TEMP\starnet-ui-body.html"
+          if ($LASTEXITCODE -ne 0) { throw "curl.exe could not reach the IPv4 loopback UI server" }
+          if (-not (Test-Path -LiteralPath "$env:RUNNER_TEMP\starnet-ui-body.html")) { throw "loopback response body was not captured" }
+          Write-Host "=== Listening socket ==="
+          netstat -ano | findstr ":8087"
+          Write-Host "=== CDP browser proof ==="
           node scripts/qa/input-isolation-smoke.mjs --url http://127.0.0.1:8087/?smoke --monitor-ms 5000
       - name: Stop StarNet UI
         if: always()
