@@ -143,9 +143,9 @@ test("M3 runtime restart restores company, mission, memory, compute, and StarNet
   assert.equal(payload.workforce.count, 1);
   assert.equal(payload.workforce.workers[0].id, "worker-m3");
   assert.equal(payload.workforce.workers[0].status, "idle");
-  // StarNet remains the owner of its live task runtime; this isolated adapter exposes
-  // only the live roster. Restored governed task/project state is verified through gameplay.
-  assert.equal(payload.execution.completed, 0);
+  // The live StarNet adapter owns the worker runtime; restored governed company state owns
+  // the persisted task ledger exposed by the HQ feed.
+  assert.equal(payload.execution.completed, 1);
   assert.equal(payload.gameplay.projects[0].outcome, "completed");
   assert.equal(payload.gameplay.activity[0].taskId, "m3-task");
 
