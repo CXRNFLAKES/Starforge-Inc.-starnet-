@@ -43,10 +43,14 @@
           const levelProgress=Math.max(0,Math.min(100,Number(performance.xpProgressPercent)||0));
           const successRate=Number.isFinite(Number(performance.successRate))?Number(performance.successRate):null;
           const recovery=performance.recovery===true;
+          const taskQueue=Array.isArray(performance.tasks)?performance.tasks:[];
+          const queueLabel=taskQueue.length
+            ? taskQueue.slice(0,3).map(task=>String(task.title||task.name||task.status||'GOVERNED TASK')).join(' · ')
+            : 'NO GOVERNED TASK QUEUE';
           const portrait = (typeof AgentPortraits !== 'undefined' && typeof AgentPortraits.thumbHTML === 'function')
             ? AgentPortraits.thumbHTML(w, 42, 50, 'sf-room-portrait')
             : '<span class="sf-room-avatar">◆</span>';
-          card.innerHTML='<div class="sf-room-avatar-wrap">'+portrait+'</div><div class="sf-room-main"><b>'+esc(w.name||w.id||'Unnamed worker')+'</b><span>'+esc(station)+' · '+esc(w.role||'StarNet agent')+' · '+esc(w.model||'model unavailable')+'</span><small>'+esc(activity)+'</small><small>'+esc(runId?'RUN '+runId:'NO ACTIVE RUN')+(startedAt?' · STARTED '+startedAt:'')+'</small><small>'+esc(capabilities.length?capabilities.slice(0,4).join(' · '):'CAPABILITIES NOT REPORTED')+'</small><small>LVL '+level+' · XP '+xp+' · '+(successRate===null?'NO HISTORY':successRate+'% SUCCESS')+'</small><small>✓ '+completed+' · ✕ '+failed+' · ▣ '+blocked+(recovery?' · RECOVERY':'')+'</small><div class="sf-xp-track"><i style="width:'+levelProgress+'%"></i></div></div><span class="sf-room-status '+(w.status==='working'?'working':'idle')+'">'+esc(String(w.status||'unknown').toUpperCase())+'</span><span class="sf-open">OPEN ›</span>';
+          card.innerHTML='<div class="sf-room-avatar-wrap">'+portrait+'</div><div class="sf-room-main"><b>'+esc(w.name||w.id||'Unnamed worker')+'</b><span>'+esc(station)+' · '+esc(w.role||'StarNet agent')+' · '+esc(w.model||'model unavailable')+'</span><small>'+esc(activity)+'</small><small>'+esc(runId?'RUN '+runId:'NO ACTIVE RUN')+(startedAt?' · STARTED '+startedAt:'')+'</small><small>'+esc(capabilities.length?capabilities.slice(0,4).join(' · '):'CAPABILITIES NOT REPORTED')+'</small><small>LVL '+level+' · XP '+xp+' · '+(successRate===null?'NO HISTORY':successRate+'% SUCCESS')+'</small><small>✓ '+completed+' · ✕ '+failed+' · ▣ '+blocked+(recovery?' · RECOVERY':'')+'</small><div class="sf-worker-queue"><span>QUEUE</span><b>'+esc(queueLabel)+'</b></div><div class="sf-xp-track"><i style="width:'+levelProgress+'%"></i></div></div><span class="sf-room-status '+(w.status==='working'?'working':'idle')+'">'+esc(String(w.status||'unknown').toUpperCase())+'</span><span class="sf-open">OPEN ›</span>';
           card.addEventListener('click',()=>{showDetail(w,recentTasks);const agents=Array.isArray(StationUI.present)?StationUI.present:[];const i=agents.findIndex(a=>String(a.id||a.agentId)===String(w.id));if(i>=0&&typeof StationUI.openAgent==='function')StationUI.openAgent(i);});
           grid.appendChild(card);
         }
