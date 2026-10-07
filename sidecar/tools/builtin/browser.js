@@ -20,6 +20,30 @@
   const CP = require('../../child-env.js').guardChildProcess(require('node:child_process'));   // Chrome never inherits station secrets
   const NET = require('node:net');
   const { fetch: undiciFetch, WebSocket: UndiciWebSocket } = require('undici');
+  const HTTP = require('node:http');
+
+  // CDP discovery is strictly loopback HTTP. Use Node's core http client for
+  // the production probe so CI proxy/dispatcher configuration cannot interfere
+  // with 127.0.0.1, while preserving the injectable fetchImpl seam used by tests.
+  function loopbackFetch(url) {
+    return new Promise((resolve, reject) => {
+      const request = HTTP.get(url, { host: '127.0.0.1', agent: false }, response => {
+        const chunks = [];
+        response.on('data', chunk => chunks.push(chunk));
+        response.on('end', () => {
+          const body = Buffer.concat(chunks).toString('utf8');
+          resolve({
+            ok: response.statusCode >= 200 && response.statusCode < 300,
+            status: response.statusCode || 0,
+            statusText: response.statusMessage || '',
+            async json() { return JSON.parse(body); },
+            async text() { return body; }
+          });
+        });
+      });
+      request.on('error', reject);
+    });
+  }
   const { swallow } = require('../../failopen.js');
   const Challenge = require('./browserchallenge.js');
   const { deriveReadClient } = require('./browser-workflow.js');
@@ -661,7 +685,7 @@
   function makeCdpDriver(deps) {
     deps = deps || {};
     // CDP discovery is loopback-only. Prefer the module-local Undici client over Node's global fetch so CI proxy settings cannot intercept /json/version or /json/list. Injected test drivers may still supply fetchImpl.
-    const fetchImpl = deps.fetchImpl || undiciFetch;
+    const fetchImpl = deps.fetchImpl || loopbackFetch;
     const WebSocketImpl = deps.WebSocketImpl || (typeof WebSocket !== 'undefined' ? WebSocket : UndiciWebSocket);
     const spawn = deps.spawn || CP.spawn;
     const startPinnedProxy = require('./browser-proxy.js').startPinnedProxy;
