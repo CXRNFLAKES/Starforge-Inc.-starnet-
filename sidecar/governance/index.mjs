@@ -5,13 +5,12 @@ export * from "./board.mjs";
 export * from "./risk-engine.mjs";
 export * from "./fact-checker.mjs";
 export * from "./decision-packet.mjs";
-
 export * from "./operations.mjs";
-
 export * from "./compute-economy.mjs";
 export * from "./mission-planner.mjs";
 export * from "./mission-memory.mjs";
 export * from "./outcome-intelligence.mjs";
+export * from "./outcome-evaluator.mjs";
 export * from "./workforce-allocator.mjs";
 export * from "./mission-executor.mjs";
 export * from "./starnet-adapter.mjs";
