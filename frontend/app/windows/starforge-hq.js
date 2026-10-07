@@ -95,7 +95,13 @@
         const active=!!(s&&StationUI.isAgentRunning&&StationUI.isAgentRunning(String(w.id)));
         const status=active||w.status==='working'?'working':'idle';
         const card=document.createElement('button'); card.type='button'; card.className='sf-room-worker';
-        card.innerHTML='<div class="sf-room-avatar">◆</div><div class="sf-room-main"><b>'+esc(w.name||w.id||'Unnamed worker')+'</b><span>'+esc(w.role||'StarNet agent')+' · '+esc(w.model||'MODEL UNAVAILABLE')+(w.provider?' · '+esc(w.provider):'')+'</span><small>'+esc(String(w.status||status).toUpperCase())+' · '+(w.activeRun?'ACTIVE RUN':'NO ACTIVE RUN')+'</small></div><span class="sf-status '+status+'">'+status.toUpperCase()+'</span>';
+        const run=w.activeRun||null;
+        const performance=w.performance||{};
+        const assignment=run?.title||run?.task||run?.label||'NO ACTIVE ASSIGNMENT';
+        const reliability=Number.isFinite(Number(performance.reliabilityPercent))?String(performance.reliabilityPercent)+'% RELIABILITY':'NO RELIABILITY DATA';
+        const completed=Number(performance.completed??0);
+        const failed=Number(performance.failed??0);
+        card.innerHTML='<div class="sf-room-avatar">◆</div><div class="sf-room-main"><b>'+esc(w.name||w.id||'Unnamed worker')+'</b><span>'+esc(w.role||'StarNet agent')+' · '+esc(w.model||'MODEL UNAVAILABLE')+(w.provider?' · '+esc(w.provider):'')+'</span><small>'+esc(String(status).toUpperCase())+' · '+esc(assignment)+'</small><small class="sf-room-performance">'+esc(String(completed))+' DONE · '+esc(String(failed))+' FAILED · '+esc(reliability)+'</small></div><span class="sf-status '+status+'">'+status.toUpperCase()+'</span>';
         card.addEventListener('click',()=>{if(!s)return;const agents=Array.isArray(StationUI.present)?StationUI.present:[];const i=agents.findIndex(a=>String(a.id||a.agentId)===String(w.id));if(i>=0&&typeof StationUI.openAgent==='function')StationUI.openAgent(i);});
         grid.appendChild(card);
       });
