@@ -59,20 +59,24 @@ export function makeWorkforceAllocator({ starnet, protectedWorkerIds = [], prote
     const missingCapabilities = required.filter((capability) => !covered.has(capability));
     const created = [];
     if (missingCapabilities.length && createMissing) {
-      if (typeof starnet.createWorker !== "function") {
-        return clone({ status: "blocked", selected, created, missingCapabilities, protectedWorkers: workers.filter(isProtected), objective: String(objective), reason: "StarNet worker creation adapter is unavailable; fail closed" });
+      const summon = typeof starnet.summonWorker === "function" ? starnet.summonWorker : null;
+      const create = typeof starnet.createWorker === "function" ? starnet.createWorker : null;
+      if (!summon && !create) {
+        return clone({ status: "blocked", selected, created, missingCapabilities, protectedWorkers: workers.filter(isProtected), objective: String(objective), reason: "StarNet worker lifecycle adapter is unavailable; fail closed" });
       }
       for (const capability of missingCapabilities) {
         if (selected.length + created.length >= Math.max(1, Number(maxWorkers) || 1)) break;
-        const result = await starnet.createWorker({
+        const request = {
           id: randomUUID(),
           name: "StarForge " + capability + " worker",
           capabilities: [capability],
+          purpose: String(objective),
           objective: String(objective),
           source: "starforge-dynamic-allocation",
-        });
+        };
+        const result = await (summon || create)(request);
         if (!result || typeof result !== "object" || !String(result.id ?? result.agentId ?? "").trim()) {
-          throw new Error("StarNet worker creation returned an invalid worker");
+          throw new Error("StarNet worker lifecycle returned an invalid worker");
         }
         created.push(result);
         covered.add(capability);
