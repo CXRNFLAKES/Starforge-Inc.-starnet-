@@ -1841,7 +1841,20 @@
           const r=el&&el.getBoundingClientRect();
           element={exists:!!el,tag:el&&el.tagName||null,text:el&&String(el.innerText||el.textContent||'').trim().slice(0,4000),value:el&&'value'in el?String(el.value).slice(0,1000):null,visible:!!(r&&r.width>0&&r.height>0),className:el&&String(el.className||'').slice(0,1000)};
         }
-        return {url:location.href,title:document.title,syntheticReady:!!(s&&s.ready),popupBlocked:!!(s&&s.popupBlocked),pointerLockTag:document.pointerLockElement&&document.pointerLockElement.tagName||null,element};
+        const isolation = (() => {
+          if (!s) return { syntheticReady: false, tamperResistant: false, fullscreenResistant: false, wakeNeutralized: false };
+          const rd = Object.getOwnPropertyDescriptor(Element.prototype, 'requestPointerLock');
+          const fd = Object.getOwnPropertyDescriptor(Element.prototype, 'requestFullscreen');
+          const fe = Object.getOwnPropertyDescriptor(Document.prototype, 'exitFullscreen');
+          const wake = navigator.wakeLock;
+          return {
+            syntheticReady: s.ready === true,
+            tamperResistant: s.ready === true && !!rd && rd.value === s.requestPointerLock && rd.writable === false && rd.configurable === false,
+            fullscreenResistant: s.ready === true && !!fd && !!fe && fd.value === s.requestFullscreen && fe.value === s.exitFullscreen && fd.writable === false && fe.writable === false && fd.configurable === false && fe.configurable === false,
+            wakeNeutralized: !wake || wake.request === s.wakeRequest
+          };
+        })();
+        return {url:location.href,title:document.title,syntheticReady:isolation.syntheticReady,popupBlocked:!!(s&&s.popupBlocked),pointerLockTag:document.pointerLockElement&&document.pointerLockElement.tagName||null,isolation,element};
       })()`);
     }
     // Scrolling is what triggers lazy-load / infinite-scroll, so it settles too — otherwise the very
