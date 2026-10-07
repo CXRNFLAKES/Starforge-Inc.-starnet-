@@ -1,0 +1,41 @@
+name: StarForge M4 Operational Reality Test
+
+on:
+  push:
+    branches: ["starforge/governance-kernel"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: starforge-m4-operational-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  m4-operational-reality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - name: Install dependencies
+        run: npm ci
+      - name: StarForge preflight
+        run: npm run starforge:preflight
+      - name: Full StarForge regression
+        run: npm run starforge:test
+      - name: StarForge integration gate
+        run: npm run starforge:integration-test
+      - name: Mobile HQ contract
+        run: npm run starforge:mobile-test
+      - name: Runtime bridge regression
+        run: npm run test:starforge:runtime
+      - name: Mission loop regression
+        run: node --test test/starforge.mission-loop.test.mjs
+      - name: M4 operational gate
+        run: |
+          echo "M4 OPERATIONAL REALITY GATE"
+          echo "Preflight, full regression, integration, mobile HQ, runtime bridge, and mission loop all passed."
+          echo "SAFE TO PROCEED WITH M4."
