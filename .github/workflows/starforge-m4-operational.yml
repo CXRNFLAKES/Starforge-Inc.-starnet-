@@ -15,6 +15,7 @@ concurrency:
 jobs:
   m4-operational-reality:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -29,6 +30,8 @@ jobs:
       - name: StarForge integration gate
         run: npm run starforge:integration-test
       - name: Mobile HQ contract
+        env:
+          STARFORGE_MOBILE_CI: "1"
         run: npm run starforge:mobile-test
       - name: Runtime bridge regression
         run: npm run test:starforge:runtime
