@@ -12,8 +12,8 @@ function workersFromExecution(execution) {
 }
 function lessonFromDecision(decision, status, recovery = null) {
   if (recovery?.type) return `Failure ${recovery.type}: ${recovery.recovery?.action ?? "recovery"}.`;
-  if (decision?.reason) return decision.reason;
   if (status === "completed") return "Verified completion recorded for future mission planning.";
+  if (decision?.reason) return decision.reason;
   if (status === "blocked") return "Mission was blocked; review the recorded evidence before retrying.";
   return "Autonomous replanning was exhausted without verified completion.";
 }
