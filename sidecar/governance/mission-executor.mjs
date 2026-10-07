@@ -57,14 +57,16 @@ export function makeMissionExecutor({ planner, allocator, starnet } = {}) {
     maxWorkers = 20,
     createMissing = true,
     projectId = null,
+    mission = null,
+    plan = null,
   } = {}) {
-    const mission = planner.intake({ objective, constraints, budget, deadline, actor });
-    const plan = planner.plan(mission, { availableWorkers, maxWorkers });
+    const activeMission = mission ?? planner.intake({ objective, constraints, budget, deadline, actor });
+    const activePlan = plan ?? planner.plan(activeMission, { availableWorkers, maxWorkers });
 
     const allocation = await allocator.allocate({
-      requiredCapabilities: mission.requiredCapabilities,
+      requiredCapabilities: activeMission.requiredCapabilities,
       maxWorkers,
-      objective: mission.objective,
+      objective: activeMission.objective,
       createMissing,
     });
 
@@ -76,13 +78,13 @@ export function makeMissionExecutor({ planner, allocator, starnet } = {}) {
     const used = new Set();
     const tasks = [];
 
-    for (const phase of plan.phases || []) {
+    for (const phase of activePlan.phases || []) {
       const worker = chooseWorker(workers, phase, used) || workers[0] || null;
       if (!worker) {
         return clone({
           status: "blocked",
-          mission,
-          plan,
+          mission: activeMission,
+          plan: activePlan,
           allocation,
           tasks,
           reason: "StarNet returned no worker for an executable mission phase",
@@ -93,19 +95,19 @@ export function makeMissionExecutor({ planner, allocator, starnet } = {}) {
       used.add(assigneeId);
       const task = {
         id: randomUUID(),
-        projectId: projectId ?? mission.id,
-        missionId: mission.id,
+        projectId: projectId ?? activeMission.id,
+        missionId: activeMission.id,
         assigneeId,
         title: String(phase.title ?? phase.name ?? "Mission phase"),
         prompt: [
-          `Mission objective: ${mission.objective}`,
+          `Mission objective: ${activeMission.objective}`,
           phase.title ? `Phase: ${phase.title}` : "",
-          mission.constraints.length ? `Constraints: ${mission.constraints.join("; ")}` : "",
-          mission.deadline ? `Deadline: ${mission.deadline}` : "",
+          activeMission.constraints.length ? `Constraints: ${activeMission.constraints.join("; ")}` : "",
+          activeMission.deadline ? `Deadline: ${activeMission.deadline}` : "",
           "Report concrete findings, actions taken, blockers, and next recommendation.",
         ].filter(Boolean).join("\n\n"),
         successCriteria: "Return a concrete result that advances the governed mission.",
-        context: JSON.stringify({ missionId: mission.id, risk: mission.risk, complexity: mission.complexity }),
+        context: JSON.stringify({ missionId: activeMission.id, risk: activeMission.risk, complexity: activeMission.complexity }),
       };
 
       const delegated = await starnet.delegateTask(actor, task);
@@ -120,13 +122,13 @@ export function makeMissionExecutor({ planner, allocator, starnet } = {}) {
 
     return clone({
       status: "executed",
-      mission,
-      plan,
+      mission: activeMission,
+      plan: activePlan,
       allocation,
       tasks,
       outcome: {
         completedPhases: tasks.length,
-        phaseCount: (plan.phases || []).length,
+        phaseCount: (activePlan.phases || []).length,
         nextStep: "verify-and-replan",
       },
     });
