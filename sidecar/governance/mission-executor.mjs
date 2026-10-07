@@ -139,17 +139,18 @@ export function makeMissionExecutor({ planner, allocator, starnet } = {}) {
     });
   }
 
-  async function verifyAndReplan({ mission, plan, results = [], availableWorkers = [], maxWorkers = 20 } = {}) {
+  async function verifyAndReplan({ mission, plan, results = [], availableWorkers = [], maxWorkers = 20, outcomeEvidence = null } = {}) {
     if (!mission?.id || !mission.objective) throw new Error("Valid mission is required for replanning");
     const completed = Array.isArray(results) ? results : [];
     const unresolved = completed.filter((result) => !result?.success && !result?.verified);
-    const nextPlan = planner.plan(mission, { availableWorkers, maxWorkers });
+    const nextPlan = planner.plan(mission, { availableWorkers, maxWorkers, outcomeEvidence });
     return clone({
       mission,
       previousPlan: plan ?? null,
       resultCount: completed.length,
       unresolvedCount: unresolved.length,
       status: unresolved.length ? "replan-required" : "verification-ready",
+      outcomeEvidence: clone(outcomeEvidence),
       nextPlan,
     });
   }
