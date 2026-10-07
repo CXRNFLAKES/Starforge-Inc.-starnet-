@@ -928,7 +928,7 @@
         for (const origin of allowedLocalOrigins) networkProxy.allowLocal(origin);
       }
       const args = ['--disable-blink-features=AutomationControlled', '--no-first-run', '--no-default-browser-check',
-        '--remote-debugging-port=' + launchPort, '--remote-debugging-address=127.0.0.1', '--disable-gpu',
+        '--remote-debugging-port=' + launchPort, '--remote-debugging-address=127.0.0.1', '--remote-allow-origins=*', '--disable-gpu',
         '--window-size=1440,900', '--user-data-dir=' + profileDir];
       if (networkProxy) args.push('--proxy-server=http://127.0.0.1:' + networkProxy.port,
         '--proxy-bypass-list=<-loopback>');
