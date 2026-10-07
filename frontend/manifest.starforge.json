@@ -1,0 +1,14 @@
+{
+  "name":"StarNet · StarForge HQ",
+  "short_name":"StarForge HQ",
+  "start_url":"./?starforge=hq",
+  "display":"standalone",
+  "orientation":"portrait-primary",
+  "background_color":"#050505",
+  "theme_color":"#050505",
+  "description":"Mobile command surface for StarNet with the governed StarForge HQ.",
+  "icons":[
+    {"src":"assets/brand/starnet-logo.png","sizes":"192x192","type":"image/png","purpose":"any maskable"},
+    {"src":"assets/brand/starnet-logo.png","sizes":"512x512","type":"image/png","purpose":"any maskable"}
+  ]
+}
