@@ -38,8 +38,6 @@ jobs:
         run: npm run test:starforge:governed-model-delegation
       - name: Compute Economy integrity
         run: npm run test:starforge:compute-economy
-      - name: Input isolation security smoke
-        run: npm run qa:input-isolation
       - name: Secret exposure scan
         run: npm run security:secrets
       - name: StarForge integration gate
@@ -52,5 +50,45 @@ jobs:
         run: |
           echo "M5 PRODUCTION HARDENING GATE"
           echo "Core regression, Android 9 compatibility, runtime connection, governed delegation,"
-          echo "Compute Economy, input isolation, secret scanning, integration, and mobile HQ all passed."
+          echo "Compute Economy, secret scanning, integration, and mobile HQ all passed."
           echo "SAFE TO PROCEED WITH FINAL RELEASE-CANDIDATE VALIDATION."
+
+  m5-input-isolation:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Start StarNet UI for input-isolation proof
+        shell: pwsh
+        run: |
+          $log = "$env:RUNNER_TEMPstarnet-ui.log"
+          $err = "$env:RUNNER_TEMPstarnet-ui.err"
+          $p = Start-Process -FilePath "node" -ArgumentList "scripts/serve-ui-only.js" -WorkingDirectory "$env:GITHUB_WORKSPACE" -RedirectStandardOutput $log -RedirectStandardError $err -PassThru
+          "STARFORGE_UI_PID=$($p.Id)" | Out-File -FilePath $env:GITHUB_ENV -Append
+          for ($i=0; $i -lt 100; $i++) {
+            try {
+              $r = Invoke-WebRequest -UseBasicParsing "http://127.0.0.1:8787/" -TimeoutSec 1
+              if ($r.StatusCode -eq 200) { break }
+            } catch {}
+            Start-Sleep -Milliseconds 200
+          }
+          if ($i -ge 100) {
+            Get-Content $log -ErrorAction SilentlyContinue
+            Get-Content $err -ErrorAction SilentlyContinue
+            throw "StarNet UI did not become ready"
+          }
+      - name: Input isolation security proof
+        run: node scripts/qa/input-isolation-smoke.mjs --url http://127.0.0.1:8787/?smoke --monitor-ms 5000
+      - name: Stop StarNet UI
+        if: always()
+        shell: pwsh
+        run: |
+          if ($env:STARFORGE_UI_PID) {
+            Stop-Process -Id ([int]$env:STARFORGE_UI_PID) -Force -ErrorAction SilentlyContinue
+          }
