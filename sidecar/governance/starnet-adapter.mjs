@@ -24,7 +24,7 @@ function normalizeRoster(source) {
     .map(clone);
 }
 
-export function makeStarNetAdapter({ roster, dispatch } = {}) {
+export function makeStarNetAdapter({ roster, dispatch, summonWorker, removeWorker } = {}) {
   if (typeof roster !== "function") throw new TypeError("StarNet roster function is required");
   if (typeof dispatch !== "function") throw new TypeError("StarNet dispatch function is required");
 
@@ -111,5 +111,23 @@ export function makeStarNetAdapter({ roster, dispatch } = {}) {
     });
   }
 
-  return Object.freeze({ listWorkers, listWorkersAsync, inspectWorkforce, delegateTask });
+  async function summonWorkerViaLifecycle(request = {}) {
+    if (typeof summonWorker !== "function") throw new Error("StarNet worker summon lifecycle is not configured");
+    const result = await summonWorker(clone(request));
+    if (!result || typeof result !== "object") throw new Error("StarNet worker summon returned an invalid result");
+    return clone(result);
+  }
+
+  async function removeWorkerViaLifecycle(agentId) {
+    const id = String(agentId ?? "").trim();
+    if (!ID_RE.test(id)) throw new Error("StarNet worker removal requires a valid agentId");
+    if (typeof removeWorker !== "function") throw new Error("StarNet worker removal lifecycle is not configured");
+    return clone(await removeWorker(id));
+  }
+
+  return Object.freeze({
+    listWorkers, listWorkersAsync, inspectWorkforce, delegateTask,
+    summonWorker: summonWorkerViaLifecycle,
+    removeWorker: removeWorkerViaLifecycle,
+  });
 }
