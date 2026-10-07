@@ -132,7 +132,7 @@ if (baseline && baseline.confined) {
   throw new Error('refusing to start input-isolation proof: cursor was already confined by another foreground app: ' + JSON.stringify(baseline));
 }
 const browser = makeBrowserTools({
-  allowVisible: false, forceHeadless: true, syntheticInputOnly: true, cdpPort,
+  allowVisible: false, forceHeadless: true, syntheticInputOnly: true, networkProxy: false, cdpPort,
   profileDir: join(tmpdir(), 'starnet-input-proof-' + process.pid + '-' + Date.now()), cleanupProfile: true
 });
 const tool = name => browser.tools.find(t => t.name === name);
