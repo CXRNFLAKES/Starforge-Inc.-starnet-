@@ -144,7 +144,7 @@ const input = async action => tool('browser.test_input').run(action, {});
 let proof, ownedCdpPort = null;
 const runStarted = Date.now();
 try {
-  await tool('browser.test_navigate').run({ url }, {});
+  await tool('browser.test_navigate').run({ url, local: true }, {});
   ownedCdpPort = browser.session.attachedPort();
   // DOM content can arrive before the deferred/module game runtime has created its
   // renderer and attached the deploy handler. Wait for both instead of racing the click.
