@@ -1,0 +1,48 @@
+name: StarForge M6 Mobile Reality
+
+on:
+  push:
+    branches:
+      - starforge/governance-kernel
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  m6-mobile-reality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout validated StarForge branch
+        uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: M6 preflight
+        run: npm run starforge:preflight
+
+      - name: M6.1 governed mobile reality
+        run: npm run test:starforge:m6:reality
+
+      - name: M6 existing StarForge regression
+        run: npm run starforge:test
+
+      - name: M6 Android 9 shell
+        run: npm run test:starforge:android9:shell
+
+      - name: M6 runtime connection contract
+        run: npm run test:starforge:runtime:connection
+
+      - name: M6 governed delegation
+        run: npm run test:starforge:governed-model-delegation
+
+      - name: M6 Compute Economy
+        run: npm run test:starforge:compute-economy
