@@ -78,6 +78,9 @@ test("D1 live StarNet runtime bridge remains the governed execution boundary", a
     },
   });
 
+  const workers = await bridge.listWorkersAsync();
+  assert.equal(workers.length, 1);
+  assert.equal(workers[0].id, "production-worker");
   assert.equal(calls.some((call) => call.url.endsWith("/api/runtime/agent")), true);
 
   const route = await bridge.routeModel({
