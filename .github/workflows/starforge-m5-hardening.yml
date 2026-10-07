@@ -87,6 +87,13 @@ jobs:
               Get-Content $err -ErrorAction SilentlyContinue
               throw "StarNet UI did not become ready"
             }
+            # Current Edge builds can be policy-gated from exposing the DevTools Protocol.
+            # This runner is disposable CI, so explicitly allow remote debugging for the isolated
+            # test browser. The browser still uses its own temporary --user-data-dir and loopback only.
+            $edgePolicy = "HKCU:\\Software\\Policies\\Microsoft\\Edge"
+            New-Item -Path $edgePolicy -Force | Out-Null
+            New-ItemProperty -Path $edgePolicy -Name "RemoteDebuggingAllowed" -PropertyType DWord -Value 1 -Force | Out-Null
+            Write-Host "RemoteDebuggingAllowed=$(Get-ItemPropertyValue -Path $edgePolicy -Name RemoteDebuggingAllowed)"
             $candidates = @(
               "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
               "C:\Program Files\Microsoft\Edge\Application\msedge.exe"
