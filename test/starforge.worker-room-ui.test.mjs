@@ -9,3 +9,10 @@ test("StarForge worker room renders governed worker RPG progression",()=>{
   assert.match(hq,/performance\.xpProgressPercent/);
   assert.match(hq,/sf-worker-xp/);
 });
+
+
+test("StarForge worker room renders governed task queue telemetry",()=>{
+  assert.match(hq,/performance\.tasks/);
+  assert.match(hq,/sf-worker-queue/);
+  assert.match(hq,/NO GOVERNED TASK QUEUE/);
+});
