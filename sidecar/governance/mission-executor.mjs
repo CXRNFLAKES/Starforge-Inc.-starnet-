@@ -57,11 +57,12 @@ export function makeMissionExecutor({ planner, allocator, starnet } = {}) {
     maxWorkers = 20,
     createMissing = true,
     projectId = null,
+    outcomeEvidence = null,
     mission = null,
     plan = null,
   } = {}) {
     const activeMission = mission ?? planner.intake({ objective, constraints, budget, deadline, actor });
-    const activePlan = plan ?? planner.plan(activeMission, { availableWorkers, maxWorkers });
+    const activePlan = plan ?? planner.plan(activeMission, { availableWorkers, maxWorkers, outcomeEvidence });
 
     const allocation = await allocator.allocate({
       requiredCapabilities: activeMission.requiredCapabilities,
@@ -104,6 +105,9 @@ export function makeMissionExecutor({ planner, allocator, starnet } = {}) {
           phase.title ? `Phase: ${phase.title}` : "",
           activeMission.constraints.length ? `Constraints: ${activeMission.constraints.join("; ")}` : "",
           activeMission.deadline ? `Deadline: ${activeMission.deadline}` : "",
+          outcomeEvidence?.confidence >= 0.4 && activeMission.risk !== "high"
+            ? `Historical outcome evidence: ${JSON.stringify(outcomeEvidence.strategies?.slice(0, 3) ?? [])}`
+            : "",
           "Report concrete findings, actions taken, blockers, and next recommendation.",
         ].filter(Boolean).join("\n\n"),
         successCriteria: "Return a concrete result that advances the governed mission.",
@@ -126,6 +130,7 @@ export function makeMissionExecutor({ planner, allocator, starnet } = {}) {
       plan: activePlan,
       allocation,
       tasks,
+      outcomeEvidence: clone(outcomeEvidence),
       outcome: {
         completedPhases: tasks.length,
         phaseCount: (activePlan.phases || []).length,
