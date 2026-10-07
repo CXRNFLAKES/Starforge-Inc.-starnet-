@@ -18,6 +18,8 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -39,7 +41,10 @@ jobs:
       - name: Compute Economy integrity
         run: npm run test:starforge:compute-economy
       - name: Secret exposure scan
-        run: npm run security:secrets
+        uses: gitleaks/gitleaks-action@v3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_ENABLE_COMMENTS: "false"
       - name: StarForge integration gate
         run: npm run starforge:integration-test
       - name: Mobile HQ contract
@@ -67,8 +72,8 @@ jobs:
       - name: Start StarNet UI for input-isolation proof
         shell: pwsh
         run: |
-          $log = "$env:RUNNER_TEMPstarnet-ui.log"
-          $err = "$env:RUNNER_TEMPstarnet-ui.err"
+          $log = "${env:RUNNER_TEMP}\starnet-ui.log"
+          $err = "${env:RUNNER_TEMP}\starnet-ui.err"
           $p = Start-Process -FilePath "node" -ArgumentList "scripts/serve-ui-only.js" -WorkingDirectory "$env:GITHUB_WORKSPACE" -RedirectStandardOutput $log -RedirectStandardError $err -PassThru
           "STARFORGE_UI_PID=$($p.Id)" | Out-File -FilePath $env:GITHUB_ENV -Append
           for ($i=0; $i -lt 100; $i++) {
@@ -92,3 +97,22 @@ jobs:
           if ($env:STARFORGE_UI_PID) {
             Stop-Process -Id ([int]$env:STARFORGE_UI_PID) -Force -ErrorAction SilentlyContinue
           }
+
+  m5-final-gate:
+    needs: [m5-production-hardening, m5-input-isolation]
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: M5 production hardening gate
+        run: |
+          if [ "${{ needs.m5-production-hardening.result }}" != "success" ] || [ "${{ needs.m5-input-isolation.result }}" != "success" ]; then
+            echo "M5 PRODUCTION HARDENING GATE: FAIL"
+            echo "production=${{ needs.m5-production-hardening.result }}"
+            echo "input-isolation=${{ needs.m5-input-isolation.result }}"
+            exit 1
+          fi
+          echo "M5 PRODUCTION HARDENING GATE: PASS"
+          echo "Core regression, Android 9 compatibility, runtime connection, governed delegation,"
+          echo "Compute Economy, secret scanning, integration, mobile HQ, and input isolation all passed."
+          echo "SAFE TO PROCEED WITH FINAL RELEASE-CANDIDATE VALIDATION."
