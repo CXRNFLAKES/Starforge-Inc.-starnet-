@@ -63,37 +63,7 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci
-      - name: Start StarNet UI for input-isolation proof
-        shell: pwsh
-        run: |
-          $log = "${env:RUNNER_TEMP}\starnet-ui.log"
-          $err = "${env:RUNNER_TEMP}\starnet-ui.err"
-          $p = Start-Process -FilePath "node" -ArgumentList "scripts/serve-ui-only.js" -WorkingDirectory "$env:GITHUB_WORKSPACE" -RedirectStandardOutput $log -RedirectStandardError $err -PassThru
-          "STARFORGE_UI_PID=$($p.Id)" | Out-File -FilePath $env:GITHUB_ENV -Append
-          for ($i=0; $i -lt 100; $i++) {
-            try {
-              $r = Invoke-WebRequest -UseBasicParsing "http://127.0.0.1:8087/" -TimeoutSec 1
-              if ($r.StatusCode -eq 200) { break }
-            } catch {}
-            Start-Sleep -Milliseconds 200
-          }
-          if ($i -ge 100) {
-            Get-Content $log -ErrorAction SilentlyContinue
-            Get-Content $err -ErrorAction SilentlyContinue
-            throw "StarNet UI did not become ready"
-          }
-      - name: Select CI Chromium runtime
-        shell: pwsh
-        run: |
-          $candidates = @(
-            "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
-            "C:\Program Files\Microsoft\Edge\Application\msedge.exe"
-          )
-          $browser = $candidates | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
-          if (-not $browser) { throw "No CI Chromium runtime found (Edge)" }
-          "STARNET_CHROME=$browser" | Out-File -FilePath $env:GITHUB_ENV -Append
-          Write-Host "Using CI Chromium runtime: $browser"
-      - name: Input isolation security proof
+      - name: Run StarNet UI input-isolation proof
         shell: pwsh
         env:
           HTTP_PROXY: ""
@@ -101,15 +71,44 @@ jobs:
           ALL_PROXY: ""
           NO_PROXY: "localhost,127.0.0.1"
         run: |
-          Write-Host "Running local input-isolation proof with all environment proxies disabled."
-          Write-Host "=== Direct HTTP loopback diagnostics ==="
-          curl.exe --noproxy "*" -sS -D - http://127.0.0.1:8087/ -o "$env:RUNNER_TEMP\starnet-ui-body.html"
-          if ($LASTEXITCODE -ne 0) { throw "curl.exe could not reach the IPv4 loopback UI server" }
-          if (-not (Test-Path -LiteralPath "$env:RUNNER_TEMP\starnet-ui-body.html")) { throw "loopback response body was not captured" }
-          Write-Host "=== Listening socket ==="
-          netstat -ano | findstr ":8087"
-          Write-Host "=== CDP browser proof ==="
-          node scripts/qa/input-isolation-smoke.mjs --url http://127.0.0.1:8087/?smoke --monitor-ms 5000
+          $log = "${env:RUNNER_TEMP}\starnet-ui.log"
+          $err = "${env:RUNNER_TEMP}\starnet-ui.err"
+          $p = Start-Process -FilePath "node" -ArgumentList "scripts/serve-ui-only.js" -WorkingDirectory "${env:GITHUB_WORKSPACE}" -RedirectStandardOutput $log -RedirectStandardError $err -PassThru
+          try {
+            for ($i = 0; $i -lt 100; $i++) {
+              try {
+                $r = Invoke-WebRequest -UseBasicParsing "http://127.0.0.1:8087/" -TimeoutSec 1
+                if ($r.StatusCode -eq 200) { break }
+              } catch {}
+              Start-Sleep -Milliseconds 200
+            }
+            if ($i -ge 100) {
+              Get-Content $log -ErrorAction SilentlyContinue
+              Get-Content $err -ErrorAction SilentlyContinue
+              throw "StarNet UI did not become ready"
+            }
+            $candidates = @(
+              "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
+              "C:\Program Files\Microsoft\Edge\Application\msedge.exe"
+            )
+            $browser = $candidates | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
+            if (-not $browser) { throw "No CI Chromium runtime found (Edge)" }
+            "STARNET_CHROME=$browser" | Out-File -FilePath $env:GITHUB_ENV -Append
+            Write-Host "Using CI Chromium runtime: $browser"
+            Write-Host "Running local input-isolation proof with all environment proxies disabled."
+            Write-Host "=== Direct HTTP loopback diagnostics ==="
+            curl.exe --noproxy "*" -sS -D - http://127.0.0.1:8087/ -o "$env:RUNNER_TEMP\starnet-ui-body.html"
+            if ($LASTEXITCODE -ne 0) { throw "curl.exe could not reach the IPv4 loopback UI server" }
+            Write-Host "=== Listening socket ==="
+            netstat -ano | findstr ":8087"
+            Write-Host "=== CDP browser proof ==="
+            node scripts/qa/input-isolation-smoke.mjs --url http://127.0.0.1:8087/?smoke --monitor-ms 5000
+          } finally {
+            if ($p -and -not $p.HasExited) { Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue }
+            Get-Content $log -ErrorAction SilentlyContinue
+            Get-Content $err -ErrorAction SilentlyContinue
+          }
+
       - name: Stop StarNet UI
         if: always()
         shell: pwsh
