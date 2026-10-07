@@ -97,8 +97,9 @@ jobs:
             )
             $browser = $candidates | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
             if (-not $browser) { throw "No CI Chromium runtime found (Edge)" }
+            $env:STARNET_CHROME = $browser
             "STARNET_CHROME=$browser" | Out-File -FilePath $env:GITHUB_ENV -Append
-            Write-Host "Using CI Chromium runtime: $browser"
+            Write-Host "Using CI Chromium runtime: $env:STARNET_CHROME"
             Write-Host "=== Direct Edge CDP launch probe ==="
             $probePort = 9229
             $probeProfile = Join-Path $env:RUNNER_TEMP "starnet-edge-cdp-probe"
