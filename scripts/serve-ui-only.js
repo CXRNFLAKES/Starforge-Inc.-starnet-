@@ -22,6 +22,6 @@ console.log(bar + '\n');
 // shell:true is required so Windows can resolve npx.cmd (Node >=20 refuses to spawn .cmd directly),
 // and it keeps this cross-platform (/bin/sh -c on POSIX). Pass ONE command string (not an args array)
 // to avoid the DEP0190 warning; PORT is coerced to a bare integer above, so there's no injection surface.
-const child = spawn('npx -y http-server frontend -c-1 -p ' + PORT, { stdio: 'inherit', shell: true });
+const child = spawn('npx -y http-server frontend -c-1 -p ' + PORT + ' -a 127.0.0.1', { stdio: 'inherit', shell: true });
 child.on('exit', code => process.exit(code == null ? 0 : code));
 child.on('error', err => { console.error('failed to launch static server:', err.message); process.exit(1); });
