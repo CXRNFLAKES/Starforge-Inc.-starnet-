@@ -99,11 +99,7 @@ jobs:
           HTTP_PROXY: ""
           HTTPS_PROXY: ""
           ALL_PROXY: ""
-          http_proxy: ""
-          https_proxy: ""
-          all_proxy: ""
           NO_PROXY: "localhost,127.0.0.1"
-          no_proxy: "localhost,127.0.0.1"
         run: |
           Write-Host "Running local input-isolation proof with all environment proxies disabled."
           node scripts/qa/input-isolation-smoke.mjs --url http://127.0.0.1:8087/?smoke --monitor-ms 5000
