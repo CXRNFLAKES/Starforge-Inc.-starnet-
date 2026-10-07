@@ -19,6 +19,7 @@
   const FS = require('node:fs');
   const CP = require('../../child-env.js').guardChildProcess(require('node:child_process'));   // Chrome never inherits station secrets
   const NET = require('node:net');
+  const { fetch: undiciFetch, WebSocket: UndiciWebSocket } = require('undici');
   const { swallow } = require('../../failopen.js');
   const Challenge = require('./browserchallenge.js');
   const { deriveReadClient } = require('./browser-workflow.js');
@@ -659,8 +660,8 @@
 
   function makeCdpDriver(deps) {
     deps = deps || {};
-    const fetchImpl = deps.fetchImpl || (typeof fetch !== 'undefined' ? fetch : null);
-    const WebSocketImpl = deps.WebSocketImpl || (typeof WebSocket !== 'undefined' ? WebSocket : null);
+    const fetchImpl = deps.fetchImpl || (typeof fetch !== 'undefined' ? fetch : undiciFetch);
+    const WebSocketImpl = deps.WebSocketImpl || (typeof WebSocket !== 'undefined' ? WebSocket : UndiciWebSocket);
     const spawn = deps.spawn || CP.spawn;
     const startPinnedProxy = require('./browser-proxy.js').startPinnedProxy;
     // HEADLESS BY DEFAULT (2026-07-07 direction): research must never open a window on the user's screen.
