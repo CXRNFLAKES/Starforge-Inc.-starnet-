@@ -164,8 +164,11 @@ try {
     deploy: !!(initialElement && initialElement.exists),
     rect: initialElement && initialElement.visible ? await evaluate(`(() => { const b=document.querySelector('#deploy'); const r=b&&b.getBoundingClientRect(); return r&&{x:r.x+r.width/2,y:r.y+r.height/2}; })()`) : null
   };
-  window.__STARNET_PROOF_MOVES__=[];
-  document.addEventListener('mousemove',e=>window.__STARNET_PROOF_MOVES__.push([e.movementX,e.movementY]),{capture:true});
+  await evaluate(`(() => {
+    window.__STARNET_PROOF_MOVES__=[];
+    document.addEventListener('mousemove',e=>window.__STARNET_PROOF_MOVES__.push([e.movementX,e.movementY]),{capture:true});
+    return true;
+  })()`);
   if (!initial.synthetic || !initial.tamperResistant || !initial.fullscreenResistant || !initial.wakeNeutralized || !initial.deploy || !initial.rect) throw new Error('FPS deploy/isolation state unavailable: ' + JSON.stringify(initial));
   await evaluate(`document.documentElement.requestFullscreen()`);
   await until(() => evaluate(`document.fullscreenElement===document.documentElement`), 'logical fullscreen');
