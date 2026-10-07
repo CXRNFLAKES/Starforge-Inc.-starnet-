@@ -4,23 +4,14 @@
   "phase": "starforge-hq-governance-feed",
   "validation": {
     "status": "green",
-    "runNumber": 563,
-    "runId": 37568370363,
-    "sha": "78dc5d4c693a45a190c998bf4d5ffe50e2c8065e",
+    "runNumber": 564,
+    "runId": 37568695367,
+    "sha": "094822632f46dc27580ac3a6d57028a057a82173",
     "branch": "starforge/governance-kernel",
-    "recordedAt": "2026-10-07T03:49:58.020Z",
+    "recordedAt": "2026-10-07T03:52:38.529Z",
     "source": "github-actions"
   },
   "history": [
-    {
-      "status": "green",
-      "runNumber": 531,
-      "runId": 37562911687,
-      "sha": "263a0000ca6a533f3daae4b7748b7ee290996ce0",
-      "branch": "starforge/governance-kernel",
-      "recordedAt": "2026-10-07T02:40:07.203Z",
-      "source": "github-actions"
-    },
     {
       "status": "green",
       "runNumber": 532,
@@ -191,7 +182,16 @@
       "branch": "starforge/governance-kernel",
       "recordedAt": "2026-10-07T03:49:58.020Z",
       "source": "github-actions"
+    },
+    {
+      "status": "green",
+      "runNumber": 564,
+      "runId": 37568695367,
+      "sha": "094822632f46dc27580ac3a6d57028a057a82173",
+      "branch": "starforge/governance-kernel",
+      "recordedAt": "2026-10-07T03:52:38.529Z",
+      "source": "github-actions"
     }
   ],
-  "updatedAt": "2026-10-07T03:49:58.020Z"
+  "updatedAt": "2026-10-07T03:52:38.529Z"
 }
