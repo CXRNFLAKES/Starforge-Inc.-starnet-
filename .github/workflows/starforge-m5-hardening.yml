@@ -51,13 +51,6 @@ jobs:
         env:
           STARFORGE_MOBILE_CI: "1"
         run: npm run starforge:mobile-test
-      - name: M5 production hardening gate
-        run: |
-          echo "M5 PRODUCTION HARDENING GATE"
-          echo "Core regression, Android 9 compatibility, runtime connection, governed delegation,"
-          echo "Compute Economy, secret scanning, integration, and mobile HQ all passed."
-          echo "SAFE TO PROCEED WITH FINAL RELEASE-CANDIDATE VALIDATION."
-
   m5-input-isolation:
     runs-on: windows-latest
     timeout-minutes: 15
