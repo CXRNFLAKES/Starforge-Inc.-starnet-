@@ -1,3 +1,6 @@
+import fs from "node:fs";
+import path from "node:path";
+
 /* StarForge Compute Economy.
    Policy sits above the existing model router. It never bypasses provider limits or silently
    upgrades a task into paid compute. Legacy authorize()/recordUsage() remain compatible while
@@ -23,6 +26,7 @@ export function makeComputeEconomy({
   providerStatuses = {},
   router = null,
   costEngine = null,
+  storagePath = null,
 } = {}) {
   const limits = Object.freeze({
     missionCents: Number.isFinite(Number(budgets.missionCents)) ? Math.max(0, Math.round(Number(budgets.missionCents))) : DEFAULT_BUDGETS.missionCents,
@@ -30,8 +34,36 @@ export function makeComputeEconomy({
     taskCents: Number.isFinite(Number(budgets.taskCents)) ? Math.max(0, Math.round(Number(budgets.taskCents))) : DEFAULT_BUDGETS.taskCents,
   });
   const providers = new Map(Object.entries(providerStatuses).map(([k, v]) => [String(k).trim().toLowerCase(), v]));
-  const ledger = [];
-  const reservations = new Map();
+  const persistentPath = storagePath ? path.resolve(String(storagePath)) : null;
+  let persisted = null;
+  if (persistentPath && fs.existsSync(persistentPath)) {
+    try {
+      persisted = JSON.parse(fs.readFileSync(persistentPath, "utf8"));
+    } catch (error) {
+      throw new Error(`Compute Economy persistence could not be read: ${error.message}`);
+    }
+  }
+  const ledger = Array.isArray(persisted?.ledger) ? persisted.ledger.map((entry) => ({ ...entry })) : [];
+  const reservations = new Map(
+    Array.isArray(persisted?.reservations)
+      ? persisted.reservations.map((reservation) => [String(reservation.reservationId), { ...reservation, authorization: { ...(reservation.authorization || {}) } }])
+      : [],
+  );
+
+  function persist() {
+    if (!persistentPath) return;
+    const directory = path.dirname(persistentPath);
+    fs.mkdirSync(directory, { recursive: true });
+    const temporaryPath = `${persistentPath}.${process.pid}.tmp`;
+    const payload = JSON.stringify({ version: 1, limits: { ...limits }, reservations: [...reservations.values()], ledger: ledger.map((entry) => ({ ...entry })) }, null, 2) + "\n";
+    try {
+      fs.writeFileSync(temporaryPath, payload, "utf8");
+      fs.renameSync(temporaryPath, persistentPath);
+    } catch (error) {
+      try { if (fs.existsSync(temporaryPath)) fs.unlinkSync(temporaryPath); } catch {}
+      throw new Error(`Compute Economy persistence could not be saved: ${error.message}`);
+    }
+  }
 
   function providerStatus(provider) {
     return providers.get(id(provider, "provider").toLowerCase()) || "available";
@@ -157,6 +189,7 @@ export function makeComputeEconomy({
       throw new Error("Compute Economy usage exceeds a hard budget ceiling");
     }
     ledger.push(entry);
+    persist();
     return entry;
   }
 
@@ -183,6 +216,7 @@ export function makeComputeEconomy({
     const authorization = authorize({ missionId, workerId, taskId, provider: chosen.route.provider, model: chosen.route.model, estimatedCost: chosen.cost, complexity });
     const reservationId = "compute-" + (ledger.length + reservations.size + 1);
     reservations.set(reservationId, { reservationId, authorization, reason: String(reason), reservedCost: chosen.cost, status: "reserved", createdAt: new Date().toISOString() });
+    persist();
     return Object.freeze({ reservationId, ...authorization, route: chosen.route, reservedCost: chosen.cost, reason: String(reason) });
   }
   function settleCompute(reservationId, { actualCost = null, usage = {}, revenueUsd = 0, outcome = "" } = {}) {
@@ -204,6 +238,7 @@ export function makeComputeEconomy({
     return Object.freeze({ ...reservation });
   }
   function snapshot() { return Object.freeze({ limits: { ...limits }, reservations: [...reservations.values()].map(r => ({ ...r, authorization: { ...r.authorization } })), ledger: ledger.map(e => ({ ...e })) }); }
+  function persistence() { return Object.freeze({ enabled: Boolean(persistentPath), path: persistentPath, entries: ledger.length }); }
 
   function report({ missionId = null, workerId = null } = {}) {
     const entries = ledger.filter(e =>
@@ -220,7 +255,7 @@ export function makeComputeEconomy({
     });
   }
 
-  return Object.freeze({ limits: Object.freeze({ ...limits }), providerStatus, authorize, allocate, requestCompute, settleCompute, releaseCompute, recordUsage, remaining, report, snapshot });
+  return Object.freeze({ limits: Object.freeze({ ...limits }), providerStatus, authorize, allocate, requestCompute, settleCompute, releaseCompute, recordUsage, remaining, report, snapshot, persistence });
 }
 
 export { DEFAULT_BUDGETS, STATUS };
