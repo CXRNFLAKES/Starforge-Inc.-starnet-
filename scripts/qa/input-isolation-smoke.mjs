@@ -8,13 +8,12 @@
    browser.test_* substrate only. A separate read-only Win32 observer samples GetClipCursor,
    GetCursorPos, and GetLastInputInfo throughout. The observer never moves or releases input. */
 import { spawn } from 'node:child_process';
-import { createRequire } from 'node:module';
 import { writeFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 
-const require = createRequire(import.meta.url);
-const { makeBrowserTools } = await import('../../sidecar/tools/builtin/browser.js');
+const browserModule = await import('../../sidecar/tools/builtin/browser.js');
+const makeBrowserTools = browserModule.makeBrowserTools || (browserModule.default && browserModule.default.makeBrowserTools);
 
 const argv = process.argv.slice(2);
 const arg = (name, fallback = '') => {
