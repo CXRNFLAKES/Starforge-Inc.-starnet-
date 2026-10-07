@@ -41,7 +41,7 @@ function lessonFromDecision(decision, status) {
   return "Autonomous replanning was exhausted without verified completion.";
 }
 
-export function makeMissionLoop({ planner, executor, evaluator, memory = null, maxIterations = 3 } = {}) {
+export function makeMissionLoop({ planner, executor, evaluator, memory = null, outcomeIntelligence = null, maxIterations = 3 } = {}) {
   if (!planner || typeof planner.intake !== "function" || typeof planner.plan !== "function") {
     throw new Error("makeMissionLoop requires a mission planner");
   }
@@ -93,7 +93,15 @@ export function makeMissionLoop({ planner, executor, evaluator, memory = null, m
     const mission = planner.intake({ objective, constraints, budget, deadline, actor });
     const priorLearning = recall(mission);
     mission.memoryContext = priorLearning;
-    let plan = planner.plan(mission, { availableWorkers, maxWorkers, priorLearning });
+    const outcomeEvidence = outcomeIntelligence
+      ? clone(outcomeIntelligence.analyze({
+          objective: mission.objective,
+          requiredCapabilities: mission.requiredCapabilities,
+          candidates: availableWorkers,
+        }))
+      : null;
+    mission.outcomeIntelligence = outcomeEvidence;
+    let plan = planner.plan(mission, { availableWorkers, maxWorkers, priorLearning, outcomeEvidence });
     const history = [];
 
     const limit = Math.max(1, Math.min(10, Number(maxIterations) || 1));
@@ -107,6 +115,7 @@ export function makeMissionLoop({ planner, executor, evaluator, memory = null, m
         createMissing,
         projectId,
         priorLearning,
+        outcomeEvidence,
       });
 
       if (execution.status === "blocked") {
@@ -131,6 +140,7 @@ export function makeMissionLoop({ planner, executor, evaluator, memory = null, m
           iteration,
           history: clone(history),
           priorLearning,
+          outcomeEvidence,
         }),
       );
       history.push({ iteration, execution, decision });
@@ -175,6 +185,7 @@ export function makeMissionLoop({ planner, executor, evaluator, memory = null, m
         availableWorkers,
         maxWorkers,
         priorLearning,
+        outcomeEvidence,
       });
       plan = replanned.nextPlan;
 
