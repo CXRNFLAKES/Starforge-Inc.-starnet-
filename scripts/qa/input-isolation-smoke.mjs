@@ -180,7 +180,9 @@ try {
   await input({ action: 'mouse_move', dx: 220, dy: -35 }); await input({ action: 'mouse_down', x: 720, y: 450, button: 'right' }); await sleep(150);
   await input({ action: 'mouse_up', x: 720, y: 450, button: 'right' }); await input({ action: 'click', x: 720, y: 450, button: 'left' }); await input({ action: 'key_press', key: 'KeyR' });
   await input({ action: 'key_up', key: 'ShiftLeft' }); await input({ action: 'key_up', key: 'KeyW' });
-  const active = await evaluate(`({locked:document.pointerLockElement?.tagName==='CANVAS',synthetic:!!(await browser.session.testState(null)).syntheticReady,stance:document.querySelector('#stance')?.textContent||'',hud:!document.querySelector('#hud')?.classList.contains('hidden'),moves:window.__STARNET_PROOF_MOVES__||[]})`);
+  const activePage = await evaluate(`({locked:document.pointerLockElement?.tagName==='CANVAS',stance:document.querySelector('#stance')?.textContent||'',hud:!document.querySelector('#hud')?.classList.contains('hidden'),moves:window.__STARNET_PROOF_MOVES__||[]})`);
+  const activeState = await browser.session.testState(null);
+  const active = { ...activePage, synthetic: !!(activeState && activeState.syntheticReady) };
   if (!active.locked || !active.synthetic || !active.hud) throw new Error('FPS active state was not proven: ' + JSON.stringify(active));
   if (!active.moves.some(m => m[0] === 220 && m[1] === -35)) throw new Error('relative synthetic mouse event was not observed: ' + JSON.stringify(active.moves));
   await input({ action: 'key_press', key: 'Escape' }); await until(() => evaluate(`document.pointerLockElement === null`), 'synthetic unlock');
