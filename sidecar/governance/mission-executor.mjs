@@ -71,7 +71,7 @@ export function makeMissionExecutor({ planner, allocator, starnet } = {}) {
     });
 
     if (allocation.status === "blocked") {
-      return clone({ status: "blocked", mission, plan, allocation, tasks: [] });
+      return clone({ status: "blocked", mission: activeMission, plan: activePlan, allocation, tasks: [] });
     }
 
     const workers = [...(allocation.selected || []), ...(allocation.created || [])];
