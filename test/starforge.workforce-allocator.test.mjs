@@ -73,3 +73,22 @@ test("retirement removes non-protected workers but never Overseer", async () => 
   assert.deepEqual(removed, ["old-1", "old-2"]);
   assert.deepEqual(result.remaining.map((worker) => worker.id), ["ov"]);
 });
+
+
+test("allocator prefers the governed StarNet summon lifecycle for missing capabilities", async () => {
+  const calls = [];
+  const allocator = makeWorkforceAllocator({
+    starnet: {
+      listWorkers: async () => [{ id: "ov", name: "Overseer", capabilities: [] }],
+      summonWorker: async (request) => {
+        calls.push(request);
+        return { id: "summoned-research", name: request.name, capabilities: request.capabilities };
+      },
+    },
+  });
+  const result = await allocator.allocate({ requiredCapabilities: ["research"], objective: "find legitimate resale opportunities" });
+  assert.equal(result.status, "allocated");
+  assert.equal(result.created[0].id, "summoned-research");
+  assert.equal(calls[0].source, "starforge-dynamic-allocation");
+  assert.equal(calls[0].purpose, "find legitimate resale opportunities");
+});
