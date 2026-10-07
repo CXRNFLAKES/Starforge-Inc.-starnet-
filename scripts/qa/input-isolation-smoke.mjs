@@ -30,7 +30,7 @@ const monitorMs = Math.max(3000, Number(arg('--monitor-ms', '8000')) || 8000);
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 const PS_MONITOR = String.raw`
-$DurationMs=[int]$env:STARNET_INPUT_MONITOR_MS
+$MaxDurationMs=[int]$env:STARNET_INPUT_MAX_MS
 Add-Type @"
 using System;
 using System.Runtime.InteropServices;
@@ -59,7 +59,7 @@ $confinedRects=New-Object System.Collections.ArrayList
 $bc=$base.clip
 $baselineConfined=(($bc[0]-gt$vx)-or($bc[1]-gt$vy)-or($bc[2]-lt($vx+$vw))-or($bc[3]-lt($vy+$vh)))
 [Console]::Out.WriteLine('READY '+(@{confined=$baselineConfined;clip=$base.clip;position=@($base.x,$base.y);last=$base.last;screen=@($vx,$vy,$vw,$vh)}|ConvertTo-Json -Compress));[Console]::Out.Flush()
-while(($clock.ElapsedMilliseconds -lt $DurationMs) -and -not (Test-Path -LiteralPath $env:STARNET_INPUT_STOP_FILE)){
+while(($clock.ElapsedMilliseconds -lt $MaxDurationMs) -and -not (Test-Path -LiteralPath $env:STARNET_INPUT_STOP_FILE)){
   $s=Sample;$samples++;$c=$s.clip
   if(($c[0]-gt$vx)-or($c[1]-gt$vy)-or($c[2]-lt($vx+$vw))-or($c[3]-lt($vy+$vh))){$confined++;if($confinedRects.Count-lt 12){[void]$confinedRects.Add(@($clock.ElapsedMilliseconds,$c[0],$c[1],$c[2],$c[3]))}}
   if(($s.x-ne$base.x)-or($s.y-ne$base.y)){$moved++}
@@ -78,7 +78,7 @@ function startObserver() {
   const stopFile = join(tmpdir(), 'starnet-input-observer-stop-' + process.pid + '-' + Date.now());
   try { rmSync(stopFile, { force: true }); } catch {}
   const exe = process.env.SystemRoot ? join(process.env.SystemRoot, 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe') : 'powershell.exe';
-  const child = spawn(exe, ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command', PS_MONITOR], { windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'], env: Object.assign({}, process.env, { STARNET_INPUT_MONITOR_MS: String(monitorMs), STARNET_INPUT_STOP_FILE: stopFile }) });
+  const child = spawn(exe, ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command', PS_MONITOR], { windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'], env: Object.assign({}, process.env, { STARNET_INPUT_MAX_MS: String(Math.max(60000, monitorMs * 12)), STARNET_INPUT_STOP_FILE: stopFile }) });
   let out = '', err = '', readyResolve, readyReject, readySeen = false;
   const ready = new Promise((resolve, reject) => { readyResolve = resolve; readyReject = reject; });
   const readyTimer = setTimeout(() => readyReject(new Error('cursor observer did not become ready: ' + err.slice(-500))), 30000);
@@ -199,7 +199,7 @@ try {
 }
 const runElapsedMs = Date.now() - runStarted;
 const cursor = await observer.done;
-if (!cursor.skipped && runElapsedMs >= monitorMs) throw new Error('cursor observer did not cover the full FPS sequence: ' + JSON.stringify({ runElapsedMs, monitorMs }));
+if (!cursor.skipped && cursor.elapsedMs + 250 < runElapsedMs) throw new Error('cursor observer did not cover the full FPS sequence: ' + JSON.stringify({ runElapsedMs, observerElapsedMs: cursor.elapsedMs, monitorMs }));
 if (!cursor.skipped && cursor.confinedSamples !== 0) throw new Error('GetClipCursor changed during synthetic FPS run: ' + JSON.stringify(cursor));
 if (!cursor.skipped && JSON.stringify(cursor.finalClip) !== JSON.stringify([cursor.screen[0], cursor.screen[1], cursor.screen[0] + cursor.screen[2], cursor.screen[1] + cursor.screen[3]])) throw new Error('GetClipCursor was not fully released after browser exit: ' + JSON.stringify(cursor));
 if (!cursor.skipped && cursor.lastInputChanged) throw new Error('hands-off cursor proof is inconclusive because Windows reported real input during the run: ' + JSON.stringify(cursor));
