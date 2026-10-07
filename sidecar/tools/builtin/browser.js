@@ -700,10 +700,9 @@
       const r = resolveChrome(wantHeaded, deps.existsSync);
       if (r) { chromePath = r.path; binIsHeadlessOnly = r.headless; }
     }
-    // Production passes cdpPort 0, meaning "give this run its own private endpoint" — a
-    // process-wide port can attach to another agent's browser. We honour that request by
-    // allocating a NON-zero ephemeral port ourselves (see allocateEphemeralPort): literal 0
-    // reaches Chromium as an automation signal and sets navigator.webdriver.
+    // Production passes cdpPort 0, meaning "give this run its own private endpoint". A released
+    // Node-allocated port has a TOCTOU race before Chromium binds it, so private runs let Chromium
+    // choose the port itself and read back the bound endpoint from DevToolsActivePort.
     const cdpPort = deps.cdpPort == null ? DEFAULT_PORT : Number(deps.cdpPort);
     const privatePort = cdpPort === 0;
     const profileDir = deps.profileDir || P.join(OS.tmpdir(), 'starnet-browser-' + process.pid);
@@ -942,9 +941,9 @@
       } else {
       try { FS.mkdirSync(profileDir, { recursive: true }); } catch (_) {}
       if (privatePort) { try { FS.rmSync(activePortFile, { force: true }); } catch (_) {} }
-      // Allocated here, not by Chromium, so the launch carries no automation flag. Chromium still
-      // writes the bound port into this profile's DevToolsActivePort, which stays the readiness proof.
-      launchPort = privatePort ? await allocateEphemeralPort() : cdpPort;
+      // Private runs use Chromium's own ephemeral-port allocator. The unique profile makes the
+      // DevToolsActivePort file unambiguous and removes the released-port race entirely.
+      launchPort = privatePort ? 0 : cdpPort;
       if (spawn === CP.spawn && deps.networkProxy !== false) {
         networkProxy = await startPinnedProxy({
           validate: assertSafeUrl,
@@ -987,11 +986,26 @@
       for (let i = 0; i < 40; i++) {
         if (attachPort === null && procExited) throw new Error('spawned Chromium exited before CDP ownership was established' + (procError ? ': ' + procError : ''));
         try {
-          // We chose launchPort ourselves, so it IS the endpoint — no DevToolsActivePort read-back.
-          // (Chromium only writes that file when IT picked the port; installed Chrome launched on an
-          // explicit port may never write it, which would strand the loop.) A successful /json/list
-          // on our own private port is the readiness proof.
-          const port = launchPort;
+          // Explicit ports are already known. Private runs use --remote-debugging-port=0, so wait
+          // for Chromium's DevToolsActivePort file and use the actual bound port from its first line.
+          // The profile is unique per run, so this cannot resolve to another agent's browser.
+          let port = launchPort;
+          if (privatePort) {
+            let active = null;
+            try {
+              const raw = FS.readFileSync(activePortFile, 'utf8').trim();
+              const first = raw.split(/\\r?\\n/)[0];
+              const parsed = Number(first);
+              if (Number.isInteger(parsed) && parsed > 0 && parsed < 65536) active = parsed;
+            } catch (_) {}
+            if (!active) {
+              lastConnectError = new Error('private Chromium CDP endpoint not published yet');
+              await sleep(50);
+              continue;
+            }
+            port = active;
+            launchPort = active;
+          }
           // The BROWSER endpoint is what makes popup adoption possible; /json/list is still the
           // readiness proof and the fallback when a rig exposes no browser websocket.
           let wsUrl = null, viaBrowser = false, browserProbeTransient = false;
