@@ -75,6 +75,36 @@
     function paint(governance){const governed=Array.isArray(governance?.workforce?.workers)?governance.workforce.workers:[];const stationAgents=Array.isArray(StationUI.present)?StationUI.present:[];const live=governed.map(worker=>{const station=stationAgents.find(agent=>String(agent.id||agent.agentId)===String(worker.id));let stationRunning=false;try{stationRunning=!!(StationUI.isAgentRunning&&StationUI.isAgentRunning(String(worker.id)));}catch(_){}const runtimeStatus=stationRunning?'working':(worker.status==='working'?'working':'idle');return {agent:{...worker,...(station||{})},status:runtimeStatus==='working'?['WORKING','working']:['IDLE','idle'],activeRun:worker.activeRun||null,performance:worker.performance||null,station};});const working=live.filter(x=>x.status[1]==='working').length;meta.textContent=live.length+' WORKER'+(live.length===1?'':'S')+' · '+working+' WORKING · '+(live.length-working)+' IDLE';workers.replaceChildren();if(!live.length){const e=document.createElement('div');e.className='sf-empty';e.textContent='No StarNet workers are currently exposed by the governed workforce feed.';workers.appendChild(e);return;}for(const item of live){const a=item.agent,c=document.createElement('button');c.type='button';c.className='sf-worker';c.title=item.station?'Open StarNet agent dossier':'StarNet worker — dossier unavailable in this UI session';const run=item.activeRun;const activity=run?.title||run?.task||run?.label||'';const performance=item.performance||{};const reliability=Number.isFinite(Number(performance?.reliabilityPercent))?String(performance.reliabilityPercent)+'% RELIABILITY':(Number(performance.taskCount)>0?'NO RESOLVED TASKS':'NO TASK HISTORY');c.innerHTML='<div class="sf-avatar">◆</div><div class="sf-worker-main"><b>'+esc(a.name||a.id||'Unnamed worker')+'</b><span>'+esc(a.role||'StarNet agent')+' · '+esc(a.model||'model unavailable')+(a.provider?' · '+esc(a.provider):'')+(activity?' · '+esc(activity):'')+'</span><small class="sf-worker-stats">'+esc(String(performance.completed??0))+' DONE · '+esc(String(performance.failed??0))+' FAILED · '+esc(reliability)+'</small></div><span class="sf-status '+item.status[1]+'">'+item.status[0]+'</span><span class="sf-open">'+(item.station?'OPEN ›':'LINK PENDING')+'</span>';c.addEventListener('click',()=>{if(!item.station)return;const agents=Array.isArray(StationUI.present)?StationUI.present:[];const index=agents.findIndex(x=>String(x.id||x.agentId)===String(a.id||a.agentId));if(index>=0&&typeof StationUI.openAgent==='function')StationUI.openAgent(index);});workers.appendChild(c);}}
     paint();let latestGovernance=null;const refreshWorkforce=async()=>{try{const response=await fetch('/api/starforge/governance',{cache:'no-store'});if(response.ok){latestGovernance=await response.json();paint(latestGovernance);}}catch(_){}};refreshWorkforce();const timer=window.setInterval(()=>{if(root.isConnected){paint(latestGovernance);refreshWorkforce();}else window.clearInterval(timer);},1000);body.appendChild(root);
   }
+
+  function renderWorkerRoom(body) {
+    body.innerHTML='';
+    const root=document.createElement('section'); root.className='sf-worker-room';
+    root.innerHTML='<div class="sf-room-head"><div><div class="sf-kicker">STARFORGE HQ</div><h2>STARFORGE WORKER ROOM</h2><p>Real StarNet agents · StarForge governance overlay</p></div><div class="sf-link-state" data-room-link>CONNECTING…</div></div><div class="sf-room-summary" data-room-summary>WORKFORCE DATA PENDING</div><div class="sf-room-grid" data-room-grid></div>';
+    const grid=root.querySelector('[data-room-grid]'), summary=root.querySelector('[data-room-summary]'), link=root.querySelector('[data-room-link]');
+    function paint(data){
+      const governed=Array.isArray(data?.workforce?.workers)?data.workforce.workers:[];
+      const station=Array.isArray(StationUI.present)?StationUI.present:[];
+      const workers=governed.length?governed:station.map(a=>({id:a.id,name:a.name,role:a.role,model:a.model,provider:a.provider,status:'idle'}));
+      const working=workers.filter(w=>w.status==='working'||(StationUI.isAgentRunning&&StationUI.isAgentRunning(String(w.id)))).length;
+      summary.textContent=workers.length+' WORKERS · '+working+' WORKING · '+Math.max(0,workers.length-working)+' IDLE';
+      link.textContent=data?.connection?.runtimeMode==='live-starnet'?'LIVE STARNET':'TEST BRIDGE';
+      grid.replaceChildren();
+      if(!workers.length){const e=document.createElement('div');e.className='sf-empty';e.textContent='No governed StarNet workers exposed.';grid.appendChild(e);return;}
+      workers.forEach(w=>{
+        const s=station.find(a=>String(a.id||a.agentId)===String(w.id));
+        const active=!!(s&&StationUI.isAgentRunning&&StationUI.isAgentRunning(String(w.id)));
+        const status=active||w.status==='working'?'working':'idle';
+        const card=document.createElement('button'); card.type='button'; card.className='sf-room-worker';
+        card.innerHTML='<div class="sf-room-avatar">◆</div><div class="sf-room-main"><b>'+esc(w.name||w.id||'Unnamed worker')+'</b><span>'+esc(w.role||'StarNet agent')+' · '+esc(w.model||'MODEL UNAVAILABLE')+(w.provider?' · '+esc(w.provider):'')+'</span><small>'+esc(String(w.status||status).toUpperCase())+' · '+(w.activeRun?'ACTIVE RUN':'NO ACTIVE RUN')+'</small></div><span class="sf-status '+status+'">'+status.toUpperCase()+'</span>';
+        card.addEventListener('click',()=>{if(!s)return;const agents=Array.isArray(StationUI.present)?StationUI.present:[];const i=agents.findIndex(a=>String(a.id||a.agentId)===String(w.id));if(i>=0&&typeof StationUI.openAgent==='function')StationUI.openAgent(i);});
+        grid.appendChild(card);
+      });
+    }
+    async function refresh(){try{const response=await fetch('/api/starforge/governance',{cache:'no-store'});if(!response.ok)throw new Error();const data=await response.json();paint(data);}catch(_){paint(null);link.textContent='GOVERNANCE FEED UNAVAILABLE';}}
+    refresh(); const timer=setInterval(()=>{if(root.isConnected)refresh();else clearInterval(timer);},1000); body.appendChild(root);
+  }
+  StationUI.registerWindow('starforge-worker-room','STARFORGE WORKER ROOM',renderWorkerRoom,{console:true,className:'starforge-worker-room-win'});
+
   StationUI.registerWindow('starforge-hq','STARFORGE HQ',render,{console:true,className:'starforge-hq-win'});
   window.StarForgeHQ=Object.freeze({levelForCapital,nextMilestone,milestones:MILESTONES});
 })();
