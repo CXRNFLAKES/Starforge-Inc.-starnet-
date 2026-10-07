@@ -26,7 +26,7 @@ export function makeMissionLoop({ planner, executor, evaluator, memory = null, o
   if (failureIntelligence && typeof failureIntelligence.analyze !== "function") throw new Error("Failure intelligence must expose analyze");
 
   function recall(mission) {
-    if (!memory) return [];
+    if (!memory) return undefined;
     return clone(memory.recall({ objective: mission.objective, capabilities: mission.requiredCapabilities, limit: 5 }));
   }
   function recordMemory({ mission, outcome, execution, decision = null, history, status, recovery = null }) {
