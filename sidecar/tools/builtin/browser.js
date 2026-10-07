@@ -932,6 +932,7 @@
         '--window-size=1440,900', '--user-data-dir=' + profileDir];
       if (networkProxy) args.push('--proxy-server=http://127.0.0.1:' + networkProxy.port,
         '--proxy-bypass-list=<-loopback>');
+      else if (deps.networkProxy === false) args.push('--no-proxy-server');
       args.push('--lang=' + hostBrowserLocale(deps));
       if (headed) {
         // Visible window the user can watch (and hear — no --mute-audio in headed mode).
