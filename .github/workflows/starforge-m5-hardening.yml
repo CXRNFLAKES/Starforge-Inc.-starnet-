@@ -197,7 +197,22 @@ jobs:
           node-version: 20
           cache: npm
       - name: Install dependencies
-        run: npm ci
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3; do
+            echo "RC npm ci attempt $attempt/3"
+            if npm ci --prefer-offline; then
+              echo "RC dependency installation succeeded on attempt $attempt"
+              exit 0
+            fi
+            if [ "$attempt" -lt 3 ]; then
+              echo "RC dependency installation hit a transient network/install failure; retrying in 15s..."
+              rm -rf node_modules/onnxruntime-node
+              sleep 15
+            fi
+          done
+          echo "RC dependency installation failed after 3 attempts"
+          exit 1
       - name: RC StarForge preflight
         run: npm run starforge:preflight
       - name: RC full regression
