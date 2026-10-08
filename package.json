@@ -179,7 +179,8 @@
     "test:starforge:apinex-ui": "node --test test/provider-connections-ui.test.js",
     "test:starforge:compute-economy": "node --test test/starforge.compute-economy.test.mjs",
     "test:starforge:android9:packaging": "node --test test/starforge.android9-packaging.test.mjs",
-    "test:starforge:m6:reality": "node --test test/starforge.m6-mobile-reality.test.mjs"
+    "test:starforge:m6:reality": "node --test test/starforge.m6-mobile-reality.test.mjs",
+    "test:starforge:m6:live": "node --test test/starforge.m6-live-starnet.test.mjs"
   },
   "devDependencies": {
     "@napi-rs/canvas": "0.1.100",
