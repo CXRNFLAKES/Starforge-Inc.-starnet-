@@ -79,3 +79,61 @@ test("M6.2 live StarNet bridge executes governed work through the real runtime H
     }
   });
 });
+
+
+test("M6.3 restart recovery reuses completed StarNet execution without duplicate dispatch", async () => {
+  await withRuntime(async (baseUrl, calls) => {
+    const workspace = await mkdtemp(join(tmpdir(), "starforge-m6-recovery-"));
+    const storagePath = join(workspace, "state.json");
+    try {
+      const company = makeCompany({ storagePath });
+      const objective = company.createObjective(ROLES.CHO, {
+        title: "M6.3 persistence objective",
+        description: "Persist and recover governed StarNet work across restart.",
+      });
+      const connection = await connectStarNetRuntime({ baseUrl });
+      const operations = makeOperations({ company, starnet: connection.bridge });
+      const project = operations.createProject(ROLES.CEO, {
+        title: "M6.3 Recovery Mission",
+        objectiveId: objective.id,
+      });
+      operations.setProjectStatus(ROLES.CEO, project.id, "active");
+
+      const first = await operations.delegateToStarNet(ROLES.CEO, {
+        projectId: project.id,
+        title: "M6.3 PERSISTENT STARNet EXECUTION",
+        assigneeId: "worker-live-1",
+        successCriteria: "Return the M6.3 completion marker.",
+        executionKey: "m6.3-recovery-once",
+      });
+      assert.equal(first.task.status, "completed");
+      assert.equal(first.reused, undefined);
+      const dispatchesAfterFirst = calls.filter((call) => call.url === "/api/team/dispatch").length;
+
+      const recoveredCompany = makeCompany({ storagePath });
+      const recoveredConnection = await connectStarNetRuntime({ baseUrl });
+      const recoveredOperations = makeOperations({ company: recoveredCompany, starnet: recoveredConnection.bridge });
+      const recovered = await recoveredOperations.delegateToStarNet(ROLES.CEO, {
+        projectId: project.id,
+        title: "M6.3 PERSISTENT STARNet EXECUTION",
+        assigneeId: "worker-live-1",
+        successCriteria: "Return the M6.3 completion marker.",
+        executionKey: "m6.3-recovery-once",
+      });
+
+      assert.equal(recovered.reused, true);
+      assert.equal(recovered.task.id, first.task.id);
+      assert.equal(recovered.task.status, "completed");
+      assert.equal(recovered.result.content, "M6_2_LIVE_STARNET_EXECUTION_COMPLETE");
+      assert.equal(calls.filter((call) => call.url === "/api/team/dispatch").length, dispatchesAfterFirst);
+
+      const persisted = recoveredCompany.snapshot();
+      assert.equal(persisted.tasks.length, 1);
+      assert.equal(persisted.tasks[0].executionKey, "m6.3-recovery-once");
+      assert.equal(persisted.tasks[0].execution.provider, "starnet");
+      assert.equal(persisted.tasks[0].status, "completed");
+    } finally {
+      await rm(workspace, { recursive: true, force: true });
+    }
+  });
+});
