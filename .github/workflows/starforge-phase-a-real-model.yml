@@ -22,34 +22,55 @@ concurrency:
 
 jobs:
   phase-a:
-    if: ${{ secrets.APINEX_API_KEY != '' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
+      - name: Check APInex credential
+        id: credential
+        env:
+          APINEX_API_KEY: ${{ secrets.APINEX_API_KEY }}
+        run: |
+          if [ -n "$APINEX_API_KEY" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+            echo "APInex credential is configured."
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "APInex credential is not configured; live execution will remain pending."
+          fi
       - uses: actions/checkout@v4
+        if: steps.credential.outputs.ready == 'true'
       - uses: actions/setup-node@v4
+        if: steps.credential.outputs.ready == 'true'
         with:
           node-version: 20
           cache: npm
       - name: Install dependencies
+        if: steps.credential.outputs.ready == 'true'
         run: npm ci --prefer-offline
       - name: StarForge preflight
+        if: steps.credential.outputs.ready == 'true'
         run: npm run starforge:preflight
       - name: D1 production APInex integration
+        if: steps.credential.outputs.ready == 'true'
         env:
           APINEX_API_KEY: ${{ secrets.APINEX_API_KEY }}
         run: node --test test/starforge.d1-production-apinex-integration.test.mjs
       - name: C2 real governed APInex business mission
+        if: steps.credential.outputs.ready == 'true'
         env:
           APINEX_API_KEY: ${{ secrets.APINEX_API_KEY }}
         run: node --test test/starforge.c2-apinex-business-live.test.mjs
       - name: M9.2 governed route receipt
+        if: steps.credential.outputs.ready == 'true'
         run: npm run test:starforge:m9.2:model-governance
       - name: Compute Economy regression
+        if: steps.credential.outputs.ready == 'true'
         run: npm run test:starforge:compute-economy
       - name: StarForge integration regression
+        if: steps.credential.outputs.ready == 'true'
         run: npm run starforge:integration-test
       - name: Record Phase A success
+        if: steps.credential.outputs.ready == 'true'
         run: |
           echo "STARFORGE PHASE A: REAL MODEL EXECUTION PASS"
           echo "D1 production provider integration: PASS"
@@ -57,14 +78,9 @@ jobs:
           echo "M9.2 route receipt: PASS"
           echo "Compute Economy: PASS"
           echo "Integration reality: PASS"
-
-  credential-readiness:
-    if: ${{ secrets.APINEX_API_KEY == '' }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Report external credential prerequisite
+      - name: Record Phase A prerequisite status
+        if: steps.credential.outputs.ready != 'true'
         run: |
           echo "STARFORGE PHASE A: WAITING FOR APINEX_API_KEY"
           echo "The governed real-model implementation is present."
           echo "Add the repository secret APINEX_API_KEY, then dispatch this workflow again."
-          exit 0
