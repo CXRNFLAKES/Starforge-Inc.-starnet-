@@ -188,7 +188,8 @@
     "test:starforge:m7.2:hq-refresh": "node --test test/starforge.m7.2-hq-refresh.test.mjs",
     "test:starforge:m8.1:governance": "node --test test/starforge.m8.1-governance.test.mjs",
     "test:starforge:m8.3:cho-authority": "node --test test/starforge.m8.3-cho-authority.test.mjs",
-    "test:starforge:m8.4:cho-boundary": "node --test test/starforge.m8.4-cho-boundary.test.mjs"
+    "test:starforge:m8.4:cho-boundary": "node --test test/starforge.m8.4-cho-boundary.test.mjs",
+    "test:starforge:m8.5:overseer-boundary": "node --test test/starforge.m8.5-overseer-boundary.test.mjs"
   },
   "devDependencies": {
     "@napi-rs/canvas": "0.1.100",
