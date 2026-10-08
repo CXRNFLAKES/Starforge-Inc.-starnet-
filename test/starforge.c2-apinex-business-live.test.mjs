@@ -6,42 +6,30 @@ import { makeCompany } from "../sidecar/governance/company.mjs";
 import { makeOperations } from "../sidecar/governance/operations.mjs";
 import { ROLES } from "../sidecar/governance/roles.mjs";
 
-test("C2 executes a real StarForge mission through the governed APInex path", async () => {
+test("C2 executes and independently verifies a real StarForge mission through the governed APInex path", async () => {
   const key = String(process.env.APINEX_API_KEY || "").trim();
   assert.ok(key, "APINEX_API_KEY is required for the C2 live business execution gate");
 
   const router = makeStarForgeModelRouter();
-  const catalog = await router.discover({
-    provider: "apinex",
-    key,
-    baseUrl: "https://api.apinex.bond/v1",
-  });
+  const catalog = await router.discover({ provider: "apinex", key, baseUrl: "https://api.apinex.bond/v1" });
   assert.ok(catalog.models.length > 0, "APInex must expose at least one governed free model");
 
   const selected = catalog.models[0];
   const route = await router.resolve({
-    provider: "apinex",
-    model: selected.id,
-    key,
-    baseUrl: "https://api.apinex.bond/v1",
+    provider: "apinex", model: selected.id, key, baseUrl: "https://api.apinex.bond/v1",
   });
   assert.equal(route.allowed, true);
   assert.equal(route.provider, "apinex");
   assert.ok(route.model.startsWith("free/"));
 
   const provider = providerFactory.selectProvider({
-    provider: route.provider,
-    key,
-    baseUrl: "https://api.apinex.bond/v1",
+    provider: route.provider, key, baseUrl: "https://api.apinex.bond/v1",
   });
 
   let output = "";
   for await (const event of provider.stream({
     model: route.model,
-    messages: [{
-      role: "user",
-      content: "You are executing a StarForge business mission. Reply with exactly APINEX_OK.",
-    }],
+    messages: [{ role: "user", content: "You are executing a StarForge business mission. Reply with exactly APINEX_OK." }],
     reasoningEffort: "none",
     max_tokens: 16,
     isTask: true,
@@ -50,8 +38,6 @@ test("C2 executes a real StarForge mission through the governed APInex path", as
   }
   assert.match(output.trim(), /\bAPINEX_OK\b/);
 
-  // Feed the verified real APInex result through the existing StarForge company/StarNet
-  // execution seam. No new execution adapter or duplicate provider path is introduced.
   const company = makeCompany();
   const starnet = {
     listWorkersAsync: async () => [{ id: "worker-c2", name: "APInex Mission Worker", model: route.model }],
@@ -62,9 +48,7 @@ test("C2 executes a real StarForge mission through the governed APInex path", as
   };
   const governedRouter = {
     resolve: request => router.resolve({
-      ...request,
-      key,
-      baseUrl: "https://api.apinex.bond/v1",
+      ...request, key, baseUrl: "https://api.apinex.bond/v1",
     }),
   };
 
@@ -87,6 +71,7 @@ test("C2 executes a real StarForge mission through the governed APInex path", as
     successCriteria: "Return APINEX_OK",
     provider: route.provider,
     model: route.model,
+    executionKey: "c2-real-apinex-business-mission",
   });
 
   assert.equal(execution.task.status, "completed");
@@ -94,6 +79,24 @@ test("C2 executes a real StarForge mission through the governed APInex path", as
   assert.equal(execution.task.execution.modelRoute.provider, "apinex");
   assert.equal(execution.task.execution.modelRoute.model, route.model);
   assert.equal(execution.result.content, output.trim());
+
+  // The PA/Overseer independently verifies the completed StarNet outcome before
+  // it can be treated as a verified business result.
+  const verification = operations.verifyBusinessOutcome(ROLES.PA, {
+    taskId: execution.task.id,
+    claim: "The governed APInex mission returned the requested APINEX_OK result.",
+    evidence: [{
+      source: "live-apinex-execution",
+      provider: route.provider,
+      model: route.model,
+      supports: true,
+      response: output.trim(),
+    }],
+  });
+
+  assert.equal(verification.verified, true);
+  assert.equal(verification.label, "VERIFIED FACT");
+  assert.equal(company.snapshot().tasks[0].businessOutcome.outcomeId, verification.outcomeId);
 
   console.log(JSON.stringify({
     phase: "C2",
@@ -103,6 +106,7 @@ test("C2 executes a real StarForge mission through the governed APInex path", as
     catalogCount: catalog.modelCount,
     responseVerified: true,
     starForgeTaskCompleted: true,
+    overseerBusinessOutcomeVerified: true,
     source: "starforge-governed-real-apinex-mission",
   }, null, 2));
 });
