@@ -1,4 +1,5 @@
 name: StarForge M5 Production Hardening Gate
+# M5 release-readiness rerun after the Windows input-isolation proof fixes.
 
 on:
   push:
