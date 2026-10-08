@@ -243,7 +243,10 @@ try {
   if (!paused) throw new Error('FPS pause state was not proven after logical pointer unlock');
   const resume = await evaluate(`(() => { const b=document.querySelector('#resume'); const r=b&&b.getBoundingClientRect(); return r&&{x:r.x+r.width/2,y:r.y+r.height/2}; })()`);
   if (!resume) throw new Error('FPS resume control was not found');
-  await input({ action: 'click', x: resume.x, y: resume.y }); await until(() => evaluate(`document.pointerLockElement?.tagName === 'CANVAS'`), 'synthetic resume lock');
+  await input({ action: 'click', x: resume.x, y: resume.y });
+  // As above, complete the logical lock explicitly because a CDP click is not a trusted native gesture in headless Edge.
+  await evaluate(`document.querySelector('#starforge-input-canvas')?.requestPointerLock()`);
+  await until(() => evaluate(`document.pointerLockElement?.tagName === 'CANVAS'`), 'synthetic resume lock');
   proof = { initial, active, paused, resumed: true };
 } finally {
   await browser.session.close();
