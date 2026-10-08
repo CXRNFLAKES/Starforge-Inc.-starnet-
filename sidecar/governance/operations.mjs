@@ -58,24 +58,6 @@ export function makeOperations({ company, starnet = null, modelRouter = null, fa
     const project = company.snapshot().projects.find((item) => item.id === projectId);
     if (!project) throw new Error("Unknown project");
 
-    const normalizedExecutionKey = String(executionKey ?? "").trim();
-    if (normalizedExecutionKey) {
-      const prior = company.snapshot().tasks.find((item) =>
-        item.executionKey === normalizedExecutionKey && item.projectId === projectId
-      );
-      if (prior) {
-        if (prior.status === "completed" && prior.execution?.provider === "starnet" && prior.execution?.result) {
-          const worker = person(prior.assigneeId) ?? { id: prior.assigneeId, role: prior.assigneeRole, source: prior.assigneeSource };
-          return clone({ task: prior, worker, result: prior.execution.result, reused: true });
-        }
-        if (["assigned", "in-progress"].includes(prior.status)) {
-          throw new Error("StarNet execution with this key is already in progress");
-        }
-        if (prior.status === "failed") {
-          throw new Error("StarNet execution with this key already failed; create a new execution key for recovery");
-        }
-      }
-    }
     project.status = status;
     project.updatedAt = new Date().toISOString();
     company.updateProject(actorRole, project);
@@ -130,6 +112,26 @@ export function makeOperations({ company, starnet = null, modelRouter = null, fa
     if (project.status === "cancelled" || project.status === "completed") {
       throw new Error("Cannot delegate into a closed project");
     }
+
+    const normalizedExecutionKey = String(executionKey ?? "").trim();
+    if (normalizedExecutionKey) {
+      const prior = company.snapshot().tasks.find((item) =>
+        item.executionKey === normalizedExecutionKey && item.projectId === projectId
+      );
+      if (prior) {
+        if (prior.status === "completed" && prior.execution?.provider === "starnet" && prior.execution?.result) {
+          const worker = person(prior.assigneeId) ?? { id: prior.assigneeId, role: prior.assigneeRole, source: prior.assigneeSource };
+          return clone({ task: prior, worker, result: prior.execution.result, reused: true });
+        }
+        if (["assigned", "in-progress"].includes(prior.status)) {
+          throw new Error("StarNet execution with this key is already in progress");
+        }
+        if (prior.status === "failed") {
+          throw new Error("StarNet execution with this key already failed; create a new execution key for recovery");
+        }
+      }
+    }
+
     const roster = typeof starnet.listWorkersAsync === "function"
       ? await starnet.listWorkersAsync()
       : await starnet.listWorkers();
