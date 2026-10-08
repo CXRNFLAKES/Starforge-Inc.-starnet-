@@ -53,6 +53,9 @@ jobs:
       - name: Compute Economy regression
         run: npm run test:starforge:compute-economy
 
+      - name: C3 verified outcome to revenue gate
+        run: node --test test/starforge.c3-economic-outcome.test.mjs
+
       - name: StarForge integration regression
         run: npm run starforge:integration-test
 
