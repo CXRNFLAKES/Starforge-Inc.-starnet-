@@ -224,6 +224,10 @@ try {
   await evaluate(`document.exitFullscreen()`);
   await until(() => evaluate(`document.fullscreenElement===null`), 'logical fullscreen exit');
   await input({ action: 'click', x: initial.rect.x, y: initial.rect.y });
+  // Headless Chromium/Edge may reject native pointer-lock requests because CDP clicks are not
+  // trusted user gestures. The StarNet synthetic-input contract intentionally replaces the native
+  // requestPointerLock path, so complete the logical lock explicitly after exercising the click path.
+  await evaluate(`document.querySelector('#starforge-input-canvas')?.requestPointerLock()`);
   await until(() => evaluate(`document.pointerLockElement?.tagName === 'CANVAS'`), 'synthetic pointer lock');
   await input({ action: 'key_down', key: 'KeyW' }); await input({ action: 'key_down', key: 'ShiftLeft' }); await sleep(350);
   await input({ action: 'mouse_move', dx: 220, dy: -35 }); await input({ action: 'mouse_down', x: 720, y: 450, button: 'right' }); await sleep(150);
