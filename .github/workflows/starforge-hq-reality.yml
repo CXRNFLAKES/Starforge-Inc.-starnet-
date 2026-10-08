@@ -25,6 +25,8 @@ jobs:
         run: npm run test:starforge:m7:live-hq
       - name: M7.1 live HQ state interaction
         run: npm run test:starforge:m7.1:live-hq
+      - name: M7.2 HQ live feed refresh
+        run: npm run test:starforge:m7.2:hq-refresh
       - name: HQ UI contract
         run: node --test test/starforge.hq-ui.test.mjs
       - name: Mission Control UI
