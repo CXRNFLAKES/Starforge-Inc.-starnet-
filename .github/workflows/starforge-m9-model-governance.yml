@@ -1,0 +1,33 @@
+name: StarForge M9 Model Governance Reality
+
+on:
+  push:
+    branches: ["starforge/governance-kernel"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: starforge-m9-model-governance-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  model-governance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci --prefer-offline
+      - name: M9.1 governed model execution gate
+        run: npm run test:starforge:m9.1:model-governance
+      - name: Compute Economy
+        run: npm run test:starforge:compute-economy
+      - name: Android 9 shell
+        run: npm run test:starforge:android9:shell
+      - name: StarForge operations regression
+        run: npm run test:starforge:operations
+      - name: StarForge integration reality
+        run: npm run test:starforge:integration
