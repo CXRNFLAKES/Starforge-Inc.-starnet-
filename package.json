@@ -185,7 +185,8 @@
     "test:starforge:m6:security": "node --test test/starforge.c3-failure-security-gate.test.mjs test/starforge.d14-recovery-persistence-authority.test.mjs test/starforge.d15-governance-audit-integrity.test.mjs",
     "test:starforge:m7:live-hq": "node --test test/starforge.m7-live-hq.test.mjs",
     "test:starforge:m7.1:live-hq": "node --test test/starforge.m7.1-live-hq-interaction.test.mjs",
-    "test:starforge:m7.2:hq-refresh": "node --test test/starforge.m7.2-hq-refresh.test.mjs"
+    "test:starforge:m7.2:hq-refresh": "node --test test/starforge.m7.2-hq-refresh.test.mjs",
+    "test:starforge:m8.1:governance": "node --test test/starforge.m8.1-governance.test.mjs"
   },
   "devDependencies": {
     "@napi-rs/canvas": "0.1.100",
