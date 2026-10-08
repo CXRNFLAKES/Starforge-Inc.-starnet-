@@ -1,0 +1,80 @@
+name: StarForge Live APInex Business Gate
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_ref:
+        description: "StarForge branch or commit to test"
+        required: true
+        default: "starforge/governance-kernel"
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: starforge-live-apinex-gate
+  cancel-in-progress: false
+
+jobs:
+  live-apinex:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Require APInex credential
+        env:
+          APINEX_API_KEY: ${{ secrets.APINEX_API_KEY }}
+        run: |
+          if [ -z "$APINEX_API_KEY" ]; then
+            echo "::error::APINEX_API_KEY repository secret is required for the live business gate."
+            exit 1
+          fi
+          echo "APInex credential is configured."
+
+      - name: Checkout selected StarForge ref
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source_ref }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --prefer-offline
+
+      - name: StarForge preflight
+        run: npm run starforge:preflight
+
+      - name: D1 production APInex integration
+        env:
+          APINEX_API_KEY: ${{ secrets.APINEX_API_KEY }}
+        run: node --test test/starforge.d1-production-apinex-integration.test.mjs
+
+      - name: C2 real governed APInex business mission
+        env:
+          APINEX_API_KEY: ${{ secrets.APINEX_API_KEY }}
+        run: node --test test/starforge.c2-apinex-business-live.test.mjs
+
+      - name: M9.2 governed route receipt
+        run: npm run test:starforge:m9.2:model-governance
+
+      - name: Compute Economy regression
+        run: npm run test:starforge:compute-economy
+
+      - name: C3 verified outcome to revenue gate
+        run: node --test test/starforge.c3-economic-outcome.test.mjs
+
+      - name: StarForge integration regression
+        run: npm run starforge:integration-test
+
+      - name: Record live business proof
+        run: |
+          echo "STARFORGE LIVE APINEX GATE: PASS"
+          echo "Production provider integration: PASS"
+          echo "Real governed business mission: PASS"
+          echo "Overseer business-outcome verification: PASS"
+          echo "Model route receipt: PASS"
+          echo "Compute Economy: PASS"
+          echo "Integration reality: PASS"
