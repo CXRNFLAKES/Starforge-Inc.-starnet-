@@ -183,7 +183,8 @@
     "test:starforge:m6:live": "node --test test/starforge.m6-live-starnet.test.mjs",
     "test:starforge:m6:recovery": "node --test test/starforge.m6-live-starnet.test.mjs",
     "test:starforge:m6:security": "node --test test/starforge.c3-failure-security-gate.test.mjs test/starforge.d14-recovery-persistence-authority.test.mjs test/starforge.d15-governance-audit-integrity.test.mjs",
-    "test:starforge:m7:live-hq": "node --test test/starforge.m7-live-hq.test.mjs"
+    "test:starforge:m7:live-hq": "node --test test/starforge.m7-live-hq.test.mjs",
+    "test:starforge:m7.1:live-hq": "node --test test/starforge.m7.1-live-hq-interaction.test.mjs"
   },
   "devDependencies": {
     "@napi-rs/canvas": "0.1.100",
