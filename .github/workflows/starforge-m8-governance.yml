@@ -19,7 +19,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 20
       - run: npm ci --prefer-offline
       - name: M8.1 governance authority gate
         run: node --test test/starforge.m8.1-governance.test.mjs
