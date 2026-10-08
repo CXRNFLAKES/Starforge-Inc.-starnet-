@@ -181,7 +181,8 @@
     "test:starforge:android9:packaging": "node --test test/starforge.android9-packaging.test.mjs",
     "test:starforge:m6:reality": "node --test test/starforge.m6-mobile-reality.test.mjs",
     "test:starforge:m6:live": "node --test test/starforge.m6-live-starnet.test.mjs",
-    "test:starforge:m6:recovery": "node --test test/starforge.m6-live-starnet.test.mjs"
+    "test:starforge:m6:recovery": "node --test test/starforge.m6-live-starnet.test.mjs",
+    "test:starforge:m6:security": "node --test test/starforge.c3-failure-security-gate.test.mjs test/starforge.d14-recovery-persistence-authority.test.mjs test/starforge.d15-governance-audit-integrity.test.mjs"
   },
   "devDependencies": {
     "@napi-rs/canvas": "0.1.100",
