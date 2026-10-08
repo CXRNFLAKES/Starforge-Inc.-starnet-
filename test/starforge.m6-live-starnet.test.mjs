@@ -23,8 +23,13 @@ async function withRuntime(fn) {
     }
     if (req.method === "POST" && req.url === "/api/team/dispatch") {
       assert.equal(body.workers[0].agentId, "worker-live-1");
-      assert.match(body.workers[0].prompt, /M6\.2 LIVE STARNet EXECUTION/);
-      res.end(JSON.stringify({ content: "M6_2_LIVE_STARNET_EXECUTION_COMPLETE", workerId: "worker-live-1" }));
+      const prompt = body.workers[0].prompt;
+      assert.match(prompt, /M6\.[23] (?:LIVE|PERSISTENT) STARNet EXECUTION/);
+      const isM63 = prompt.includes("M6.3 PERSISTENT STARNet EXECUTION");
+      res.end(JSON.stringify({
+        content: isM63 ? "M6_3_PERSISTENT_STARNET_EXECUTION_COMPLETE" : "M6_2_LIVE_STARNET_EXECUTION_COMPLETE",
+        workerId: "worker-live-1",
+      }));
       return;
     }
     res.statusCode = 404;
@@ -80,7 +85,6 @@ test("M6.2 live StarNet bridge executes governed work through the real runtime H
   });
 });
 
-
 test("M6.3 restart recovery reuses completed StarNet execution without duplicate dispatch", async () => {
   await withRuntime(async (baseUrl, calls) => {
     const workspace = await mkdtemp(join(tmpdir(), "starforge-m6-recovery-"));
@@ -108,6 +112,7 @@ test("M6.3 restart recovery reuses completed StarNet execution without duplicate
       });
       assert.equal(first.task.status, "completed");
       assert.equal(first.reused, undefined);
+      assert.equal(first.result.content, "M6_3_PERSISTENT_STARNET_EXECUTION_COMPLETE");
       const dispatchesAfterFirst = calls.filter((call) => call.url === "/api/team/dispatch").length;
 
       const recoveredCompany = makeCompany({ storagePath });
@@ -124,7 +129,7 @@ test("M6.3 restart recovery reuses completed StarNet execution without duplicate
       assert.equal(recovered.reused, true);
       assert.equal(recovered.task.id, first.task.id);
       assert.equal(recovered.task.status, "completed");
-      assert.equal(recovered.result.content, "M6_2_LIVE_STARNET_EXECUTION_COMPLETE");
+      assert.equal(recovered.result.content, "M6_3_PERSISTENT_STARNET_EXECUTION_COMPLETE");
       assert.equal(calls.filter((call) => call.url === "/api/team/dispatch").length, dispatchesAfterFirst);
 
       const persisted = recoveredCompany.snapshot();
