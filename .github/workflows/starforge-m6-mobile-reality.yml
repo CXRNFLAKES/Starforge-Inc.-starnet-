@@ -35,6 +35,9 @@ jobs:
       - name: M6.2 live StarNet execution bridge
         run: npm run test:starforge:m6:live
 
+      - name: M6.3 mobile persistence and recovery
+        run: npm run test:starforge:m6:recovery
+
       - name: M6 existing StarForge regression
         run: npm run starforge:test
 
