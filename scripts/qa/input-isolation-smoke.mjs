@@ -8,7 +8,7 @@
    browser.test_* substrate only. A separate read-only Win32 observer samples GetClipCursor,
    GetCursorPos, and GetLastInputInfo throughout. The observer never moves or releases input. */
 import { spawn } from 'node:child_process';
-import { writeFileSync, rmSync } from 'node:fs';
+import { writeFileSync, rmSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 
@@ -112,7 +112,7 @@ async function launchDedicatedCdpBrowser(port) {
   const profileDir = join(tmpdir(), 'starnet-input-cdp-' + process.pid + '-' + Date.now());
   const browserPath = candidates.find(p => {
     if (p.includes('\\') || p.includes('/')) {
-      try { return require('node:fs').existsSync(p); } catch (_) { return false; }
+      try { return existsSync(p); } catch (_) { return false; }
     }
     return true;
   });
@@ -141,7 +141,7 @@ async function launchDedicatedCdpBrowser(port) {
     return { proc, profileDir, browserPath };
   } catch (e) {
     try { if (proc && !proc.killed) proc.kill('SIGKILL'); } catch (_) {}
-    try { require('node:fs').rmSync(profileDir, { recursive: true, force: true }); } catch (_) {}
+    try { rmSync(profileDir, { recursive: true, force: true }); } catch (_) {}
     throw e;
   }
 }
@@ -245,7 +245,7 @@ try {
   await browser.session.close();
   if (dedicatedBrowser) {
     try { if (dedicatedBrowser.proc && !dedicatedBrowser.proc.killed) dedicatedBrowser.proc.kill('SIGKILL'); } catch (_) {}
-    try { require('node:fs').rmSync(dedicatedBrowser.profileDir, { recursive: true, force: true }); } catch (_) {}
+    try { rmSync(dedicatedBrowser.profileDir, { recursive: true, force: true }); } catch (_) {}
   }
   await sleep(250);
   observer.stop();
