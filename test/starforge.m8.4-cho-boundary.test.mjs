@@ -1,8 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { makeCompany } from "../sidecar/governance/company.mjs";
+import { ACTIONS, can } from "../sidecar/governance/authority.mjs";
 import { ROLES } from "../sidecar/governance/roles.mjs";
-import { ACTIONS } from "../sidecar/governance/authority.mjs";
 
 test("M8.4 reserved company configuration is CHO-only", () => {
   const company = makeCompany();
@@ -57,6 +57,7 @@ test("M8.4 CHO decisions cannot be recorded by delegated roles", () => {
   };
 
   assert.doesNotThrow(() => company.recordDecisionPacket(ROLES.PA, packet));
+  const packetId = company.snapshot().decisionPackets[0].id;
 
   for (const role of [
     ROLES.PA,
@@ -72,7 +73,7 @@ test("M8.4 CHO decisions cannot be recorded by delegated roles", () => {
     assert.throws(
       () => company.recordDecision(role, {
         requestId: "m8.4-request",
-        packetId: company.snapshot().decisionPackets[0].id,
+        packetId,
         decision: "approve",
         rationale: "must be blocked",
       }),
@@ -83,7 +84,7 @@ test("M8.4 CHO decisions cannot be recorded by delegated roles", () => {
 
   const decision = company.recordDecision(ROLES.CHO, {
     requestId: "m8.4-request",
-    packetId: company.snapshot().decisionPackets[0].id,
+    packetId,
     decision: "approve",
     rationale: "CHO approved after governance review",
   });
@@ -93,8 +94,10 @@ test("M8.4 CHO decisions cannot be recorded by delegated roles", () => {
   assert.equal(company.snapshot().decisions.length, 1);
 });
 
-test("M8.4 approval execution authority remains reserved for CHO", () => {
-  const company = makeCompany();
+test("M8.4 reserved authority matrix stays aligned with live company enforcement", () => {
+  assert.equal(can(ROLES.CHO, ACTIONS.CHO_DECIDE), true);
+  assert.equal(can(ROLES.CHO, ACTIONS.COMPANY_CONFIGURE), true);
+  assert.equal(can(ROLES.CHO, ACTIONS.APPROVAL_EXECUTE), true);
 
   for (const role of [
     ROLES.PA,
@@ -107,12 +110,8 @@ test("M8.4 approval execution authority remains reserved for CHO", () => {
     ROLES.EXECUTIVE,
     ROLES.WORKER,
   ]) {
-    assert.equal(
-      company.snapshot().company.cho.role,
-      ROLES.CHO,
-      "company must retain CHO ownership while delegated roles operate",
-    );
+    assert.equal(can(role, ACTIONS.CHO_DECIDE), false, role);
+    assert.equal(can(role, ACTIONS.COMPANY_CONFIGURE), false, role);
+    assert.equal(can(role, ACTIONS.APPROVAL_EXECUTE), false, role);
   }
-
-  const { assertCan } = require("../sidecar/governance/authority.mjs");
 });
