@@ -21,6 +21,8 @@ jobs:
         with:
           node-version: 18
       - run: npm ci
+      - name: M7 live StarForge HQ proof
+        run: npm run test:starforge:m7:live-hq
       - name: HQ UI contract
         run: node --test test/starforge.hq-ui.test.mjs
       - name: Mission Control UI
