@@ -1,0 +1,37 @@
+name: StarForge M7 Live HQ
+
+on:
+  push:
+    branches:
+      - starforge/governance-kernel
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: starforge-m7-live-hq-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  m7-live-hq:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout StarForge
+        uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: M7 live StarForge HQ
+        run: node --test test/starforge.m7-live-hq.test.mjs
+
+      - name: M7 existing HQ reality regression
+        run: npm run test:starforge:integration
