@@ -24,6 +24,8 @@ jobs:
       - run: npm ci --prefer-offline
       - name: M9.1 governed model execution gate
         run: npm run test:starforge:m9.1:model-governance
+      - name: M9.2 governed model route receipt
+        run: npm run test:starforge:m9.2:model-governance
       - name: Compute Economy
         run: npm run test:starforge:compute-economy
       - name: Android 9 shell
