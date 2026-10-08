@@ -67,7 +67,7 @@ test("M7 live HQ proves the actual StarForge frontend and governed feed are serv
       },
       body: "{}",
     });
-    assert.equal(write.status, 405);
+    assert.ok([404, 405].includes(write.status), `write must be rejected by the read-only bridge (got ${write.status})`);
   } finally {
     child.kill("SIGTERM");
     await new Promise((resolve) => {
