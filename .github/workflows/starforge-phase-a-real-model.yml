@@ -6,6 +6,7 @@ on:
     branches: ["starforge/governance-kernel"]
     paths:
       - "test/starforge.c2-apinex-business-live.test.mjs"
+      - "test/starforge.c3-economic-outcome.test.mjs"
       - "test/starforge.d1-production-apinex-integration.test.mjs"
       - "test/starforge.m9.2-model-governance.test.mjs"
       - "sidecar/governance/model-router.mjs"
@@ -66,6 +67,10 @@ jobs:
       - name: Compute Economy regression
         if: steps.credential.outputs.ready == 'true'
         run: npm run test:starforge:compute-economy
+
+      - name: C3 verified outcome to revenue gate
+        if: steps.credential.outputs.ready == 'true'
+        run: node --test test/starforge.c3-economic-outcome.test.mjs
       - name: StarForge integration regression
         if: steps.credential.outputs.ready == 'true'
         run: npm run starforge:integration-test
