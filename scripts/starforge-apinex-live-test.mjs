@@ -1,6 +1,12 @@
 import providerFactory from "../sidecar/providers/factory.js";
 import { makeStarForgeModelRouter } from "../sidecar/governance/model-router.mjs";
 
+const hasConfirmation = value => String(value ?? "")
+  .normalize("NFKC")
+  .replace(/[\u200B-\u200D\uFEFF]/g, "")
+  .toUpperCase()
+  .includes("APINEX_OK");
+
 const key = String(process.env.APINEX_API_KEY || "").trim();
 if (!key) throw new Error("APINEX_API_KEY is required for the live APInex execution gate");
 
@@ -44,7 +50,7 @@ for (const candidate of catalog.models) {
   }
 
   const normalized = output.trim();
-  if (!/\bAPINEX_OK\b/.test(normalized)) {
+  if (!hasConfirmation(normalized)) {
     unusableResponses.push({ model: route.model, response: normalized.slice(0, 100) });
     console.warn("APInex free-catalog model returned no usable confirmation; trying next candidate:", route.model);
     continue;
