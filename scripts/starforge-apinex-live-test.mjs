@@ -35,7 +35,7 @@ for (const candidate of catalog.models) {
     }
   } catch (error) {
     const detail = String(error?.message || error);
-    if (/\\b402\\b|billing_error|only available with a subscription|subscription required/i.test(detail)) {
+    if (/\b402\b|billing_error|only available with a subscription|subscription required/i.test(detail)) {
       billingDenied.push({ model: route.model, reason: detail.slice(0, 180) });
       console.warn("APInex free-catalog model requires subscription; trying next candidate:", route.model);
       continue;
@@ -44,7 +44,7 @@ for (const candidate of catalog.models) {
   }
 
   const normalized = output.trim();
-  if (!/\\bAPINEX_OK\\b/.test(normalized)) {
+  if (!/\bAPINEX_OK\b/.test(normalized)) {
     unusableResponses.push({ model: route.model, response: normalized.slice(0, 100) });
     console.warn("APInex free-catalog model returned no usable confirmation; trying next candidate:", route.model);
     continue;
