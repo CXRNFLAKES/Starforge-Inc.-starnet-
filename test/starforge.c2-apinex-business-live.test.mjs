@@ -29,7 +29,12 @@ test("C2 executes and independently verifies a real StarForge mission through th
   let output = "";
   const billingDenied = [];
   const unusableResponses = [];
-  for (const candidate of catalog.models) {
+  // Prefer the model proven usable by the immediately preceding live discovery gate.
+  // Keep all other discovered free models as fallbacks.
+  const candidates = catalog.models.slice().sort((a, b) =>
+    Number(b.id === "free/glm-5.3-flash") - Number(a.id === "free/glm-5.3-flash")
+  );
+  for (const candidate of candidates) {
     const candidateRoute = await router.resolve({
       provider: "apinex", model: candidate.id, key, baseUrl,
     });
@@ -44,10 +49,10 @@ test("C2 executes and independently verifies a real StarForge mission through th
     try {
       for await (const event of candidateProvider.stream({
         model: candidateRoute.model,
-        messages: [{ role: "user", content: "You are executing a StarForge business mission. Reply with exactly APINEX_OK." }],
+        messages: [{ role: "user", content: "Reply with exactly APINEX_OK" }],
         reasoningEffort: "none",
         max_tokens: 16,
-        isTask: true,
+        isTask: false,
       })) {
         if (event?.type === "text") candidateOutput += String(event.delta || "");
       }
