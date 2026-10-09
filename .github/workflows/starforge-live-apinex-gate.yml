@@ -1,6 +1,9 @@
 name: StarForge Live APInex Business Gate
 
 on:
+  push:
+    branches:
+      - ci/expose-live-apinex-gate
   workflow_dispatch:
     inputs:
       source_ref:
@@ -34,7 +37,7 @@ jobs:
       - name: Checkout selected StarForge ref
         uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.source_ref }}
+          ref: ${{ inputs.source_ref || github.ref }}
 
       - uses: actions/setup-node@v4
         with:
