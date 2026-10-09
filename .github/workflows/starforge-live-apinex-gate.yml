@@ -37,7 +37,7 @@ jobs:
       - name: Checkout selected StarForge ref
         uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.source_ref || github.ref }}
+          ref: ${{ inputs.source_ref || 'starforge/governance-kernel' }}
 
       - uses: actions/setup-node@v4
         with:
