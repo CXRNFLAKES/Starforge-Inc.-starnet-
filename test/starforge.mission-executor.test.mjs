@@ -18,6 +18,7 @@ function harness({ allocationStatus = "allocated" } = {}) {
         selected: [
           { id: "research-1", name: "Researcher", capabilities: ["research"] },
           { id: "strategy-1", name: "Strategist", capabilities: ["strategy"] },
+          { id: "sales-1", name: "Sales Executor", capabilities: ["sales", "execution"] },
           { id: "verify-1", name: "Verifier", capabilities: ["verification"] },
         ],
         created: [],
