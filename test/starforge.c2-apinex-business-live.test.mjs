@@ -10,32 +10,59 @@ test("C2 executes and independently verifies a real StarForge mission through th
   const key = String(process.env.APINEX_API_KEY || "").trim();
   assert.ok(key, "APINEX_API_KEY is required for the C2 live business execution gate");
 
+  const baseUrl = "https://api.apinex.bond/v1";
   const router = makeStarForgeModelRouter();
-  const catalog = await router.discover({ provider: "apinex", key, baseUrl: "https://api.apinex.bond/v1" });
+  const catalog = await router.discover({ provider: "apinex", key, baseUrl });
   assert.ok(catalog.models.length > 0, "APInex must expose at least one governed free model");
 
-  const selected = catalog.models[0];
-  const route = await router.resolve({
-    provider: "apinex", model: selected.id, key, baseUrl: "https://api.apinex.bond/v1",
-  });
-  assert.equal(route.allowed, true);
-  assert.equal(route.provider, "apinex");
-  assert.ok(route.model.startsWith("free/"));
-
-  const provider = providerFactory.selectProvider({
-    provider: route.provider, key, baseUrl: "https://api.apinex.bond/v1",
-  });
-
+  // A catalog's "free/" label is not proof that the account can actually use a model.
+  // Probe candidates in catalog order and fall through only for explicit subscription/billing
+  // denials; other provider errors remain hard failures so outages are not hidden.
+  let route = null;
+  let provider = null;
   let output = "";
-  for await (const event of provider.stream({
-    model: route.model,
-    messages: [{ role: "user", content: "You are executing a StarForge business mission. Reply with exactly APINEX_OK." }],
-    reasoningEffort: "none",
-    max_tokens: 16,
-    isTask: true,
-  })) {
-    if (event?.type === "text") output += String(event.delta || "");
+  const billingDenied = [];
+  for (const candidate of catalog.models) {
+    const candidateRoute = await router.resolve({
+      provider: "apinex", model: candidate.id, key, baseUrl,
+    });
+    assert.equal(candidateRoute.allowed, true);
+    assert.equal(candidateRoute.provider, "apinex");
+    assert.ok(candidateRoute.model.startsWith("free/"));
+
+    const candidateProvider = providerFactory.selectProvider({
+      provider: candidateRoute.provider, key, baseUrl,
+    });
+    let candidateOutput = "";
+    try {
+      for await (const event of candidateProvider.stream({
+        model: candidateRoute.model,
+        messages: [{ role: "user", content: "You are executing a StarForge business mission. Reply with exactly APINEX_OK." }],
+        reasoningEffort: "none",
+        max_tokens: 16,
+        isTask: true,
+      })) {
+        if (event?.type === "text") candidateOutput += String(event.delta || "");
+      }
+    } catch (error) {
+      const detail = String(error?.message || error);
+      if (/\b(?:402|billing_error|subscription required|only with a subscription)\b/i.test(detail)) {
+        billingDenied.push(candidateRoute.model);
+        continue;
+      }
+      throw error;
+    }
+    route = candidateRoute;
+    provider = candidateProvider;
+    output = candidateOutput;
+    break;
   }
+
+  assert.ok(
+    route,
+    "No APInex free-catalog model is usable by this account; subscription/billing denied: " +
+      (billingDenied.join(", ") || "no candidate completed"),
+  );
   assert.match(output.trim(), /\bAPINEX_OK\b/);
 
   const company = makeCompany();
@@ -48,7 +75,7 @@ test("C2 executes and independently verifies a real StarForge mission through th
   };
   const governedRouter = {
     resolve: request => router.resolve({
-      ...request, key, baseUrl: "https://api.apinex.bond/v1",
+      ...request, key, baseUrl,
     }),
   };
 
@@ -104,6 +131,7 @@ test("C2 executes and independently verifies a real StarForge mission through th
     model: route.model,
     free: route.free,
     catalogCount: catalog.modelCount,
+    billingDeniedCount: billingDenied.length,
     responseVerified: true,
     starForgeTaskCompleted: true,
     overseerBusinessOutcomeVerified: true,
