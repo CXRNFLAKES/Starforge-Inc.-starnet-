@@ -27,7 +27,8 @@ function inferCapabilities(text) {
   const caps = new Set(["strategy"]);
   if (/(research|find|compare|investigate|market)/.test(s)) caps.add("research");
   if (/(sell|sales|customer|client|resale|revenue|money)/.test(s)) caps.add("sales");
-  if (/(build|create|automate|execute|launch|deploy)/.test(s)) caps.add("execution");
+  // Commercial missions need an execution phase as well as sales expertise.
+  if (/(build|create|automate|execute|launch|deploy|sell|sales|customer|client|resale|revenue|money)/.test(s)) caps.add("execution");
   if (/(money|revenue|profit|budget|cost|capital)/.test(s)) caps.add("finance");
   caps.add("verification");
   return [...caps];
