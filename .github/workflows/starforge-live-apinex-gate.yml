@@ -1,4 +1,5 @@
 name: StarForge Live APInex Business Gate
+# The C2 gate probes catalog candidates and skips only explicit subscription-denied models.
 
 on:
   push:
