@@ -13,6 +13,7 @@ on:
       - "sidecar/governance/compute-economy.mjs"
       - "sidecar/governance/starnet-adapter.mjs"
       - "sidecar/governance/mission-loop.mjs"
+      - "sidecar/governance/mission-planner.mjs"
       - "sidecar/governance/outcome-evaluator.mjs"
       - "sidecar/providers/**"
       - "test/starforge.compute-economy.test.mjs"
