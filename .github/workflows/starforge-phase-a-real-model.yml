@@ -16,6 +16,7 @@ on:
       - "sidecar/providers/**"
       - "test/starforge.compute-economy.test.mjs"
       - "test/starforge.governed-model-delegation.test.mjs"
+      - "test/starforge.multi-agent-business-mission.test.mjs"
       - "scripts/starforge-apinex-live-test.mjs"
       - "docs/starforge-branch-policy.md"
       - ".github/workflows/starforge-phase-a-real-model.yml"
