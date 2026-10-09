@@ -53,7 +53,7 @@ test("C2 executes and independently verifies a real StarForge mission through th
       }
       throw error;
     }
-    if (!/\\bAPINEX_OK\\b/.test(candidateOutput.trim())) {
+    if (!/\bAPINEX_OK\b/.test(candidateOutput.trim())) {
       // Catalog entries can be labelled free but still return empty/nonconforming output.
       // Keep probing other free models rather than treating the first response as success.
       unusableResponses.push(candidateRoute.model + (candidateOutput.trim() ? " (unexpected response)" : " (empty response)"));
@@ -72,7 +72,7 @@ test("C2 executes and independently verifies a real StarForge mission through th
       "; empty/nonconforming responses: " +
       (unusableResponses.join(", ") || "none"),
   );
-  assert.match(output.trim(), /\\bAPINEX_OK\\b/);
+  assert.match(output.trim(), /\bAPINEX_OK\b/);
 
   const company = makeCompany();
   const starnet = {
