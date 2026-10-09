@@ -22,6 +22,7 @@ test("C2 executes and independently verifies a real StarForge mission through th
   let provider = null;
   let output = "";
   const billingDenied = [];
+  const unusableResponses = [];
   for (const candidate of catalog.models) {
     const candidateRoute = await router.resolve({
       provider: "apinex", model: candidate.id, key, baseUrl,
@@ -52,6 +53,12 @@ test("C2 executes and independently verifies a real StarForge mission through th
       }
       throw error;
     }
+    if (!/\\bAPINEX_OK\\b/.test(candidateOutput.trim())) {
+      // Catalog entries can be labelled free but still return empty/nonconforming output.
+      // Keep probing other free models rather than treating the first response as success.
+      unusableResponses.push(candidateRoute.model + (candidateOutput.trim() ? " (unexpected response)" : " (empty response)"));
+      continue;
+    }
     route = candidateRoute;
     provider = candidateProvider;
     output = candidateOutput;
@@ -60,10 +67,12 @@ test("C2 executes and independently verifies a real StarForge mission through th
 
   assert.ok(
     route,
-    "No APInex free-catalog model is usable by this account; subscription/billing denied: " +
-      (billingDenied.join(", ") || "no candidate completed"),
+    "No APInex free-catalog model completed the live prompt. Billing/subscription denied: " +
+      (billingDenied.join(", ") || "none") +
+      "; empty/nonconforming responses: " +
+      (unusableResponses.join(", ") || "none"),
   );
-  assert.match(output.trim(), /\bAPINEX_OK\b/);
+  assert.match(output.trim(), /\\bAPINEX_OK\\b/);
 
   const company = makeCompany();
   const starnet = {
