@@ -1,0 +1,73 @@
+name: StarForge Web Runtime and Prompt Gate
+
+on:
+  push:
+    branches:
+      - starforge/governance-kernel
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: starforge-web-runtime-prompt-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  web-runtime-prompt:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout StarForge
+        uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: StarForge preflight
+        run: npm run starforge:preflight
+
+      - name: StarForge UI and governance regression
+        run: npm run starforge:test
+
+      - name: Start the actual StarNet web app and API
+        run: |
+          node sidecar/index.js > /tmp/starforge-web.log 2>&1 &
+          echo $! > /tmp/starforge-web.pid
+          trap 'kill "$(cat /tmp/starforge-web.pid)" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 40); do
+            if curl --fail --silent http://127.0.0.1:8787/ -o /tmp/starforge-index.html; then
+              break
+            fi
+            sleep 1
+          done
+          test -s /tmp/starforge-index.html
+          grep -qi '<title>STARNET</title>' /tmp/starforge-index.html
+          curl --fail --silent http://127.0.0.1:8787/api/health -o /tmp/starforge-health.json
+          cat /tmp/starforge-health.json
+          echo "Web frontend and live sidecar health endpoint responded."
+
+      - name: Live APInex prompt response
+        env:
+          APINEX_API_KEY: ${{ secrets.APINEX_API_KEY }}
+        run: npm run test:starforge:apinex:live
+
+      - name: Governed business prompt and Overseer verification
+        env:
+          APINEX_API_KEY: ${{ secrets.APINEX_API_KEY }}
+        run: node --test test/starforge.c2-apinex-business-live.test.mjs
+
+      - name: Publish gate summary
+        if: success()
+        run: |
+          echo "STARFORGE WEB RUNTIME + PROMPT GATE: PASS"
+          echo "StarNet frontend served by the real sidecar: PASS"
+          echo "StarForge UI/governance regression: PASS"
+          echo "Live APInex prompt response: PASS"
+          echo "Governed business mission + Overseer verification: PASS"
