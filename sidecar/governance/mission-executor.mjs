@@ -52,8 +52,8 @@ export function makeMissionExecutor({ planner, allocator, starnet, computeEconom
     const workers = [...(allocation.selected || []), ...(allocation.created || [])];
     const used = new Set(); const tasks = []; const computeRecords = []; let revenueUsd = 0;
     for (const phase of activePlan.phases || []) {
-      const worker = chooseWorker(workers, phase, used) || workers[0] || null;
-      if (!worker) return clone({ status:"blocked", mission:activeMission, plan:activePlan, allocation, tasks, reason:"StarNet returned no worker for an executable mission phase" });
+      const worker = chooseWorker(workers, phase, used);
+      if (!worker) return clone({ status:"blocked", mission:activeMission, plan:activePlan, allocation, tasks, reason:`No unused worker has the required capability for phase: ${String(phase.title ?? phase.id ?? "unknown")}` });
       const assigneeId = id(worker.id ?? worker.agentId, "worker id"); used.add(assigneeId);
       const recoveryContext = recovery?.type ? `Recovery directive: ${recovery.recovery?.action ?? "replan"} (failure type: ${recovery.type}).` : "";
       const task = {
