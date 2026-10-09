@@ -14,6 +14,8 @@ on:
       - "sidecar/governance/starnet-adapter.mjs"
       - "sidecar/governance/mission-loop.mjs"
       - "sidecar/governance/mission-planner.mjs"
+      - "sidecar/governance/mission-executor.mjs"
+      - "test/starforge.mission-executor.test.mjs"
       - "sidecar/governance/outcome-evaluator.mjs"
       - "sidecar/providers/**"
       - "test/starforge.compute-economy.test.mjs"
