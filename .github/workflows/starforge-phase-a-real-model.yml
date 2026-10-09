@@ -10,7 +10,12 @@ on:
       - "test/starforge.d1-production-apinex-integration.test.mjs"
       - "test/starforge.m9.2-model-governance.test.mjs"
       - "sidecar/governance/model-router.mjs"
+      - "sidecar/governance/compute-economy.mjs"
+      - "sidecar/governance/starnet-adapter.mjs"
+      - "sidecar/governance/mission-loop.mjs"
       - "sidecar/providers/**"
+      - "test/starforge.compute-economy.test.mjs"
+      - "test/starforge.governed-model-delegation.test.mjs"
       - "scripts/starforge-apinex-live-test.mjs"
       - ".github/workflows/starforge-phase-a-real-model.yml"
 
