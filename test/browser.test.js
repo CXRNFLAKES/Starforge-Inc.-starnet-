@@ -475,7 +475,7 @@ function fakeDriver() {
         timeoutMs: 1000, cdpPort: 9349, settleQuietPolls: 1, settleNavBudgetMs: 300, settleActionBudgetMs: 300, settleMinObserveMs: 0,
         fetchImpl: async url => {
           attendedFetched.push(url);
-          return { json: async () => url.endsWith('/json/version')
+          return { ok: true, status: 200, statusText: 'OK', json: async () => url.endsWith('/json/version')
             ? { webSocketDebuggerUrl: 'ws://attended-browser' }
             : [{ type: 'page', webSocketDebuggerUrl: 'ws://attended-page' }] };
         },
@@ -507,7 +507,7 @@ function fakeDriver() {
     const privatePort = T.makeCdpDriver({
       chrome: 'fake-chrome.exe', forceHeadless: true, syntheticInputOnly: true, timeoutMs: 1000,
       cdpPort: 0, profileDir: privateProfile, browserVersion: '140.0.7339.12', locale: 'en-US', platform: 'win32',
-      fetchImpl: async url => { fetched.push(url); return { json: async () => [{ type: 'page', webSocketDebuggerUrl: 'ws://owned-private' }] }; },
+      fetchImpl: async url => { fetched.push(url); return { ok: true, status: 200, statusText: 'OK', json: async () => [{ type: 'page', webSocketDebuggerUrl: 'ws://owned-private' }] }; },
       WebSocketImpl: FakeWS,
       spawn: (exe, args) => { privateLaunches.push(args); return fakeProc(44); }
     });
@@ -562,7 +562,7 @@ function fakeDriver() {
       const driver = T.makeCdpDriver({
         chrome: 'fake-chrome.exe', forceHeadless: true, syntheticInputOnly: true, timeoutMs: 1000, cdpPort: 9349,
         settleQuietPolls: 2, settleNavBudgetMs: 400, settleActionBudgetMs: 400, settleMinObserveMs: 0, settleEmptyGraceMs: 0,
-        fetchImpl: async () => ({ json: async () => [{ type: 'page', webSocketDebuggerUrl: 'ws://settle' }] }),
+        fetchImpl: async () => ({ ok: true, status: 200, statusText: 'OK', json: async () => [{ type: 'page', webSocketDebuggerUrl: 'ws://settle' }] }),
         WebSocketImpl: WS,
         spawn: () => ({ pid: 51, on(ev, fn) { if (ev === 'close') this._c = fn; }, kill() { if (this._c) queueMicrotask(() => this._c(0)); } })
       });
@@ -679,7 +679,7 @@ function fakeDriver() {
       const drv = T.makeCdpDriver({
         chrome: 'fake-chrome.exe', forceHeadless: true, syntheticInputOnly: true, timeoutMs: 1000, cdpPort: 9352,
         settleQuietPolls: 1, settleNavBudgetMs: 5000, settleActionBudgetMs: 5000, settleMinObserveMs: 300, settleEmptyGraceMs: 0,
-        fetchImpl: async () => ({ json: async () => [{ type: 'page', webSocketDebuggerUrl: 'ws://min' }] }),
+        fetchImpl: async () => ({ ok: true, status: 200, statusText: 'OK', json: async () => [{ type: 'page', webSocketDebuggerUrl: 'ws://min' }] }),
         WebSocketImpl: WS2,
         spawn: () => ({ pid: 81, on(ev, fn) { if (ev === 'close') this._c = fn; }, kill() { if (this._c) queueMicrotask(() => this._c(0)); } })
       });
@@ -779,7 +779,7 @@ function fakeDriver() {
     const d = T.makeCdpDriver({
       chrome: 'fake-chrome.exe', forceHeadless: true, syntheticInputOnly: true, timeoutMs: 1000, cdpPort: 9353,
       settleQuietPolls: 1, settleNavBudgetMs: 300, settleActionBudgetMs: 300, settleMinObserveMs: 0, settleEmptyGraceMs: 0,
-      fetchImpl: async () => ({ json: async () => [{ type: 'page', webSocketDebuggerUrl: 'ws://tabs' }] }),
+      fetchImpl: async () => ({ ok: true, status: 200, statusText: 'OK', json: async () => [{ type: 'page', webSocketDebuggerUrl: 'ws://tabs' }] }),
       WebSocketImpl: WS3,
       spawn: () => ({ pid: 91, on(ev, fn) { if (ev === 'close') this._c = fn; }, kill() { if (this._c) queueMicrotask(() => this._c(0)); } })
     });
@@ -905,7 +905,7 @@ function fakeDriver() {
     const d = T.makeCdpDriver({
       chrome: 'fake-chrome.exe', forceHeadless: true, syntheticInputOnly: true, timeoutMs: 1000, cdpPort: 9351,
       settleQuietPolls: 1, settleNavBudgetMs: 300, settleActionBudgetMs: 300,
-      fetchImpl: async () => ({ json: async () => [{ type: 'page', webSocketDebuggerUrl: 'ws://frames' }] }),
+      fetchImpl: async () => ({ ok: true, status: 200, statusText: 'OK', json: async () => [{ type: 'page', webSocketDebuggerUrl: 'ws://frames' }] }),
       WebSocketImpl: WS,
       spawn: () => ({ pid: 71, on(ev, fn) { if (ev === 'close') this._c = fn; }, kill() { if (this._c) queueMicrotask(() => this._c(0)); } })
     });
@@ -1081,7 +1081,7 @@ function fakeDriver() {
       const driver = T.makeCdpDriver({
         chrome: 'fake-chrome.exe', forceHeadless: true, syntheticInputOnly: true, timeoutMs: 1000, cdpPort: 9350,
         settleQuietPolls: 1, settleNavBudgetMs: 300, settleActionBudgetMs: 300, settleMinObserveMs: 0, settleEmptyGraceMs: 0,
-        fetchImpl: async () => ({ json: async () => [{ type: 'page', webSocketDebuggerUrl: 'ws://net' }] }),
+        fetchImpl: async () => ({ ok: true, status: 200, statusText: 'OK', json: async () => [{ type: 'page', webSocketDebuggerUrl: 'ws://net' }] }),
         WebSocketImpl: WS,
         spawn: () => ({ pid: 61, on(ev, fn) { if (ev === 'close') this._c = fn; }, kill() { if (this._c) queueMicrotask(() => this._c(0)); } })
       });
@@ -1385,7 +1385,7 @@ function fakeDriver() {
     const d = T.makeCdpDriver({
       chrome: 'fake-chrome.exe', forceHeadless: true, syntheticInputOnly: false,
       timeoutMs: 400, navTimeoutMs: 800, cdpPort: 9361,
-      fetchImpl: async () => ({ json: async () => [{ type: 'page', webSocketDebuggerUrl: 'ws://stall' }] }),
+      fetchImpl: async () => ({ ok: true, status: 200, statusText: 'OK', json: async () => [{ type: 'page', webSocketDebuggerUrl: 'ws://stall' }] }),
       WebSocketImpl: StallWS,
       // kill() must actually signal 'close', or session.close() rightly refuses to believe Chromium exited.
       spawn: () => { let onClose = null; return { pid: 7, on(ev, fn) { if (ev === 'close') onClose = fn; }, kill() { if (onClose) queueMicrotask(() => onClose(0)); } }; }
