@@ -1,0 +1,34 @@
+name: Refresh Product-Perfect Surface Lock
+
+on:
+  push:
+    branches:
+      - fix/refresh-product-perfect-surface
+
+permissions:
+  contents: write
+
+jobs:
+  refresh-and-verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Regenerate exact source-snapshot lock
+        run: node scripts/qa/product-perfect/refresh-ledger-surface.mjs
+      - name: Commit refreshed lock
+        run: |
+          if ! git diff --quiet -- qa/product-perfect/claims.json; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add qa/product-perfect/claims.json
+            git commit -m "qa: refresh product-perfect release-surface hashes"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+          fi
+      - name: Verify claims authority
+        run: node test/qa-product-perfect-claims.test.js
