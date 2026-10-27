@@ -47,6 +47,14 @@
       supportsReasoning: true,
       wireReasoningEffort: true,
       freeModelsOnly: true,
+      // APInex documents these free/* IDs in its public catalog. Keep a minimal, explicitly free-only
+      // fallback for transient/filtered /models responses; the live catalog always wins when it returns
+      // governed free models. The adapter still rejects every non-free ID.
+      staticModels: [
+        { id: 'free/gpt-6-luna', name: 'Free GPT-6 Luna', supportsTools: true },
+        { id: 'free/deepseek-v4.1-flash', name: 'Free DeepSeek V4.1 Flash', supportsTools: true },
+        { id: 'free/gemini-3.8-flash', name: 'Free Gemini 3.8 Flash', supportsTools: true }
+      ],
       order: 16
     },
     {
