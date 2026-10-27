@@ -374,7 +374,7 @@ function fakeDriver() {
       inputSeed: 'browser-input-contract', inputSleep: async ms => { inputDelays.push(ms); },
       fetchImpl: async url => {
         if (url.endsWith('/json/version') && browserVersionAttempts++ === 0) throw new Error('browser endpoint still starting');
-        return { json: async () => [{ type: 'page', webSocketDebuggerUrl: 'ws://fake' }] };
+        return { ok: true, status: 200, statusText: 'OK', json: async () => [{ type: 'page', webSocketDebuggerUrl: 'ws://fake' }] };
       },
       WebSocketImpl: FakeWS,
       spawn: (exe, args) => { launches.push({ exe, args }); return fakeProc(42); }
