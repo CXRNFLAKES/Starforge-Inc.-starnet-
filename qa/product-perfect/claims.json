@@ -22,6 +22,31 @@
     "pathSetSha256": "258a2a3e26c865b222fbd3cced2d2f87b69e8bf0108ff2f8c177c8878ba51010",
     "files": [
       {
+        "path": "INSTALL.md",
+        "bytes": 5355,
+        "sha256": "278a132e68b1c5a96402787ebad7d8a94360c58e03dee8fa1a6b63a7301f2593"
+      },
+      {
+        "path": "PRIVACY.md",
+        "bytes": 13829,
+        "sha256": "6974307f435a54716c1daa78c4dc2d05349dd96ade68c9a18224dcf5db65b65e"
+      },
+      {
+        "path": "README.md",
+        "bytes": 8928,
+        "sha256": "4b8dd90437e07ea1324203f6c4e0b62204413cb827d90f7fd195308a5fe7dd92"
+      },
+      {
+        "path": "RELEASE_NOTES.md",
+        "bytes": 49089,
+        "sha256": "f2b6bd4d4ca527fb6d329469d21ac13b9957033f544c885b9f949b4143fcc831"
+      },
+      {
+        "path": "TERMS.md",
+        "bytes": 5309,
+        "sha256": "4ec233df27b6781838559005fcef2e7a214e21431b9cd0ef0cb5768a78eee24c"
+      },
+      {
         "path": "docs/DOWNLOAD_PAGE.md",
         "bytes": 5585,
         "sha256": "b4d17b1b3514383c7f013447ea0f4a431b4f7516a8d682e69c0462ecafde5e68"
@@ -1710,31 +1735,6 @@
         "path": "frontend/skin-review-0914.js",
         "bytes": 8745,
         "sha256": "b542a9825aa46c8fde92cf80a6ccf45b2bef4143f6068821a2c504acdaefe7af"
-      },
-      {
-        "path": "INSTALL.md",
-        "bytes": 5355,
-        "sha256": "278a132e68b1c5a96402787ebad7d8a94360c58e03dee8fa1a6b63a7301f2593"
-      },
-      {
-        "path": "PRIVACY.md",
-        "bytes": 13829,
-        "sha256": "6974307f435a54716c1daa78c4dc2d05349dd96ade68c9a18224dcf5db65b65e"
-      },
-      {
-        "path": "README.md",
-        "bytes": 8928,
-        "sha256": "4b8dd90437e07ea1324203f6c4e0b62204413cb827d90f7fd195308a5fe7dd92"
-      },
-      {
-        "path": "RELEASE_NOTES.md",
-        "bytes": 49089,
-        "sha256": "f2b6bd4d4ca527fb6d329469d21ac13b9957033f544c885b9f949b4143fcc831"
-      },
-      {
-        "path": "TERMS.md",
-        "bytes": 5309,
-        "sha256": "4ec233df27b6781838559005fcef2e7a214e21431b9cd0ef0cb5768a78eee24c"
       }
     ]
   },
