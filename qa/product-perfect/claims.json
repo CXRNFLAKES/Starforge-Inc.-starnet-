@@ -18,34 +18,9 @@
   "expectedClaimCount": 37,
   "releaseSurface": {
     "algorithm": "sha256",
-    "sourceCommit": "6fb2505ded64590b243912b36a4f456178fc0100",
-    "pathSetSha256": "d399b7dc9c6d8ef4e165d0c6560b5770636dbaf73b81f662e7c4b31d7cc55045",
+    "sourceCommit": "6a51b16b02b60cf3925c0e461f8355f9fd4ad639",
+    "pathSetSha256": "258a2a3e26c865b222fbd3cced2d2f87b69e8bf0108ff2f8c177c8878ba51010",
     "files": [
-      {
-        "path": "INSTALL.md",
-        "bytes": 5355,
-        "sha256": "278a132e68b1c5a96402787ebad7d8a94360c58e03dee8fa1a6b63a7301f2593"
-      },
-      {
-        "path": "PRIVACY.md",
-        "bytes": 13829,
-        "sha256": "6974307f435a54716c1daa78c4dc2d05349dd96ade68c9a18224dcf5db65b65e"
-      },
-      {
-        "path": "README.md",
-        "bytes": 8928,
-        "sha256": "4b8dd90437e07ea1324203f6c4e0b62204413cb827d90f7fd195308a5fe7dd92"
-      },
-      {
-        "path": "RELEASE_NOTES.md",
-        "bytes": 49089,
-        "sha256": "f2b6bd4d4ca527fb6d329469d21ac13b9957033f544c885b9f949b4143fcc831"
-      },
-      {
-        "path": "TERMS.md",
-        "bytes": 5309,
-        "sha256": "4ec233df27b6781838559005fcef2e7a214e21431b9cd0ef0cb5768a78eee24c"
-      },
       {
         "path": "docs/DOWNLOAD_PAGE.md",
         "bytes": 5585,
@@ -1257,6 +1232,21 @@
         "sha256": "aa902d9e42761c8136287b0ff59008b05c30d7258280cf69d7f8924a4091b1cb"
       },
       {
+        "path": "frontend/app/windows/starforge-hq.js",
+        "bytes": 24893,
+        "sha256": "2a0385086eb1497ee51303ae902620b546e9b7bbf75cfc629860d54dc6d0e1dd"
+      },
+      {
+        "path": "frontend/app/windows/starforge-mission-control.js",
+        "bytes": 4443,
+        "sha256": "8ddd18760dfb78caf71532baafa31dff1fec0642d55d94b48bef8ef2e3be7e4a"
+      },
+      {
+        "path": "frontend/app/windows/starforge-worker-room.js",
+        "bytes": 9820,
+        "sha256": "c6910c8fdfbf9f07c33e392fd507e06aef2a96d5eca2dfbdb7abf0b63daea1c6"
+      },
+      {
         "path": "frontend/app/windows/trophies.js",
         "bytes": 4503,
         "sha256": "cbcea1cb78abcecfd912691d8eb9b3de58e450d1d2d61c3f0a4b471899bff655"
@@ -1517,6 +1507,21 @@
         "sha256": "f20b9dae61f1b9b065e577e4ebf1f597f2c931b68dae966952523b82d893ecda"
       },
       {
+        "path": "frontend/css/starforge-hq.css",
+        "bytes": 11937,
+        "sha256": "57ebe10cbd99d4b142673b183274a4b5157b5079c2cdd80a762e81f999d405c1"
+      },
+      {
+        "path": "frontend/css/starforge-mission-control.css",
+        "bytes": 1773,
+        "sha256": "56d200264e32d841c2622992e484f9d444c1f622f7315b6f1db229cbfc9ca834"
+      },
+      {
+        "path": "frontend/css/starforge-worker-room.css",
+        "bytes": 5940,
+        "sha256": "5492ae4715adac10d46a5dcf2d49146794d72199e5366a2f301a29bbabd77d2c"
+      },
+      {
         "path": "frontend/css/style.css",
         "bytes": 104241,
         "sha256": "3e70c29845935e0473b3b053d27ab24b019b2f60668f2dc65a2068ea6ff514d7"
@@ -1705,6 +1710,31 @@
         "path": "frontend/skin-review-0914.js",
         "bytes": 8745,
         "sha256": "b542a9825aa46c8fde92cf80a6ccf45b2bef4143f6068821a2c504acdaefe7af"
+      },
+      {
+        "path": "INSTALL.md",
+        "bytes": 5355,
+        "sha256": "278a132e68b1c5a96402787ebad7d8a94360c58e03dee8fa1a6b63a7301f2593"
+      },
+      {
+        "path": "PRIVACY.md",
+        "bytes": 13829,
+        "sha256": "6974307f435a54716c1daa78c4dc2d05349dd96ade68c9a18224dcf5db65b65e"
+      },
+      {
+        "path": "README.md",
+        "bytes": 8928,
+        "sha256": "4b8dd90437e07ea1324203f6c4e0b62204413cb827d90f7fd195308a5fe7dd92"
+      },
+      {
+        "path": "RELEASE_NOTES.md",
+        "bytes": 49089,
+        "sha256": "f2b6bd4d4ca527fb6d329469d21ac13b9957033f544c885b9f949b4143fcc831"
+      },
+      {
+        "path": "TERMS.md",
+        "bytes": 5309,
+        "sha256": "4ec233df27b6781838559005fcef2e7a214e21431b9cd0ef0cb5768a78eee24c"
       }
     ]
   },
