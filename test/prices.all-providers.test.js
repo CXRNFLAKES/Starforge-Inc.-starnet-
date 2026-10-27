@@ -255,6 +255,14 @@ function burnProvider(tokensPerTurn, priceOf) {
     for (const p of profiles) {
       if (p.authType !== 'api_key') continue;
       if (UNPRICED_BY_DESIGN[p.id]) { A.ok(UNPRICED_BY_DESIGN[p.id].length > 10, p.id + ' is unpriced by design: ' + UNPRICED_BY_DESIGN[p.id]); continue; }
+      // A free-only catalog is a distinct safety policy: it admits only models proven free by zero
+      // catalog rates or APInex's explicit free/ namespace, and excludes paid/ambiguous models. It
+      // must not be assigned an unrelated paid-model price family merely to satisfy this metered ratchet.
+      if (p.freeModelsOnly === true) {
+        A.ok(p.adapter === 'openai-compatible', p.id + ': freeModelsOnly uses the adapter that enforces free-model filtering');
+        A.ok(p.id === 'apinex', p.id + ': free-only policy is explicitly reviewed for this provider');
+        continue;
+      }
       checked++;
       const id = (p.staticModels && p.staticModels[0] && p.staticModels[0].id) || REPRESENTATIVE[p.id];
       A.ok(id, p.id + ': a representative model id is known to this ratchet (add it to REPRESENTATIVE)');

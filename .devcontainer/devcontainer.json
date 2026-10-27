@@ -1,6 +1,14 @@
 {
   "name": "StarForge + StarNet Mobile Workspace",
   "image": "mcr.microsoft.com/devcontainers/javascript-node:1-20-bookworm",
+  "runArgs": [
+    "--device=/dev/net/tun"
+  ],
+  "features": {
+    "ghcr.io/tailscale/codespace/tailscale": {
+      "version": "latest"
+    }
+  },
   "forwardPorts": [
     8787,
     8799

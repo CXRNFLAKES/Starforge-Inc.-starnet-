@@ -18,8 +18,8 @@
   "expectedClaimCount": 37,
   "releaseSurface": {
     "algorithm": "sha256",
-    "sourceCommit": "6fb2505ded64590b243912b36a4f456178fc0100",
-    "pathSetSha256": "d399b7dc9c6d8ef4e165d0c6560b5770636dbaf73b81f662e7c4b31d7cc55045",
+    "sourceCommit": "6a51b16b02b60cf3925c0e461f8355f9fd4ad639",
+    "pathSetSha256": "258a2a3e26c865b222fbd3cced2d2f87b69e8bf0108ff2f8c177c8878ba51010",
     "files": [
       {
         "path": "INSTALL.md",
@@ -33,8 +33,8 @@
       },
       {
         "path": "README.md",
-        "bytes": 8928,
-        "sha256": "4b8dd90437e07ea1324203f6c4e0b62204413cb827d90f7fd195308a5fe7dd92"
+        "bytes": 9474,
+        "sha256": "fbd49dc95fdfea67d37e25ace555ef68f07797562df9b0dd793deb5ccb5bee33"
       },
       {
         "path": "RELEASE_NOTES.md",
@@ -528,8 +528,8 @@
       },
       {
         "path": "frontend/app/harness.js",
-        "bytes": 85921,
-        "sha256": "2687e7386b4bc8209b663b04b557e987e466dca9c3a1cf370b34f199f728b681"
+        "bytes": 86224,
+        "sha256": "e38949e7338612be02c357115b8e233a9f73d82279dbbe212773b466fbd7e9fc"
       },
       {
         "path": "frontend/app/hint.js",
@@ -1068,13 +1068,13 @@
       },
       {
         "path": "frontend/app/stationtemplates.js",
-        "bytes": 10700,
-        "sha256": "bf712ae1d0cd5af522ae2d4f6a5434497f6fa867c13e6f19861e3753dccb378a"
+        "bytes": 11379,
+        "sha256": "9fa188829d2f28b82eda21f173337371958e92491afe84b0fb2131ea60e7aaef"
       },
       {
         "path": "frontend/app/stationui.js",
-        "bytes": 737739,
-        "sha256": "54eafb79d484178035be7a286a0de9f6667c803a147befc40170e46282e03f48"
+        "bytes": 737912,
+        "sha256": "9af9d2ee5ae1b6039d0f5c842d3a68afb0dfc80d5a5e2ac94fc0ebfecfb2a1a2"
       },
       {
         "path": "frontend/app/study.js",
@@ -1257,6 +1257,21 @@
         "sha256": "aa902d9e42761c8136287b0ff59008b05c30d7258280cf69d7f8924a4091b1cb"
       },
       {
+        "path": "frontend/app/windows/starforge-hq.js",
+        "bytes": 24893,
+        "sha256": "2a0385086eb1497ee51303ae902620b546e9b7bbf75cfc629860d54dc6d0e1dd"
+      },
+      {
+        "path": "frontend/app/windows/starforge-mission-control.js",
+        "bytes": 4443,
+        "sha256": "8ddd18760dfb78caf71532baafa31dff1fec0642d55d94b48bef8ef2e3be7e4a"
+      },
+      {
+        "path": "frontend/app/windows/starforge-worker-room.js",
+        "bytes": 9820,
+        "sha256": "c6910c8fdfbf9f07c33e392fd507e06aef2a96d5eca2dfbdb7abf0b63daea1c6"
+      },
+      {
         "path": "frontend/app/windows/trophies.js",
         "bytes": 4503,
         "sha256": "cbcea1cb78abcecfd912691d8eb9b3de58e450d1d2d61c3f0a4b471899bff655"
@@ -1333,8 +1348,8 @@
       },
       {
         "path": "frontend/app/worldmodel.js",
-        "bytes": 184795,
-        "sha256": "15b1ce071552f7108c9def308cd20b2daeb09993f4a2e3138d2e47ed98fbd2c5"
+        "bytes": 184871,
+        "sha256": "043b3aaae209d636f43f46ccbb39a57d3756ed6cfb596dff6a97d71c549bde65"
       },
       {
         "path": "frontend/app/worldrenderer.js",
@@ -1393,8 +1408,8 @@
       },
       {
         "path": "frontend/css/app.css",
-        "bytes": 402619,
-        "sha256": "c596923a374f8851178ddf73474bf9790da75deec8c1ba132fb7fef3db9a2dc4"
+        "bytes": 402925,
+        "sha256": "adb99fc8a9dddd8235dc159f33efb554f413f94eb4e1928e18579d0bfa776f83"
       },
       {
         "path": "frontend/css/asciifx.css",
@@ -1517,6 +1532,21 @@
         "sha256": "f20b9dae61f1b9b065e577e4ebf1f597f2c931b68dae966952523b82d893ecda"
       },
       {
+        "path": "frontend/css/starforge-hq.css",
+        "bytes": 11937,
+        "sha256": "57ebe10cbd99d4b142673b183274a4b5157b5079c2cdd80a762e81f999d405c1"
+      },
+      {
+        "path": "frontend/css/starforge-mission-control.css",
+        "bytes": 1773,
+        "sha256": "56d200264e32d841c2622992e484f9d444c1f622f7315b6f1db229cbfc9ca834"
+      },
+      {
+        "path": "frontend/css/starforge-worker-room.css",
+        "bytes": 5940,
+        "sha256": "5492ae4715adac10d46a5dcf2d49146794d72199e5366a2f301a29bbabd77d2c"
+      },
+      {
         "path": "frontend/css/style.css",
         "bytes": 104241,
         "sha256": "3e70c29845935e0473b3b053d27ab24b019b2f60668f2dc65a2068ea6ff514d7"
@@ -1618,8 +1648,8 @@
       },
       {
         "path": "frontend/index.html",
-        "bytes": 87519,
-        "sha256": "193209f36485e09d7906e54e81dac35690b36b3419f61946bc9b039ceba9768e"
+        "bytes": 88764,
+        "sha256": "9f11f4d25abe9049b4529a33c35fb409b7e5ffc17cb4fdb8c3a7ad8b65d86a6e"
       },
       {
         "path": "frontend/js/arcade.js",
