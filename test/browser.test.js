@@ -493,7 +493,7 @@ function fakeDriver() {
     isolationReady = false; currentUrl = 'about:blank'; sent.length = 0;
     const refused = T.makeCdpDriver({
       chrome: 'fake-chrome.exe', forceHeadless: true, syntheticInputOnly: true, timeoutMs: 1000, cdpPort: 9348,
-      fetchImpl: async () => ({ json: async () => [{ type: 'page', webSocketDebuggerUrl: 'ws://fake-refused' }] }),
+      fetchImpl: async () => ({ ok: true, status: 200, statusText: 'OK', json: async () => [{ type: 'page', webSocketDebuggerUrl: 'ws://fake-refused' }] }),
       WebSocketImpl: FakeWS,
       spawn: () => fakeProc(43)
     });
